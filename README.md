@@ -3,7 +3,7 @@ This Environment is used in [RobôCIn's](https://github.com/robocin/deepvss) pro
 
 ## Project based on:
 * [VSS-SDK/VSS-Simulator & VSS-Viewer](https://github.com/VSS-SDK/VSS-Simulator) (x64 binaries provided here)
-* [OpenAI Gym Encironments](https://github.com/openai/gym)
+* [OpenAI Gym Environments](https://github.com/openai/gym)
 
 # Install
 ```bash
