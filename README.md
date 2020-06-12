@@ -26,7 +26,7 @@ env = SingleAgentSoccerEnvWrapper(env, simulator='sdk')
 env.setup(0, n_agents, random_cmd)
 env.reset()
 for i in range(100):
-    done = True
+    done = False
     state = env.reset()
     while not done:
         action = env.action_space.sample()

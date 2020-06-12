@@ -23,6 +23,8 @@ class SimSoccerEnv(VSSSoccerEnv):
         self.init_ball = 4
         self.sim = None
         self.manage_process = True
+        self.fast_mode = True
+        self.render = False
 
     # Simulation methods
     # ----------------------------
@@ -50,11 +52,12 @@ class SimSoccerEnv(VSSSoccerEnv):
 
     def start(self, manage_process=True):
         self.manage_process = manage_process
-        if isinstance(self.simulator_type, FiraParser):
+        if self.simulator_type == FiraParser:
             self.sim = self.simulator_type(self.ip, self.port,
                                            self.is_team_yellow,
                                            self.team_name, manage_process,
-                                           self.fast_mode, self.render)
+                                           fast_mode=self.fast_mode,
+                                           render=self.render)
         else:
             self.sim = SimParser(self.ip, self.port,
                                  self.is_team_yellow,

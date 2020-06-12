@@ -228,5 +228,6 @@ class SingleAgentSoccerEnvWrapper(gym.Wrapper):
     def seed(self, seed=None):
         return [self.soccer_env.seed(seed)]
 
-    def render(self, mode='human', close=False):
-        self.soccer_env.render(mode, close)
+    def render(self):
+        self.change_params({'render': True})
+        self.reset()
