@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package fira_message;
+
+message Ball {
+    double x = 1;
+    double y = 2;
+    double z = 3;
+    double vx = 4;
+    double vy = 5;
+    double vz = 6;
+}
+
+message Robot {
+    uint32 robot_id = 1;
+    double x = 2;
+    double y = 3;
+    double orientation = 4;
+    double vx = 5;
+    double vy = 6;
+    double vorientation = 7;
+}
+
+message Field {
+    double width = 1;
+    double length = 2;
+    double goal_width = 3;
+    double goal_depth = 4;
+}
+
+message Frame {
+    Ball ball = 1;
+    repeated Robot robots_yellow = 2;
+    repeated Robot robots_blue = 3;
+}
