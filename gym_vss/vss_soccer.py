@@ -1,15 +1,17 @@
-from .utils import *
-from .vss_agent import VSSAgent
-
-import numpy as np
-import gym
-from gym import spaces
-from gym.utils import seeding
 import math
+import random
 from collections import deque
 
-import random
+import gym
+import numpy as np
+from gym import spaces
+from gym.utils import seeding
+
 from gym_vss.speed_estimator import SpeedEstimator
+from gym_vss.spline import SplineRandomizer
+
+from .utils import *
+from .vss_player import VSSPlayer
 
 
 class Pose:
@@ -28,7 +30,9 @@ class EntityState:
             self.v_pose = Pose()
         else:
             self.pose = Pose(entity.pose.x, entity.pose.y, entity.pose.yaw)
-            self.v_pose = Pose(entity.v_pose.x, entity.v_pose.y, entity.v_pose.yaw)
+            self.v_pose = Pose(
+                entity.v_pose.x, entity.v_pose.y, entity.v_pose.yaw)
+
 
 class VSSSoccerEnv(gym.Env):
 
@@ -41,7 +45,8 @@ class VSSSoccerEnv(gym.Env):
         self.steps = 0
         self.frame_step_size = (1000 / 60.0)
         self.frame_skip = 5
-        self.cmd_wait = self.frame_skip * self.frame_step_size  # frames x (1s in ms)/fps
+        self.cmd_wait = self.frame_skip * \
+            self.frame_step_size  # frames x (1s in ms)/fps
         self.command_rate = round(self.cmd_wait)
         self.time_limit = -1
         self.team_name = 'Yellow'
@@ -53,7 +58,7 @@ class VSSSoccerEnv(gym.Env):
         self.action_format = None
 
         # -- Game info
-        self.team = [VSSAgent(i) for i in range(3)]
+        self.team = [VSSPlayer(i) for i in range(3)]
         self.ball_x = None
         self.ball_y = None
         self.my_goals = 0
@@ -130,7 +135,8 @@ class VSSSoccerEnv(gym.Env):
 
         self.frame_step_size = parameters['frame_step_size']
         self.frame_skip = parameters['frame_skip']
-        self.cmd_wait = self.frame_skip * self.frame_step_size  # frames x (1s in ms)/fps
+        self.cmd_wait = self.frame_skip * \
+            self.frame_step_size  # frames x (1s in ms)/fps
         self.command_rate = round(self.cmd_wait)
         self.time_limit = parameters['time_limit_ms']
 
@@ -165,7 +171,6 @@ class VSSSoccerEnv(gym.Env):
 
         self.min_dist_move_rw = parameters['min_dist_move_rw']
         self.collision_distance = parameters['collision_distance']
-
 
     def reset_game_vars(self):
         self.prev_ball_potential = None
@@ -271,13 +276,16 @@ class VSSSoccerEnv(gym.Env):
         print("Team is Blue")
 
     def init_space_action(self):
-        self.last_state, reward, done = self._parse_state(self._receive_state(), self.cmd_wait)
+        self.last_state, reward, done = self._parse_state(
+            self._receive_state(), self.cmd_wait)
         shape = len(self.last_state[0])
         self.state_format = "%df" % shape
 
-        self.observation_space = spaces.Box(low=-200, high=200, dtype=np.float32, shape=(shape,))
+        self.observation_space = spaces.Box(
+            low=-200, high=200, dtype=np.float32, shape=(shape,))
         if self.action_dict is None:
-            self.action_space = spaces.Box(low=-1, high=1, dtype=np.float32, shape=(2,))
+            self.action_space = spaces.Box(
+                low=-1, high=1, dtype=np.float32, shape=(2,))
             self.action_format = '2f'
         else:
             self.action_space = spaces.Discrete(len(self.action_dict))
@@ -294,7 +302,7 @@ class VSSSoccerEnv(gym.Env):
     def _receive_state(self):
         raise NotImplementedError()
 
-    #def _parse_state(self, state, dt):
+    # def _parse_state(self, state, dt):
     #    raise NotImplementedError()
 
     def _set_action(self, commands):
@@ -404,15 +412,16 @@ class VSSSoccerEnv(gym.Env):
                 if self.team[i].prev_ball_dist is not None and self.team[i].ball_dist > self.min_dist_move_rw:
 
                     dist = (1-self.team[i].alpha_base)*(self.team[i].prev_ball_dist - self.team[i].ball_dist) + \
-                           self.team[i].alpha_base*(self.team[i].prev_base_dist - self.team[i].base_dist)
+                        self.team[i].alpha_base * \
+                        (self.team[i].prev_base_dist - self.team[i].base_dist)
 
                     move_reward[i] = clip(dist * 50 / dt, -1.0, 1.0)  # (-1,1)
 
             rewards = self.w_move * move_reward + \
-                      self.w_ball_grad * grad_ball_potential + \
-                      self.w_collision * collisions + \
-                      self.w_ball_pot * ball_potential + \
-                      self.w_energy * energy_penalty
+                self.w_ball_grad * grad_ball_potential + \
+                self.w_collision * collisions + \
+                self.w_ball_pot * ball_potential + \
+                self.w_energy * energy_penalty
 
             # record ball_grad reward
             self.rw_ball_grad += self.w_ball_grad * grad_ball_potential
@@ -467,7 +476,6 @@ class VSSSoccerEnv(gym.Env):
                      agent.rw_collision / steps,
                      agent.rw_total))
 
-
     def is_in_defense_area(self, pose):
         safe = 15
         if pose.x < 25+safe and (40-safe < pose.y < 90+safe):
@@ -488,7 +496,8 @@ class VSSSoccerEnv(gym.Env):
         striker2 = 1
         keeper = 2
 
-        ball_state_array = [EntityState(ball_state), EntityState(ball_state), EntityState(ball_state)]
+        ball_state_array = [EntityState(ball_state), EntityState(
+            ball_state), EntityState(ball_state)]
 
         # # hold keeper behind:
         # if ball_state.pose.x > 80:  # ball x for goalkeeper >20
@@ -521,7 +530,7 @@ class VSSSoccerEnv(gym.Env):
         #         ball_state_array[striker1].pose.x = 140
         #         #print("Prevent fault")
 
-        #print(".")
+        # print(".")
         return ball_state_array
 
 # # #================= Heuristics
@@ -541,7 +550,8 @@ class VSSSoccerEnv(gym.Env):
         self.ball_x = state.balls[0].pose.x
         self.ball_y = state.balls[0].pose.y
 
-        ball_np = np.array((self.ball_x - 4.0, self.ball_y))  # where the ball is now (a little behind it)
+        # where the ball is now (a little behind it)
+        ball_np = np.array((self.ball_x - 4.0, self.ball_y))
 
         balls = self.state_heuristics(state.balls[0], my_team, opponent_team)
 
@@ -551,7 +561,7 @@ class VSSSoccerEnv(gym.Env):
             # balls[i].v_pose.x, balls[i].v_pose.y = self.ball_estim.estimate_speed(state.balls[0].pose, state.time, False)
 
             ball_state[i] = (normX(balls[i].pose.x), normX(balls[i].pose.y),
-                          normVx(balls[i].v_pose.x), normVx(balls[i].v_pose.y))
+                             normVx(balls[i].v_pose.x), normVx(balls[i].v_pose.y))
 
         my_team_state = deque()
 
@@ -571,7 +581,8 @@ class VSSSoccerEnv(gym.Env):
 
             # build the state. Encode yaw as sin(yaw) and cos(yaw)
             rbt_state = (normX(self.team[idx].target_x), normX(self.team[idx].target_y), normX(t1_robot.pose.x),
-                         normX(t1_robot.pose.y), math.sin(t1_robot.pose.yaw), math.cos(t1_robot.pose.yaw),
+                         normX(t1_robot.pose.y), math.sin(
+                             t1_robot.pose.yaw), math.cos(t1_robot.pose.yaw),
                          normVx(t1_robot.v_pose.x), normVx(t1_robot.v_pose.y),
                          normVt(t1_robot.v_pose.yaw))
 
@@ -582,15 +593,19 @@ class VSSSoccerEnv(gym.Env):
                     if self.rndball is None:
                         dist = 0
                     else:
-                        dist = np.linalg.norm(self.rndball - np.array([self.team[idx].x, self.team[idx].y]))  # distance to current ball position
+                        # distance to current ball position
+                        dist = np.linalg.norm(
+                            self.rndball - np.array([self.team[idx].x, self.team[idx].y]))
 
                     if dist < 10:
                         self.ball_x = ball.pose.x = random.uniform(20, 150)
                         self.ball_y = ball.pose.y = random.uniform(10, 120)
                         self.rndball = np.array((self.ball_x, self.ball_y))
-                        print("Dist: %d, new rnd ball: (%d, %d)" % (dist, self.ball_x, self.ball_y))
+                        print("Dist: %d, new rnd ball: (%d, %d)" %
+                              (dist, self.ball_x, self.ball_y))
 
-                ball_state[idx] = (normX(self.rndball[0]), normX(self.rndball[1]), 0, 0)
+                ball_state[idx] = (normX(self.rndball[0]),
+                                   normX(self.rndball[1]), 0, 0)
 
             #print(idx, "lin:%.2f ang:%.2f vr:%.2f x: %.2f" % (math.sqrt(t1_robot.v_pose.x**2+t1_robot.v_pose.y**2), t1_robot.v_pose.yaw, t1_robot.v_pose.yaw*self.robot_l, t1_robot.pose.x))
             # if(idx == 0):
@@ -598,7 +613,7 @@ class VSSSoccerEnv(gym.Env):
             #                                               t1_robot.v_pose.yaw,
             #                                               t1_robot.v_pose.yaw * self.robot_l, t1_robot.pose.x, t1_robot.pose.y, t1_robot.pose.yaw), state.time)
 
-                #print(t1_robot.pose.x,t1_robot.pose.y)
+                # print(t1_robot.pose.x,t1_robot.pose.y)
 
         opponent_team_state = ()
         for idx, t2_robot in enumerate(opponent_team):
@@ -606,16 +621,17 @@ class VSSSoccerEnv(gym.Env):
             # t2_robot.v_pose.x, t2_robot.v_pose.y, t2_robot.v_pose.yaw = self.opponent_estim[idx].estimate_speed(t2_robot.pose, state.time)
 
             opponent_team_state += (normX(t2_robot.pose.x), normX(t2_robot.pose.y), math.sin(t2_robot.pose.yaw),
-                         math.cos(t2_robot.pose.yaw),
-                         normVx(t2_robot.v_pose.x), normVx(t2_robot.v_pose.y),
-                         normVt(t2_robot.v_pose.yaw))  # estimated values
+                                    math.cos(t2_robot.pose.yaw),
+                                    normVx(t2_robot.v_pose.x), normVx(
+                                        t2_robot.v_pose.y),
+                                    normVt(t2_robot.v_pose.yaw))  # estimated values
 
         return ball_state, my_team_state, opponent_team_state, my_team
 
-
     def _parse_state(self, state, dt):
 
-        ball_state, my_team_state, opponent_team_state, my_team = self._update_state(state)
+        ball_state, my_team_state, opponent_team_state, my_team = self._update_state(
+            state)
 
         if self.is_team_yellow:
             goals_diff = state.goals_yellow - state.goals_blue
@@ -648,7 +664,8 @@ class VSSSoccerEnv(gym.Env):
             t1_state_tuple = tuple([i for sub in my_team_state for i in sub])
             #env_state = ball_state + t1_state_tuple + t2_state
             # env_state = (time_norm,) + agent_ids[a] + ball_state + t1_state_tuple + t2_state
-            env_state = (time_norm,) + ball_state[a] + t1_state_tuple + opponent_team_state
+            env_state = (time_norm,) + \
+                ball_state[a] + t1_state_tuple + opponent_team_state
             np_state = np.array(env_state, dtype=np.float32)
             env_states.append(np_state)
             my_team_state.rotate(-1)
@@ -743,7 +760,6 @@ class VSSSoccerEnv(gym.Env):
 
     #     return ball_state, my_team_state, opponent_team_state, my_team
 
-
     # def _parse_state(self, state, dt):
 
     #     ball_state, my_team_state, opponent_team_state, my_team = self._update_state(state)
@@ -775,7 +791,6 @@ class VSSSoccerEnv(gym.Env):
     #     env_states = []
     #     # agent_ids = [(1,0,0), (0,1,0), (0,0,1)]
 
-    #     for a in range(0, len(self.team)):
     #         t1_state_tuple = tuple([i for sub in my_team_state for i in sub])
     #         #env_state = ball_state + t1_state_tuple + t2_state
     #         # env_state = (time_norm,) + agent_ids[a] + ball_state + t1_state_tuple + t2_state
@@ -789,4 +804,3 @@ class VSSSoccerEnv(gym.Env):
     #         self._decay_reward_shaping()
 
     #     return env_states, rewards, [done, done, done]
-

@@ -1,7 +1,7 @@
 import math
 import numpy as np
 import cv2
-cv2.startWindowThread()
+# cv2.startWindowThread()
 
 # Constants
 # ----------------------------

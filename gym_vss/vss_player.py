@@ -13,7 +13,7 @@ from gym_vss.ctrl.ctrl_model import ModelFF, ModelLSTM
 
 
 
-class VSSAgent:
+class VSSPlayer:
     def __init__(self, id):
         base_striker = 140.0  # 160.0
         base_defender = 70  # 85.0

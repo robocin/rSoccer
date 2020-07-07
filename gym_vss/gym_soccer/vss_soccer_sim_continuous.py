@@ -53,7 +53,7 @@ class SimSoccerContinuousEnv(SimSoccerEnv):
 
             rbt = self.team[i]
 
-            rbt.write_log([self.ball_x, self.ball_y])
+            # rbt.write_log([self.ball_x, self.ball_y])
 
             rbt.update_targets()
 
