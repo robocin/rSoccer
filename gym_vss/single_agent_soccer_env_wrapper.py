@@ -9,7 +9,7 @@ bin_path = '/'.join(os.path.abspath(__file__).split('/')
 
 SDK_PARAMS = {
     'env_name': "vss_soccer_cont-v0",
-    'run_name': '%',  # '%' in this field sets the run_name to the parameter's file name
+    'run_name': 'experiment',  # '%' in this field sets the run_name to the parameter's file name
     'n_agents': 1,
 
     # simulator config:
@@ -55,7 +55,7 @@ SDK_PARAMS = {
 
 FIRA_PARAMS = {
     'env_name': "vss_soccer_cont-v0",
-    'run_name': '%',  # '%' in this field sets the run_name to the parameter's file name
+    'run_name': 'experiment',  # '%' in this field sets the run_name to the parameter's file name
     'n_agents': 1,
 
     # simulator config:
