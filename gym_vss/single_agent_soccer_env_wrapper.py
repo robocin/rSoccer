@@ -4,7 +4,8 @@ import numpy as np
 import random
 import os
 
-bin_path = '/'.join(os.path.abspath(__file__).split('/')[:-1]) + '/binaries_envs/'
+bin_path = '/'.join(os.path.abspath(__file__).split('/')
+                    [:-1]) + '/binaries_envs/'
 
 SDK_PARAMS = {
     'env_name': "vss_soccer_cont-v0",
@@ -70,7 +71,8 @@ FIRA_PARAMS = {
     'is_team_yellow': True,  # True here requires ia = False
     'frame_step_size': (1000 / 250.0),
     'frame_skip': 0.08,
-    'time_limit_ms':  (5 * 60 * 1000),  # 5min in ms, to disable time limit set time_limit_ms < 0
+    # 5min in ms, to disable time limit set time_limit_ms < 0
+    'time_limit_ms':  (5 * 60 * 1000),
     'render': False,
     'fast_mode': True,
 
@@ -99,6 +101,58 @@ FIRA_PARAMS = {
     'track_rewards': [True, False, False]
 }
 
+x_speed = 1.2
+REAL_PARAMS = {
+    'env_name': 'vss_soccer_real_continuous-v0',
+    'run_name': 'GameVSS',  # '%' in this field sets the run_name to the parameter's file name
+    'n_agents': 3,
+
+    # 'ip': '224.5.23.2',  # SSL
+    # 'port': 10006,
+
+    'ip': '127.0.0.1',  # VSS
+    'port': 54000,
+
+    'random_cmd': False,
+    'is_team_yellow': True,  # True here requires ia = False
+    'frame_step_size': (1000 / 30.0),
+    'frame_skip': 0,
+    # 5min in ms, to disable time limit set time_limit_ms < 0
+    'time_limit_ms':  (0.5 * 60 * 1000),
+
+    # Robot configuration
+    'robot_center_wheel_dist': 3.35,  # default: 3.75,
+    'robot_wheel_radius': 2.6,  # default: 2.6
+    # adjust linear speeds (values per agent)
+    'pulse_speed_ratio': [0.22, 0.2, 0.2],
+
+    # ctrl configuration
+    'cmd_moving_average': 0.9,
+    # [Kp, Ki, Kd][0.15, 0.2, 0]
+    'angular_speed_pid':  [0.15, 0.01, 0.000],
+    'linear_speed_pid': [0.025, 0.1, 0.],  # [Kp, Ki, Kd][0.15, 0.1, 0.001]
+
+    # actions (this parameter is optional). None for 2D continuous space:
+    'actions': None,
+    'range_linear':  x_speed*75.0,  # linear speed range
+    'range_angular': x_speed*15.0,  # angular speed range
+
+    # reward shaping/scaling parameters (per step):
+    'w_rescaling': 10,
+    'w_goal': (1.0, 1.0),  # (pro, against)
+    'w_move': (0.02, 1),  # (-1,1)
+    'w_ball_grad': (0.08, 1),  # (-1,1)
+    'w_collision': (0.000, 1),  # {-1,0}
+    'w_ball_pot': (0.0, 1),  # (-1,0)
+    'w_energy': (1e-5, 1),  # (-1,0)
+    'min_dist_move_rw': 0.0,  # cm
+    'collision_distance': 12,
+    'alpha_base': [0.25, 0.5, 0.6],
+
+    # Tracking and log
+    'track_rewards': [False, False, True]
+}
+
 
 class EnvContext:
 
@@ -123,11 +177,16 @@ class SingleAgentSoccerEnvWrapper(gym.Wrapper):
         self.agent_id = agent_id
         # This attributes set's if I should send random commands to the robots i'm not controlling with policy
         if params is None:
-            self.env_params = SDK_PARAMS if simulator == 'sdk' else FIRA_PARAMS
-            self.n_agents = self.env_params['n_agents'] 
+            if simulator in ['sdk', 'fira']:
+                self.env_params = SDK_PARAMS if simulator == 'sdk' else FIRA_PARAMS
+            elif simulator == 'real':
+                self.env_params = REAL_PARAMS
+            else:
+                raise ValueError('Simulator not included in our list')
+            self.n_agents = self.env_params['n_agents']
             self.random_cmd = self.env_params['random_cmd']
         else:
-            self.n_agents = params['n_agents'] 
+            self.n_agents = params['n_agents']
             self.random_cmd = params['random_cmd']
             self.env_params = params
         if self.soccer_env.env_context is None:
