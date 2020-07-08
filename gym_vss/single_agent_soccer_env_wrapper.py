@@ -121,12 +121,14 @@ class SingleAgentSoccerEnvWrapper(gym.Wrapper):
         self.first = False
         self.soccer_env = env
         self.agent_id = agent_id
-        self.n_agents = params['n_agents'] 
         # This attributes set's if I should send random commands to the robots i'm not controlling with policy
-        self.random_cmd = params['random_cmd']
         if params is None:
             self.env_params = SDK_PARAMS if simulator == 'sdk' else FIRA_PARAMS
+            self.n_agents = self.env_params['n_agents'] 
+            self.random_cmd = self.env_params['random_cmd']
         else:
+            self.n_agents = params['n_agents'] 
+            self.random_cmd = params['random_cmd']
             self.env_params = params
         if self.soccer_env.env_context is None:
             self.soccer_env.set_parameters(self.env_params)
