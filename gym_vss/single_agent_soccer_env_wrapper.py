@@ -116,11 +116,11 @@ class EnvContext:
 
 class SingleAgentSoccerEnvWrapper(gym.Wrapper):
 
-    def __init__(self, env, simulator='sdk', params=None):
+    def __init__(self, env, simulator='sdk', params=None, agent_id=0):
         super().__init__(env)
         self.first = False
         self.soccer_env = env
-        self.agent_id = None
+        self.agent_id = agent_id
         self.n_agents = params['n_agents'] 
         # This attributes set's if I should send random commands to the robots i'm not controlling with policy
         self.random_cmd = params['random_cmd']
@@ -128,15 +128,11 @@ class SingleAgentSoccerEnvWrapper(gym.Wrapper):
             self.env_params = SDK_PARAMS if simulator == 'sdk' else FIRA_PARAMS
         else:
             self.env_params = params
-        self.soccer_env.set_parameters(self.env_params)
-        self.soccer_env.start()
-        self.observation_space, self.action_space = self.soccer_env.init_space_action()
-        self.soccer_env.stop()
-
-    def setup(self, agent_id=0):
-        self.agent_id = agent_id
-
         if self.soccer_env.env_context is None:
+            self.soccer_env.set_parameters(self.env_params)
+            self.soccer_env.start()
+            self.observation_space, self.action_space = self.soccer_env.init_space_action()
+            self.soccer_env.stop()
             self.soccer_env.env_context = EnvContext(self.n_agents)
             self.first = True  # only the first agent actually sends the commands
 
