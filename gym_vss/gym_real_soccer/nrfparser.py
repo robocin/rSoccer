@@ -1,7 +1,12 @@
+import os
 import sys
-sys.path.append("gym_vss/gym_real_soccer")
-import _nrf_Communication as nrf
 import time
+
+path = '/'.join(os.path.abspath(__file__).split('/')[:-1])
+sys.path.append(path)
+
+import _nrf_Communication as nrf
+
 
 class NRFParser:
     def __init__(self):
