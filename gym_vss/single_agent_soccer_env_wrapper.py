@@ -116,7 +116,7 @@ class EnvContext:
 
 class SingleAgentSoccerEnvWrapper(gym.Wrapper):
 
-    def __init__(self, env, simulator='sdk', params=None, agent_id=0):
+    def __init__(self, env, simulator='fira', params=None, agent_id=0):
         super().__init__(env)
         self.first = False
         self.soccer_env = env
