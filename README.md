@@ -23,7 +23,7 @@ env = gym.make('vss_soccer_cont-v0')
 env = SingleAgentSoccerEnvWrapper(env, simulator='sdk')
 # If you want FIRASim
 # env = SingleAgentSoccerEnvWrapper(env, simulator='fira')
-env.setup(0, n_agents, random_cmd)
+env.setup(agent_id=0)
 env.reset()
 for i in range(100):
     done = False
