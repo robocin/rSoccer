@@ -2,7 +2,7 @@
 FLAGS = -fPIC
 
 # the python interface through swig
-PYTHONI = -I/home/mateus/anaconda3/include/python3.6m
+PYTHONI = -I/home/$(USER)/anaconda3/include/python3.6m
 PYTHONL = -Xlinker -export-dynamic
 
 # default super-target

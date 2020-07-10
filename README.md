@@ -5,8 +5,29 @@ This Environment is used in [RobôCIn's](https://github.com/robocin/deepvss) pro
 * [VSS-SDK/VSS-Simulator & VSS-Viewer](https://github.com/VSS-SDK/VSS-Simulator) (x64 binaries provided here)
 * [OpenAI Gym Environments](https://github.com/openai/gym)
 
+# Requirements
+
+- FIRASim
+    - Clone the repo
+        - https://github.com/robocin/FIRASim/releases/tag/deep_train
+    - Follow it's install guide
+        - https://github.com/robocin/FIRASim/blob/master/INSTALL.md
+    - Once builded, change the binary file in gym_vss/binaries_envs/fira_sim/bin
+
+- VSS SDK
+    - Add the following line to your ~/.bashrc or ~/.bash_profile
+    - source /home/$USER/path/to/envs/gym_vss/binaries_envs/vss_sdk/exportlibs
+
+FIRASim requires much more and heavy libs linked than SDK, that's why we couldn't do as in SDK guide.
+
 # Install
+First change the 5th line of gym_vss/gym_real_soccer/comm/Makefile to your python include path.
+If you are using anaconda, you need to change only the python version in the path.
 ```bash
+$ sudo apt-get install swig freeglut3-dev -y
+$ cd gym_vss/gym_real_soccer/comm
+$ make
+$ cd ../../../
 $ pip install -e .
 ```
 
