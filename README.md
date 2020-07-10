@@ -31,6 +31,10 @@ $ cd ../../../
 $ pip install -e .
 ```
 
+OBS: If you will use only the simulated environment, do:
+- comment line 3 in gym_vss/__init__.py
+- pip install -e .
+
 # Example of agent
 ```python
 import gym
