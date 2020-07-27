@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package fira_message.sim_to_ref;
+
+message Command {
+	uint32 id          = 1;
+	bool   yellowteam  = 2;
+	double wheel_left  = 6;
+	double wheel_right = 7;
+}
+
+message Commands {
+	repeated Command robot_commands = 1;
+}
