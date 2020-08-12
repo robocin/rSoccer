@@ -1,5 +1,4 @@
 import socket
-# import binascii
 import pb.messages_robocup_ssl_wrapper_pb2 as wrapper_pb2
 import pb.grSim_Packet_pb2 as packet_pb2
 
