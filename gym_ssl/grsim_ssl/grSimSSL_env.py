@@ -59,8 +59,17 @@ class GrSimSSLEnv(gym.Env):
 
         print('Environment initialized')
 
-    def step(self):
-        print('step sucessful!')
-        return self.observation_space.sample()
+    def step(self, actions):
+        self.client.send(actions[0], actions[1], actions[2])
+
+        data = self.client.receive()
+        while 0 not in [robot.robot_id for robot in data.detection.robots_blue]:
+            data = self.client.receive()
+
+        for robot in data.detection.robots_blue:
+            if robot.robot_id == 0:
+                observation = np.array([robot.x, robot.y, robot.orientation], dtype=np.float32)
+        return observation, 0, False, {}
+
     def reset(self):
         print('Environment reset')
