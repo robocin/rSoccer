@@ -18,30 +18,13 @@ class grSimClient:
         self.visionSocket.bind((self.ip, self.visionPort))
         self.commandAddress = (self.ip, self.commandPort)
 
-    def send(self, vx, vy, omega):
-        """Sends vx, vy and omega command to id = 0 blue robot"""
-        packet = packet_pb2.grSim_Packet()
-        grSimCommands = packet.commands
-        grSimRobotCommand = grSimCommands.robot_commands
-
-        grSimCommands.timestamp = 0.0
-        grSimCommands.isteamyellow = False
-        robot = grSimRobotCommand.add()
-        robot.id = 0
-        robot.kickspeedx = 0
-        robot.kickspeedz = 0
-        robot.veltangent = vx
-        robot.velnormal = vy
-        robot.velangular = omega
-        robot.spinner = False
-        robot.wheelsspeed = False
-
+    def send(self, packet):
+        """Sends packet to grSim"""
         data = packet.SerializeToString()
         self.commandSocket.sendto(data, self.commandAddress)
 
     def receive(self):
         """Receive SSL wrapper package and decode."""
-
         data, _ = self.visionSocket.recvfrom(1024)
         decoded_data = wrapper_pb2.SSL_WrapperPacket().FromString(data)
 

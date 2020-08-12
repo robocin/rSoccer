@@ -1,6 +1,7 @@
 import gym
 import math
 import numpy as np
+import gym_ssl.grsim_ssl.pb.grSim_Packet_pb2 as packet_pb2
 
 from gym_ssl.grsim_ssl.grSimClient import grSimClient
 
@@ -19,9 +20,10 @@ class GrSimSSLEnv(gym.Env):
     Observation:
         Type: Box(3)
         Num     Observation                  Min                     Max
-        0       id 0 Blue Team Robot X       -Inf                    Inf
-        1       id 0 Blue Team Robot Y       -Inf                    Inf
-        2       id 0 Blue Team Robot Angle   -3.1416                 3.1416
+        0       Ball X       -Inf                    Inf
+        1       Ball Y       -Inf                    Inf
+        2       Ball Vx   -3.1416                 3.1416
+        3       Ball Vy       -Inf                    Inf
 
     Actions:
         Type: Box(3)
@@ -60,7 +62,10 @@ class GrSimSSLEnv(gym.Env):
         print('Environment initialized')
 
     def step(self, actions):
-        self.client.send(actions[0], actions[1], actions[2])
+        # Generate command Packet from actions
+        packet = self._generateCommandPacket(actions)
+        # Send command Packet
+        self.client.send(packet)
 
         data = self.client.receive()
         while 0 not in [robot.robot_id for robot in data.detection.robots_blue]:
@@ -73,3 +78,22 @@ class GrSimSSLEnv(gym.Env):
 
     def reset(self):
         print('Environment reset')
+
+    def _generateCommandPacket(self, actions):
+        # actions = [vx, vy, omega] for blue robot 0
+        packet = packet_pb2.grSim_Packet()
+        grSimCommands = packet.commands
+        grSimRobotCommand = grSimCommands.robot_commands
+        grSimCommands.timestamp = 0.0
+        grSimCommands.isteamyellow = False
+        robot = grSimRobotCommand.add()
+        robot.id = 0
+        robot.kickspeedx = 0
+        robot.kickspeedz = 0
+        robot.veltangent = actions[0]
+        robot.velnormal = actions[1]
+        robot.velangular = actions[2]
+        robot.spinner = False
+        robot.wheelsspeed = False
+
+        return packet
