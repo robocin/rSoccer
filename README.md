@@ -1,7 +1,10 @@
-# ssl-env
+# ssl-en
 
-# install
+# Requirements
 ```bash
+$ sudo apt-get install libprotobuf-dev protobuf-compiler -y
+$ cd gym_ssl/grsim_ssl/pb/
+$ protoc --python_out=../ *.proto
 $ pip install -e .
 ```
 

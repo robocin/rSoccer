@@ -1,4 +1,3 @@
-
 .DS_Store
-
-pb/__pycache__/
+grsim_ssl/__pycache__/*
+pb/*
