@@ -1,6 +1,6 @@
 import socket
-import pb.messages_robocup_ssl_wrapper_pb2 as wrapper_pb2
-import pb.grSim_Packet_pb2 as packet_pb2
+import gym_ssl.grsim_ssl.pb.messages_robocup_ssl_wrapper_pb2 as wrapper_pb2
+import gym_ssl.grsim_ssl.pb.grSim_Packet_pb2 as packet_pb2
 
 
 class grSimClient:

@@ -1,3 +1,4 @@
 .DS_Store
-grsim_ssl/__pycache__/*
+*.pyc
+gym_ssl.egg-info/
 pb/*
