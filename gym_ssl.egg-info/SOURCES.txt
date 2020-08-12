@@ -1,7 +1,0 @@
-README.md
-setup.py
-gym_ssl.egg-info/PKG-INFO
-gym_ssl.egg-info/SOURCES.txt
-gym_ssl.egg-info/dependency_links.txt
-gym_ssl.egg-info/requires.txt
-gym_ssl.egg-info/top_level.txt
