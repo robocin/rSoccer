@@ -5,18 +5,19 @@ import gym_ssl.grsim_ssl.pb.grSim_Packet_pb2 as packet_pb2
 
 class grSimClient:
 
-    def __init__(self, ip='127.0.0.1', visionPort=10020, commandPort=20011):
+    def __init__(self, visionIp='224.5.23.2', commandIp='127.0.0.1', visionPort=10020, commandPort=20011):
         """Init grSimClient object."""
 
-        self.ip = ip
+        self.visionIp = visionIp
+        self.commandIp = commandIp
         self.visionPort = visionPort
         self.commandPort = commandPort
 
         # Connect vision and command sockets
         self.visionSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.commandSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.visionSocket.bind((self.ip, self.visionPort))
-        self.commandAddress = (self.ip, self.commandPort)
+        self.visionSocket.bind((self.visionIp, self.visionPort))
+        self.commandAddress = (self.commandIp, self.commandPort)
 
     def send(self, packet):
         """Sends packet to grSim"""
