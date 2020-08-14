@@ -1,5 +1,12 @@
+'''
+#   Environment Communication Structure
+#    - Father class that creates the structure to communicate with multples setups of enviroment
+#    - To create your wrapper from env to communcation, use inherit from this class! 
+'''
+
+
 import gym
-from gym_ssl.grsim_ssl.grSimClient import grSimClient
+from gym_ssl.grsim_ssl.communication.grSimClient import grSimClient
 
 class GrSimSSLEnv(gym.Env):
     def __init__(self):

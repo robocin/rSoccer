@@ -1,3 +1,10 @@
+'''
+#
+# Reinforcement Learing Space
+# 
+# - Each gym is a type of environment with its actions, rewards and states!
+#
+'''
 import gym
 import gym_ssl
 
