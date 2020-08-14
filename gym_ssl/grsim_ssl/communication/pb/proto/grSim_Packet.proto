@@ -1,3 +1,10 @@
+
+// **********************************************
+//
+// Message sent to grSim (a robot command or a replacement)
+//
+// **********************************************
+
 syntax = "proto2";
 
 import "grSim_Commands.proto";

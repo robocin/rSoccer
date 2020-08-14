@@ -1,3 +1,11 @@
+
+// **********************************************
+//
+// Message from grSim with geometry and detection
+//
+// **********************************************
+
+
 syntax = "proto2";
 
 import "messages_robocup_ssl_detection.proto";

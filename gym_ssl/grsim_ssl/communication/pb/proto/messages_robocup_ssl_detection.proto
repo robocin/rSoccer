@@ -8,6 +8,9 @@ message SSL_DetectionBall {
   optional float  z          = 5;
   required float  pixel_x    = 6;
   required float  pixel_y    = 7;
+  required float vx          = 8;
+  required float vy          = 9;
+  required float vz          = 10;
 }
 
 message SSL_DetectionRobot {
@@ -19,6 +22,9 @@ message SSL_DetectionRobot {
   required float  pixel_x     =  6;
   required float  pixel_y     =  7;
   optional float  height      =  8;
+  required float vx           = 9;
+  required float vy           = 10;
+  required float vorientation = 11;
 }
 
 message SSL_DetectionFrame {
