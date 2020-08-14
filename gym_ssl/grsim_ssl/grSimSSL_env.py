@@ -38,7 +38,7 @@ class GrSimSSLEnv(gym.Env):
         raise NotImplementedError
 
     # TODO a partir de uma lista de posições gerar o pacote de replacement no formato da mensagem do pb e envia
-    def __sendReplacementPacket(self, positions):
+    def __sendReplacementPacket(self, formation):
         raise NotImplementedError
     
     # TODO
