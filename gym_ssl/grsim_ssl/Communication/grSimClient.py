@@ -23,6 +23,7 @@ from gym_ssl.grsim_ssl.Entities.Ball import Ball
 from gym_ssl.grsim_ssl.Entities.Robot import Robot
 import gym_ssl.grsim_ssl.Communication.pb.messages_robocup_ssl_wrapper_pb2 as wrapper_pb2
 import gym_ssl.grsim_ssl.Communication.pb.grSim_Packet_pb2 as packet_pb2
+from gym_ssl.grsim_ssl.Communication.frame import *
 
 
 class grSimClient:
@@ -41,12 +42,9 @@ class grSimClient:
         self.visionSocket.bind((self.visionIp, self.visionPort))
         self.commandAddress = (self.commandIp, self.commandPort)
 
-    def send(self, robots):
+        self.frame = Frame()
 
-        packet = packet_pb2.grSim_Packet()
-        
-        self.__fillPacket(packet, robots)
-
+    def send(self, packet):
         """Sends packet to grSim"""
         data = packet.SerializeToString()
 
@@ -57,7 +55,9 @@ class grSimClient:
         data, _ = self.visionSocket.recvfrom(1024)
         decoded_data = wrapper_pb2.SSL_WrapperPacket().FromString(data)
         
-        return decoded_data
+        self.frame.parse(decoded_data)
+
+        return self.frame
 
     def __fillPacket(self, packet, robots):
         grSimCommands = packet.commands
@@ -81,11 +81,35 @@ class grSimClient:
     
     
     # TEMPORARY TEST
-# comm = grSimClient()
-# while(True):
-#     print(comm.receive())
-#     robots = []
-#     robots.append(Robot(False, id=0, vx=0, vy=0, vw=2))
-#     robots.append(Robot(True, id=0, vx=0, vy=0, vw=2))
-
-#     comm.send(robots)
+#comm = grSimClient()
+#while(True):
+#    print(comm.receive())
+#
+#    packet = packet_pb2.grSim_Packet()
+#    grSimCommands = packet.commands
+#    grSimRobotCommand = grSimCommands.robot_commands
+#    grSimCommands.timestamp = 0.0
+#    robot = grSimRobotCommand.add()
+#    robot.isteamyellow = False
+#    robot.id = 0
+#    robot.kickspeedx = 0
+#    robot.kickspeedz = 0
+#    robot.veltangent = 0
+#    robot.velnormal = 0
+#    robot.velangular = 2
+#    robot.spinner = False
+#    robot.wheelsspeed = False
+#
+#    robot = grSimRobotCommand.add()
+#    robot.isteamyellow = True
+#    robot.id = 0
+#    robot.kickspeedx = 0
+#    robot.kickspeedz = 0
+#    robot.veltangent = 0
+#    robot.velnormal = 0
+#    robot.velangular = 2
+#    robot.spinner = False
+#    robot.wheelsspeed = False
+#
+#    comm.send(packet)
+#
