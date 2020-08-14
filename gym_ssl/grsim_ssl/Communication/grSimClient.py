@@ -10,19 +10,17 @@
     float vy
     float vw
     bool dribbler
-    bool wheelsspeed
+    bool wheelSpeed
     float vWheel1
     float vWheel2
     float vWheel3
     float vWheel4
-
-
 '''
 
 
 import socket
-import gym_ssl.grsim_ssl.communication.pb.messages_robocup_ssl_wrapper_pb2 as wrapper_pb2
-import gym_ssl.grsim_ssl.communication.pb.grSim_Packet_pb2 as packet_pb2
+import gym_ssl.grsim_ssl.Communication.pb.messages_robocup_ssl_wrapper_pb2 as wrapper_pb2
+import gym_ssl.grsim_ssl.Communication.pb.grSim_Packet_pb2 as packet_pb2
 
 
 class grSimClient:
