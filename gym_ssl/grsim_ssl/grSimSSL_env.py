@@ -6,7 +6,7 @@
 
 
 import gym
-from gym_ssl.grsim_ssl.communication.grSimClient import grSimClient
+from gym_ssl.grsim_ssl.Communication.grSimClient import grSimClient
 
 class GrSimSSLEnv(gym.Env):
     def __init__(self):

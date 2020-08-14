@@ -59,34 +59,34 @@ class grSimClient:
     
     
     # TEMPORARY TEST
-    # comm = grSimClient()
-    # while(True):
-    # print(comm.receive())
-    
-    # packet = packet_pb2.grSim_Packet()
-    # grSimCommands = packet.commands
-    # grSimRobotCommand = grSimCommands.robot_commands
-    # grSimCommands.timestamp = 0.0
-    # robot = grSimRobotCommand.add()
-    # robot.isteamyellow = False
-    # robot.id = 0
-    # robot.kickspeedx = 0
-    # robot.kickspeedz = 0
-    # robot.veltangent = 0
-    # robot.velnormal = 0
-    # robot.velangular = 2
-    # robot.spinner = False
-    # robot.wheelsspeed = False
+comm = grSimClient()
+while(True):
+    print(comm.receive())
 
-    # robot = grSimRobotCommand.add()
-    # robot.isteamyellow = True
-    # robot.id = 0
-    # robot.kickspeedx = 0
-    # robot.kickspeedz = 0
-    # robot.veltangent = 0
-    # robot.velnormal = 0
-    # robot.velangular = 2
-    # robot.spinner = False
-    # robot.wheelsspeed = False
+    packet = packet_pb2.grSim_Packet()
+    grSimCommands = packet.commands
+    grSimRobotCommand = grSimCommands.robot_commands
+    grSimCommands.timestamp = 0.0
+    robot = grSimRobotCommand.add()
+    robot.isteamyellow = False
+    robot.id = 0
+    robot.kickspeedx = 0
+    robot.kickspeedz = 0
+    robot.veltangent = 0
+    robot.velnormal = 0
+    robot.velangular = 2
+    robot.spinner = False
+    robot.wheelsspeed = False
 
-    # comm.send(packet)
+    robot = grSimRobotCommand.add()
+    robot.isteamyellow = True
+    robot.id = 0
+    robot.kickspeedx = 0
+    robot.kickspeedz = 0
+    robot.veltangent = 0
+    robot.velnormal = 0
+    robot.velangular = 2
+    robot.spinner = False
+    robot.wheelsspeed = False
+
+    comm.send(packet)
