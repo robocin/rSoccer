@@ -11,60 +11,48 @@ from gym_ssl.grsim_ssl.Communication.grSimClient import grSimClient
 class GrSimSSLEnv(gym.Env):
     def __init__(self):
         self.client = grSimClient()
-        self.state = None
         self.action_space = None
         self.observation_space = None
+        self.state = None
 
     def step(self, action):
-        # Envia ações do step para o grSim
-        commands = self._getCommands(action) #commands são as ações do agente mais as ações do ia
-        self.__sendCommandsPacket(commands) #gera pacote protobuf a partir de commands e envia
+        # Sends actions
+        commands = self._getCommands(action)
+        self.client.sendCommandsPacket(commands) 
 
-        # Recebe dados de visão pós ações do step
-        self.state = self.__getState()
-        observation = self._parseState()
+        # Update state
+        self.state = self.client.receiveState()
 
-        # Calcula a recompensa e verifica fim de episodio
-        reward, done = self._calculateRewards()
+        # Calculate environment observation, reward and done condition
+        observation = self._parseObservationFromState()
+        reward, done = self._calculateRewardsAndDoneFlag()
 
         return observation, reward, done, {}
 
     def reset(self):
         # Place robots on initial positions
-        initialFormation = self._getFormation() #get initial positions
-        self.__sendReplacementPacket(initialFormation) #generate and send replacement packet 
+        initialFormation = self._getFormation() 
+        self.client.sendReplacementPacket(initialFormation) 
 
-        # Recebe dados de visão pós reposicionamento
-        self.state = self.__getState()
-        observation = self._parseState()
+        # Update state and observation
+        self.state = self.client.receiveState()
+        observation = self._parseObservationFromState()
 
         return observation
 
-    # TODO a partir de uma lista de commands gerar o pacote de comando no formato da mensagem do pb e envia
-    def __sendCommandsPacket(self, commands):
-        raise NotImplementedError
-
-    # TODO a partir de uma lista de posições gerar o pacote de replacement no formato da mensagem do pb e envia
-    def __sendReplacementPacket(self, formation):
-        raise NotImplementedError
-    
-    # TODO
-    def __getState(self):
-        raise NotImplementedError
-
-    # Para ser definido pelos envs filho, deve transformar a ação (como definida pelo ambiente) no formato recebido pelo __genCommandsPacket(), tambem deve aqui ser definidas as ações do oponente
     def _getCommands(self, action):
+        '''returns a list of commands of type List[Robot] from type action_space action'''
         raise NotImplementedError
 
-    # Para ser definido pelos envs filho, deve retornar as posições iniciais no formato recebido pelo __genReplacementPackage()
     def _getFormation(self):
+        '''returns a positioning formation of type List[Robot]'''
         raise NotImplementedError
 
-    # Para ser definido pelos envs filho, deve a partir do pacote de visão retornar o estado no formado como definido pelo ambiente
-    def _parseState(self):
+    def _parseObservationFromState(self):
+        '''returns a type observation_space observation from a type List[Robot] state'''
         raise NotImplementedError
 
-    # Para ser definidopelos envs filho, deve a partir da mensagem de visão calcular a recompensa e definir se chegou ao fim do episodio
-    def _calculateRewards(self):
+    def _calculateRewardsAndDoneFlag(self):
+        '''returns reward value and done flag from type List[Robot] state'''
         raise NotImplementedError
 

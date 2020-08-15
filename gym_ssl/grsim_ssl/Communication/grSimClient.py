@@ -32,7 +32,7 @@ class grSimClient:
 
 #-------------------------------------------------------------------------    
 
-    def receive(self):
+    def receiveState(self):
         """Receive SSL wrapper package and decode."""
         data, _ = self.visionSocket.recvfrom(1024)
         decoded_data = wrapper_pb2.SSL_WrapperPacket().FromString(data)
@@ -46,7 +46,7 @@ class grSimClient:
     
 
     def sendCommandsPacket(self, commands):
-        packet = self.__fillCommandPacket(commands)
+        packet = self._fillCommandPacket(commands)
         
         """Sends packet to grSim"""
         data = packet.SerializeToString()
@@ -54,7 +54,7 @@ class grSimClient:
         self.commandSocket.sendto(data, self.commandAddress)
 
 
-    def __fillCommandPacket(self, commands):
+    def _fillCommandPacket(self, commands):
         packet = packet_pb2.grSim_Packet()
         grSimCommands = packet.commands
         grSimCommands.timestamp = 0.0
@@ -75,14 +75,14 @@ class grSimClient:
 #-------------------------------------------------------------------------    
 
     def sendReplacementPacket(self, positions = None, ballPosition = None):
-        packet = self.__fillReplacementPacket(positions, ballPosition)
+        packet = self._fillReplacementPacket(positions, ballPosition)
         """Sends packet to grSim"""
         data = packet.SerializeToString()
 
         self.commandSocket.sendto(data, self.commandAddress)
 
 
-    def __fillReplacementPacket(self, robotPositions = None, ballPosition = None):
+    def _fillReplacementPacket(self, robotPositions = None, ballPosition = None):
         packet = packet_pb2.grSim_Packet()
         grSimReplacement = packet.replacement
         
@@ -103,14 +103,3 @@ class grSimClient:
                 rbt.y = rbtPosition.y
                 rbt.dir = rbtPosition.w
         return packet
-
-        
-
-    # TEMPORARY TEST
-# comm = grSimClient()
-# while(True):
-#     print(comm.receive().robotsYellow)
-#     robots = []
-#     robots.append(Robot(False, id=0, x=0, y=0, w=0))
-#     robots.append(Robot(True, id=0, x=1.5, y=0, w=90))
-#     comm.sendReplacementPacket(robots)
