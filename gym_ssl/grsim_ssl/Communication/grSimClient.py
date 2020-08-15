@@ -1,30 +1,16 @@
 '''
 #  Center all packets communication:
 #   - Vision (receives from grSim env) (receives ssl-vision packet + vx vy vw)
-    
-    bool yellow
-    uint32 id
-    float kickVx
-    float kickVz
-    float vx
-    float vy
-    float vw
-    bool dribbler
-    bool wheelSpeed
-    float vWheel1
-    float vWheel2
-    float vWheel3
-    float vWheel4
+
 '''
 
 
 import socket
-from gym_ssl.grsim_ssl.Entities.Ball import Ball
-from gym_ssl.grsim_ssl.Entities.Robot import Robot
 import gym_ssl.grsim_ssl.Communication.pb.messages_robocup_ssl_wrapper_pb2 as wrapper_pb2
 import gym_ssl.grsim_ssl.Communication.pb.grSim_Packet_pb2 as packet_pb2
-from gym_ssl.grsim_ssl.Communication.frame import *
-
+from gym_ssl.grsim_ssl.Entities.Robot import Robot
+from gym_ssl.grsim_ssl.Entities.Ball import Ball
+from gym_ssl.grsim_ssl.Entities.Frame import Frame
 
 class grSimClient:
 
@@ -42,74 +28,89 @@ class grSimClient:
         self.visionSocket.bind((self.visionIp, self.visionPort))
         self.commandAddress = (self.commandIp, self.commandPort)
 
-        self.frame = Frame()
+        
 
-    def send(self, packet):
-        """Sends packet to grSim"""
-        data = packet.SerializeToString()
-
-        self.commandSocket.sendto(data, self.commandAddress)
+#-------------------------------------------------------------------------    
 
     def receive(self):
         """Receive SSL wrapper package and decode."""
         data, _ = self.visionSocket.recvfrom(1024)
         decoded_data = wrapper_pb2.SSL_WrapperPacket().FromString(data)
         
-        self.frame.parse(decoded_data)
+        frame = Frame()
+        frame.parse(decoded_data)
 
-        return self.frame
+        return frame
 
-    def __fillPacket(self, packet, robots):
+#-------------------------------------------------------------------------    
+    
+
+    def sendCommandsPacket(self, commands):
+        packet = self.__fillCommandPacket(commands)
+        
+        """Sends packet to grSim"""
+        data = packet.SerializeToString()
+
+        self.commandSocket.sendto(data, self.commandAddress)
+
+
+    def __fillCommandPacket(self, commands):
+        packet = packet_pb2.grSim_Packet()
         grSimCommands = packet.commands
         grSimCommands.timestamp = 0.0
         grSimRobotCommand = grSimCommands.robot_commands
-        for robot in robots:
+        for robotCommand in commands:
             rbt = grSimRobotCommand.add()
-            rbt.isteamyellow = robot.yellow
-            rbt.id = robot.id
-            rbt.kickspeedx = robot.kickVx
-            rbt.kickspeedz = robot.kickVz
-            rbt.veltangent = robot.vx
-            rbt.velnormal = robot.vy
-            rbt.velangular = robot.vw
-            rbt.spinner = robot.dribbler
-            rbt.wheelsspeed = robot.wheelSpeed
+            rbt.isteamyellow = robotCommand.yellow
+            rbt.id = robotCommand.id
+            rbt.kickspeedx = robotCommand.kickVx
+            rbt.kickspeedz = robotCommand.kickVz
+            rbt.veltangent = robotCommand.vx
+            rbt.velnormal = robotCommand.vy
+            rbt.velangular = robotCommand.vw
+            rbt.spinner = robotCommand.dribbler
+            rbt.wheelsspeed = robotCommand.wheelSpeed
+        return packet
 
-    
-    
-    
-    
-    
+#-------------------------------------------------------------------------    
+
+    def sendReplacementPacket(self, positions = None, ballPosition = None):
+        packet = self.__fillReplacementPacket(positions, ballPosition)
+        """Sends packet to grSim"""
+        data = packet.SerializeToString()
+
+        self.commandSocket.sendto(data, self.commandAddress)
+
+
+    def __fillReplacementPacket(self, robotPositions = None, ballPosition = None):
+        packet = packet_pb2.grSim_Packet()
+        grSimReplacement = packet.replacement
+        
+        if ballPosition != None:
+            grSimBall = grSimReplacement.ball
+            grSimBall.x = ballPosition.x
+            grSimBall.y = ballPosition.y
+            grSimBall.vx = ballPosition.vx
+            grSimBall.vy = ballPosition.vy
+        
+        if robotPositions != None:
+            grSimRobot = grSimReplacement.robots
+            for rbtPosition in robotPositions:
+                rbt = grSimRobot.add()
+                rbt.yellowteam = rbtPosition.yellow
+                rbt.id = rbtPosition.id
+                rbt.x = rbtPosition.x
+                rbt.y = rbtPosition.y
+                rbt.dir = rbtPosition.w
+        return packet
+
+        
+
     # TEMPORARY TEST
-#comm = grSimClient()
-#while(True):
-#    print(comm.receive())
-#
-#    packet = packet_pb2.grSim_Packet()
-#    grSimCommands = packet.commands
-#    grSimRobotCommand = grSimCommands.robot_commands
-#    grSimCommands.timestamp = 0.0
-#    robot = grSimRobotCommand.add()
-#    robot.isteamyellow = False
-#    robot.id = 0
-#    robot.kickspeedx = 0
-#    robot.kickspeedz = 0
-#    robot.veltangent = 0
-#    robot.velnormal = 0
-#    robot.velangular = 2
-#    robot.spinner = False
-#    robot.wheelsspeed = False
-#
-#    robot = grSimRobotCommand.add()
-#    robot.isteamyellow = True
-#    robot.id = 0
-#    robot.kickspeedx = 0
-#    robot.kickspeedz = 0
-#    robot.veltangent = 0
-#    robot.velnormal = 0
-#    robot.velangular = 2
-#    robot.spinner = False
-#    robot.wheelsspeed = False
-#
-#    comm.send(packet)
-#
+# comm = grSimClient()
+# while(True):
+#     print(comm.receive().robotsYellow)
+#     robots = []
+#     robots.append(Robot(False, id=0, x=0, y=0, w=0))
+#     robots.append(Robot(True, id=0, x=1.5, y=0, w=90))
+#     comm.sendReplacementPacket(robots)

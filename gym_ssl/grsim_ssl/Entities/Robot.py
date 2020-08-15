@@ -2,11 +2,14 @@ from dataclasses import dataclass
 
 @dataclass
 class Robot:
-    yellow: bool
-    id: int 
-    vx: float
-    vy: float
-    vw: float
+    yellow: bool = None
+    id: int = None
+    vx: float = 0
+    vy: float = 0
+    vw: float = 0
+    x: float = None
+    y: float = None
+    w: float = None
     kickVx: float = 0
     kickVz: float = 0
     dribbler: bool = False

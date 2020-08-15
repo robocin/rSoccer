@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Ball:
-    x: bool
-    y: int 
-    vx: float
-    vy: float
+    x: float = None
+    y: float = None
+    vx: float = None
+    vy: float = None
