@@ -22,4 +22,4 @@ env = gym.make('grSimSSL-v0')
 
 #To test comm, uncomment the following line and comment lines above
 while(True):
-    print(env.client.receive().ball.x)
+    print(env.client.receiveState().ball)
