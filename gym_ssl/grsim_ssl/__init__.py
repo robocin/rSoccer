@@ -1,1 +1,1 @@
-from gym_ssl.grsim_ssl.grSimSSL_env import GrSimSSLEnv
+from gym_ssl.grsim_ssl.grSimSSL_penalty_env import GrSimSSLPenaltyEnv
