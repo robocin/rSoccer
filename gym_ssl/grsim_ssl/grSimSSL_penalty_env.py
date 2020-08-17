@@ -1,15 +1,12 @@
 import gym
 import math
 import numpy as np
-import gym_ssl.grsim_ssl.Communication.pb.grSim_Packet_pb2 as packet_pb2
 
 from gym_ssl.grsim_ssl.grSimSSL_env import GrSimSSLEnv
 from gym_ssl.grsim_ssl.Communication.grSimClient import grSimClient
-from gym_ssl.grsim_ssl.deterministics_agents import AttackerAgent
 from gym_ssl.grsim_ssl.Entities.Ball import Ball
 from gym_ssl.grsim_ssl.Entities.Robot import Robot
 from gym_ssl.grsim_ssl.Entities.Frame import Frame
-from gym_ssl.grsim_ssl.Entities.State import State
 
 
 class GrSimSSLPenaltyEnv(GrSimSSLEnv):
@@ -68,25 +65,30 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         # Observation Space thresholds
         obsSpaceThresholds = np.array([7000, 6000, 10000, 10000, 6000, 10000, 7000,
                                        math.pi, 6000, 1000, math.pi * 3], dtype=np.float32)
-        self.observation_space = gym.spaces.Box(low=-obsSpaceThresholds, high=obsSpaceThresholds)
+        self.observation_space = gym.spaces.Box(low=-obsSpaceThresholds, high=obsSpaceThresholds)        
+        self.atkState = None
+
         print('Environment initialized')
     
     def _getCommands(self, actions):
+        commands = []
+
         cmdGoalKeeper = Robot()
         cmdGoalKeeper.id = 0
         cmdGoalKeeper.vy = actions
         cmdGoalKeeper.yellow = False
 
-        #TODO
-        # get deterministic IA action
-        # actions = self.deterministicAttacker.getAction(self.state)
+        commands.append(cmdGoalKeeper)
 
-        cmdAttacker = Robot()
-        cmdAttacker.id = 0
-        cmdAttacker.vx = actions
-        cmdAttacker.yellow = True
+        cmdAttacker = self._getAttackerCommand()
+        # cmdAttacker = Robot()
+        # cmdAttacker.id = 0
+        # cmdAttacker.yellow = True
+        # cmdAttacker.vx = 0.5
 
-        return cmdGoalKeeper, cmdAttacker
+        commands.append(cmdAttacker)
+
+        return commands
 
     def _parseObservationFromState(self):
         observation = []
@@ -110,12 +112,16 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         return observation
 
     def _getFormation(self):
+        self.atkState = 0
+
         # ball penalty position
         ball = Ball()
         ball.x = -4.8
         ball.y = 0
         ball.vx = 0
         ball.vy = 0
+
+        robotPositions = []
 
         # Goalkeeper penalty position
         goalKeeper = Robot()
@@ -124,6 +130,7 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         goalKeeper.w = 0
         goalKeeper.id = 0
         goalKeeper.yellow = False
+        robotPositions.append(goalKeeper)
 
         # Kicker penalty position
         attacker = Robot()
@@ -132,8 +139,80 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         attacker.w = 180
         attacker.id = 0
         attacker.yellow = True
+        robotPositions.append(attacker)
 
-        return [[goalKeeper, attacker], ball]
+        return robotPositions, ball
 
     def _calculateRewardsAndDoneFlag(self):
-        return 0, False
+        reward = 0
+        done = False
+
+        if self.state.ball.x < -6000:
+            done = True
+            if self.state.ball.y < 600 and self.state.ball.y > -600:
+                reward = 0
+            else:
+                reward = 1
+
+        if self.state.ball.x < -5000:
+            if self.state.ball.vx > -1:
+                done = True
+                reward = 1
+        
+        if done:
+            print(self.state.robotsBlue)
+            print(self.state.robotsYellow)
+            print(self.state.ball)
+
+
+        return reward, done
+
+    def _getAttackerCommand(self):
+        kickAngle = np.random.uniform(-0.35,0.35)
+        
+        cmdAttacker = Robot()
+        cmdAttacker.yellow = True
+        cmdAttacker.id = 0
+        cmdAttacker.dribbler = True
+
+        if kickAngle < 0:
+            target = -3.14 - kickAngle
+        else:
+            target = 3.14 - kickAngle
+
+        if self.atkState == 0:
+            if self.state.robotsYellow[0].x < -4725:
+                cmdAttacker.vx = 0.0
+                if kickAngle < 0:
+                    self.atkState = 1
+                else:
+                    self.atkState = 2
+            else:
+                cmdAttacker.vx = 0.50
+        elif self.atkState == 1:
+            if self.state.robotsYellow[0].w > -3.15 and self.state.robotsYellow[0].w < target:
+                cmdAttacker.vw = 0.25
+                cmdAttacker.vx = 0.0
+            elif self.state.robotsYellow[0].w < 3.15 and self.state.robotsYellow[0].w > target:
+                cmdAttacker.vw = 0.25
+                cmdAttacker.vx = 0.0
+            else:
+                cmdAttacker.dribbler = False
+                cmdAttacker.vw = 0.0
+                cmdAttacker.vx = 0.0
+                cmdAttacker.kickVx = 2.0       
+            #se mandar -0.05 gira pra direita e vai de 3.14 diminuindo
+        elif self.atkState == 2:
+            if self.state.robotsYellow[0].w < 3.15 and self.state.robotsYellow[0].w > target:
+                cmdAttacker.vw = -0.25
+                cmdAttacker.vx = 0.0
+            elif self.state.robotsYellow[0].w > -3.15 and self.state.robotsYellow[0].w < target:
+                cmdAttacker.vw = -0.25
+                cmdAttacker.vx = 0.0
+            else:
+                cmdAttacker.dribbler = False
+                cmdAttacker.vw = 0.0
+                cmdAttacker.vx = 0.0
+                cmdAttacker.kickVx = 2.0 
+
+        return cmdAttacker
