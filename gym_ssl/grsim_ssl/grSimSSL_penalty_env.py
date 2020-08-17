@@ -24,7 +24,7 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         This environment corresponds to the version of the cart-pole problem
         described by Barto, Sutton, and Anderson
     Observation:
-        Type: Box(3)
+        Type: Box(11)
         Num     Observation                         Min                     Max
         0       Ball X   (mm)                       -7000                   7000
         1       Ball Y   (mm)                       -6000                   6000
@@ -38,7 +38,6 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         9       id 0 Yellow Robot Vx    (mm/s)      -10000                  10000
         10      id 0 Yellow Robot Vy    (mm/s)      -10000                  10000
         11      id 0 Yellow Robot Vy    (rad/s)     -math.pi * 3            math.pi * 3
-
     Actions:
         Type: Box(1)
         Num     Action                        Min                     Max
@@ -90,18 +89,25 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         return cmdGoalKeeper, cmdAttacker
 
     def _parseObservationFromState(self):
-        observation_state = State()
-        observation_state.keeperY = self.state.robotsBlue[0].y
-        observation_state.keeperVy = self.state.robotsBlue[0].vy
+        observation = []
 
-        observation_state.ballVx = self.state.robotsYellow[0].vx
-        observation_state.ballVy = self.state.robotsYellow[0].vy
+        observation.append(self.state.ball.x)
+        observation.append(self.state.ball.y)
+        observation.append(self.state.ball.vx)
+        observation.append(self.state.ball.vy)
 
-        observation_state.attackerX = self.state.robotsYellow[0].x
-        observation_state.attackerY = self.state.robotsYellow[0].y
-        observation_state.attackerW = self.state.robotsYellow[0].w
+        observation.append(self.state.robotsBlue[0].y)
+        observation.append(self.state.robotsBlue[0].vy)
 
-        return observation_state
+        observation.append(self.state.robotsYellow[0].x)
+        observation.append(self.state.robotsYellow[0].y)
+        observation.append(self.state.robotsYellow[0].w)
+        observation.append(self.state.robotsYellow[0].vx)
+        observation.append(self.state.robotsYellow[0].vy)
+        observation.append(self.state.robotsYellow[0].vw)
+
+
+        return observation
 
     def _getFormation(self):
         # ball penalty position
