@@ -14,11 +14,13 @@ env = gym.make('grSimSSLPenalty-v0')
 env.reset()
 for i in range(1):
     done = False
-    while not done:
+    reward = 0
+    while reward == 0:
         action = env.action_space.sample()
-        next_state, reward, done, _ = env.step(action)
-    print(reward)
-    env.reset()
+        next_state, reward, done, _ = env.step(0.0)
+        if done:
+            env.reset()
+
 
 
 #To test comm, uncomment the following line and comment lines above

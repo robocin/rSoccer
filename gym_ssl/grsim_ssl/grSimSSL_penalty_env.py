@@ -70,6 +70,17 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
 
         print('Environment initialized')
     
+    def reset(self):
+        super().reset()
+        
+        self.atkState = 0
+        # get a random target kick angle between -20 and 20 degrees
+        kickAngle = np.random.uniform(-0.5,0.5)
+        if kickAngle < 0:
+            self.target = -3.14 - kickAngle
+        else:
+            self.target = 3.14 - kickAngle
+
     def _getCommands(self, actions):
         commands = []
 
@@ -108,12 +119,9 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         observation.append(self.state.robotsYellow[0].vy)
         observation.append(self.state.robotsYellow[0].vw)
 
-
         return observation
 
     def _getFormation(self):
-        self.atkState = 0
-
         # ball penalty position
         ball = Ball()
         ball.x = -4.8
@@ -158,61 +166,48 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
             if self.state.ball.vx > -1:
                 done = True
                 reward = 1
-        
-        if done:
-            print(self.state.robotsBlue)
-            print(self.state.robotsYellow)
-            print(self.state.ball)
-
 
         return reward, done
 
     def _getAttackerCommand(self):
-        kickAngle = np.random.uniform(-0.35,0.35)
-        
         cmdAttacker = Robot()
         cmdAttacker.yellow = True
         cmdAttacker.id = 0
         cmdAttacker.dribbler = True
 
-        if kickAngle < 0:
-            target = -3.14 - kickAngle
-        else:
-            target = 3.14 - kickAngle
+        vw = 0.5
+        vx = 0.7
+        vkick = 5
 
         if self.atkState == 0:
             if self.state.robotsYellow[0].x < -4725:
                 cmdAttacker.vx = 0.0
-                if kickAngle < 0:
+                if self.target < 0:
                     self.atkState = 1
                 else:
                     self.atkState = 2
             else:
-                cmdAttacker.vx = 0.50
+                cmdAttacker.vx = vx        
         elif self.atkState == 1:
-            if self.state.robotsYellow[0].w > -3.15 and self.state.robotsYellow[0].w < target:
-                cmdAttacker.vw = 0.25
-                cmdAttacker.vx = 0.0
-            elif self.state.robotsYellow[0].w < 3.15 and self.state.robotsYellow[0].w > target:
-                cmdAttacker.vw = 0.25
+
+            if -(abs(self.state.robotsYellow[0].w)) < self.target:
+                cmdAttacker.vw = vw
                 cmdAttacker.vx = 0.0
             else:
                 cmdAttacker.dribbler = False
                 cmdAttacker.vw = 0.0
                 cmdAttacker.vx = 0.0
-                cmdAttacker.kickVx = 2.0       
+                cmdAttacker.kickVx = vkick       
             #se mandar -0.05 gira pra direita e vai de 3.14 diminuindo
         elif self.atkState == 2:
-            if self.state.robotsYellow[0].w < 3.15 and self.state.robotsYellow[0].w > target:
-                cmdAttacker.vw = -0.25
-                cmdAttacker.vx = 0.0
-            elif self.state.robotsYellow[0].w > -3.15 and self.state.robotsYellow[0].w < target:
-                cmdAttacker.vw = -0.25
+            if abs(self.state.robotsYellow[0].w) > self.target:
+                cmdAttacker.vw = -vw
                 cmdAttacker.vx = 0.0
             else:
                 cmdAttacker.dribbler = False
                 cmdAttacker.vw = 0.0
                 cmdAttacker.vx = 0.0
-                cmdAttacker.kickVx = 2.0 
+                cmdAttacker.kickVx = vkick
 
         return cmdAttacker
+
