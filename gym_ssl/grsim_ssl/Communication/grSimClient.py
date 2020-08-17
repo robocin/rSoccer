@@ -74,8 +74,8 @@ class grSimClient:
 
 #-------------------------------------------------------------------------    
 
-    def sendReplacementPacket(self, positions = None, ballPosition = None):
-        packet = self._fillReplacementPacket(positions, ballPosition)
+    def sendReplacementPacket(self, robotPositions = None, ballPosition = None):
+        packet = self._fillReplacementPacket(robotPositions, ballPosition)
         """Sends packet to grSim"""
         data = packet.SerializeToString()
 

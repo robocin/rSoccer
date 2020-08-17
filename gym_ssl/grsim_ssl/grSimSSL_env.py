@@ -30,9 +30,9 @@ class GrSimSSLEnv(gym.Env):
         return observation, reward, done, {}
 
     def reset(self):
-        # Place robots on initial positions
-        initialFormation = self._getFormation() 
-        self.client.sendReplacementPacket(initialFormation) 
+        # Place robots on reset positions
+        resetRobotPositions, resetBallPosition = self._getFormation() 
+        self.client.sendReplacementPacket(robotPositions=resetRobotPositions, ballPosition=resetBallPosition) 
 
         # Update state and observation
         self.state = self.client.receiveState()
