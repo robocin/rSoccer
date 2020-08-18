@@ -1,7 +1,5 @@
 import math
 import numpy as np
-import cv2
-cv2.startWindowThread()
 
 # Constants
 # ----------------------------
@@ -38,7 +36,7 @@ ax = None
 # ----------------------------
 
 def mod(x, y):
-    return math.sqrt(x*x + y*y)
+    return (math.sqrt(x*x + y*y))
 
 
 def angle(x, y):
@@ -154,42 +152,42 @@ def get_robots_bounds(robot, scale):
     return np.array([left_up_corner, left_down_corner, right_down_corner, right_up_corner])
 
 
-def draw_robots(field_img, bound_box, is_my_team):
-    center1 = np.array([sum(y) / len(y) for y in zip(*(bound_box[0], bound_box[1]))], dtype=np.int32)
-    center2 = np.array([sum(y) / len(y) for y in zip(*(bound_box[2], bound_box[3]))], dtype=np.int32)
-    center3 = np.array([sum(y) / len(y) for y in zip(*(bound_box[0], bound_box[3]))], dtype=np.int32)
-    center4 = np.array([sum(y) / len(y) for y in zip(*(bound_box[1], bound_box[2]))], dtype=np.int32)
+# def draw_robots(field_img, bound_box, is_my_team):
+#     center1 = np.array([sum(y) / len(y) for y in zip(*(bound_box[0], bound_box[1]))], dtype=np.int32)
+#     center2 = np.array([sum(y) / len(y) for y in zip(*(bound_box[2], bound_box[3]))], dtype=np.int32)
+#     center3 = np.array([sum(y) / len(y) for y in zip(*(bound_box[0], bound_box[3]))], dtype=np.int32)
+#     center4 = np.array([sum(y) / len(y) for y in zip(*(bound_box[1], bound_box[2]))], dtype=np.int32)
     
-    if(not is_my_team):
-        cv2.polylines(field_img, np.int32([bound_box]), True, [255,255,255])
-        points = np.array([bound_box[2],bound_box[3],center3,center4], dtype=np.int32)
-        cv2.polylines(field_img, [points],True, [255,255,255])
+#     if(not is_my_team):
+#         cv2.polylines(field_img, np.int32([bound_box]), True, [255,255,255])
+#         points = np.array([bound_box[2],bound_box[3],center3,center4], dtype=np.int32)
+#         cv2.polylines(field_img, [points],True, [255,255,255])
 
-    else:
-        cv2.polylines(field_img, np.int32([bound_box]), True, [255,255,255])
-        points = np.array([center3, center2, center4], dtype=np.int32)
-        cv2.polylines(field_img, [points], True, [255,255,255])
+#     else:
+#         cv2.polylines(field_img, np.int32([bound_box]), True, [255,255,255])
+#         points = np.array([center3, center2, center4], dtype=np.int32)
+#         cv2.polylines(field_img, [points], True, [255,255,255])
 
 
-def cntrl_debug(robot, target):
+# def cntrl_debug(robot, target):
      
-    scale = 3
+#     scale = 3
     
-    cv2.namedWindow('target', cv2.WINDOW_NORMAL)
-    cv2.resizeWindow('target', scale*172, scale*132)
-    field_img = np.zeros([130*scale, 170*scale], np.uint8)
+#     cv2.namedWindow('target', cv2.WINDOW_NORMAL)
+#     cv2.resizeWindow('target', scale*172, scale*132)
+#     field_img = np.zeros([130*scale, 170*scale], np.uint8)
     
-    field_dimensions = np.array([[10*scale,1*scale],[160*scale,1*scale],[160*scale,50*scale],[169*scale,50*scale],
-                        [169*scale,80*scale],[160*scale,80*scale],[160*scale,129*scale],[10*scale,129*scale],
-                        [10*scale,80*scale],[1*scale,80*scale],[1*scale,50*scale],[10*scale,50*scale]],np.int32)
-    robots_positions = [robot]
+#     field_dimensions = np.array([[10*scale,1*scale],[160*scale,1*scale],[160*scale,50*scale],[169*scale,50*scale],
+#                         [169*scale,80*scale],[160*scale,80*scale],[160*scale,129*scale],[10*scale,129*scale],
+#                         [10*scale,80*scale],[1*scale,80*scale],[1*scale,50*scale],[10*scale,50*scale]],np.int32)
+#     robots_positions = [robot]
 
-    cv2.polylines(field_img, [field_dimensions], True, [255, 255, 255])
-    bound_box = get_robots_bounds(robots_positions[0], scale)
-    draw_robots(field_img, bound_box, True)
-    ball = {"x":target["x"], "y":target["y"], "r":1}
+#     cv2.polylines(field_img, [field_dimensions], True, [255, 255, 255])
+#     bound_box = get_robots_bounds(robots_positions[0], scale)
+#     draw_robots(field_img, bound_box, True)
+#     ball = {"x":target["x"], "y":target["y"], "r":1}
 
-    cv2.circle(field_img,(np.int32(ball["x"])*scale,np.int32(ball["y"])*scale), ball["r"]*scale, (255,255,255), -1)
+#     cv2.circle(field_img,(np.int32(ball["x"])*scale,np.int32(ball["y"])*scale), ball["r"]*scale, (255,255,255), -1)
 
-    cv2.imshow('target', field_img)
-    cv2.waitKey(1)
+#     cv2.imshow('target', field_img)
+#     cv2.waitKey(1)
