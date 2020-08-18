@@ -63,15 +63,14 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         self.deterministicAttacker = None
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)
         # Observation Space thresholds
-        obsSpaceThresholds = np.array([7000, 6000, 10000, 10000, 6000, 10000, 7000,
-                                       math.pi, 6000, 1000, math.pi * 3], dtype=np.float32)
+        obsSpaceThresholds = np.array([7000, 6000, 10000, 10000, 6000, 10000, 7000, 6000,
+                                       math.pi, 10000, 10000, math.pi * 3], dtype=np.float32)
         self.observation_space = gym.spaces.Box(low=-obsSpaceThresholds, high=obsSpaceThresholds)        
         self.atkState = None
 
         print('Environment initialized')
     
     def reset(self):
-        super().reset()
         
         self.atkState = 0
         # get a random target kick angle between -20 and 20 degrees
@@ -80,6 +79,8 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
             self.target = -3.14 - kickAngle
         else:
             self.target = 3.14 - kickAngle
+        
+        return super().reset()
 
     def _getCommands(self, actions):
         commands = []
@@ -119,7 +120,7 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         observation.append(self.state.robotsYellow[0].vy)
         observation.append(self.state.robotsYellow[0].vw)
 
-        return observation
+        return np.array(observation)
 
     def _getFormation(self):
         # ball penalty position
@@ -188,8 +189,8 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
                     self.atkState = 2
             else:
                 cmdAttacker.vx = vx        
-        elif self.atkState == 1:
-
+        if self.atkState == 1:
+            self.atkState = 0       
             if -(abs(self.state.robotsYellow[0].w)) < self.target:
                 cmdAttacker.vw = vw
                 cmdAttacker.vx = 0.0
@@ -197,9 +198,10 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
                 cmdAttacker.dribbler = False
                 cmdAttacker.vw = 0.0
                 cmdAttacker.vx = 0.0
-                cmdAttacker.kickVx = vkick       
+                cmdAttacker.kickVx = vkick
             #se mandar -0.05 gira pra direita e vai de 3.14 diminuindo
-        elif self.atkState == 2:
+        if self.atkState == 2:
+            self.atkState = 0
             if abs(self.state.robotsYellow[0].w) > self.target:
                 cmdAttacker.vw = -vw
                 cmdAttacker.vx = 0.0
@@ -210,4 +212,7 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
                 cmdAttacker.kickVx = vkick
 
         return cmdAttacker
+
+    def render(self):
+        pass
 
