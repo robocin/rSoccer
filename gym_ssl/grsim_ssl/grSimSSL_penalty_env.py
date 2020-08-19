@@ -249,8 +249,6 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
                 done = True
                 reward = 1
 
-        print(bool(done), reward)
-
         return reward, done
 
 
