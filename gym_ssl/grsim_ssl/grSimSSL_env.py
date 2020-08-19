@@ -7,7 +7,6 @@
 
 import gym
 from gym_ssl.grsim_ssl.Communication.grSimClient import grSimClient
-from gym_ssl.grsim_ssl.Utils.normalize import NormalizedObservation
 
 class GrSimSSLEnv(gym.Env):
     def __init__(self):
@@ -27,7 +26,7 @@ class GrSimSSLEnv(gym.Env):
         self.state = self.client.receiveState()
 
         # Calculate environment observation, reward and done condition
-        observation = self.normalizeObservation._observation(self._parseObservationFromState())
+        observation = self._parseObservationFromState()
         reward, done = self._calculateRewardsAndDoneFlag()
 
         return observation, reward, done, {}
