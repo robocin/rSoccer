@@ -58,15 +58,18 @@ class shootGoalieEnv(GrSimSSLEnv):
   """
   def __init__(self):
     super().__init__()
+    ## Action Space
     actSpaceThresholds = np.array([math.pi * 3, 6.5], dtype=np.float32)
     self.action_space = gym.spaces.Box(low=-actSpaceThresholds, high=actSpaceThresholds)
+
     # Observation Space thresholds
     obsSpaceThresholds = np.array([7000, 6000, 10000, 10000, math.pi * 3, 10000, math.pi, math.pi,
                                    math.pi, math.pi, math.pi, math.pi, math.pi, math.pi, math.pi, math.pi], dtype=np.float32)
     self.observation_space = gym.spaces.Box(low=-obsSpaceThresholds, high=obsSpaceThresholds)
     self.normalizeObservation = NormalizedObservation(self.observation_space)
-    self.state = None
+
     self.shootGoalieState = None
+
     print('Environment initialized')
   
   def _getCommands(self, actions):
@@ -120,7 +123,10 @@ class shootGoalieEnv(GrSimSSLEnv):
         # goalkeeper caught the ball
       done = True
       reward = -1
-    elif mod(self.state.ball.vx, self.state.ball.vy) < 10: # 1 cm/s
+    elif mod(self.state.ball.vx, self.state.ball.vy) < 10 and self.steps > 15: # 1 cm/s
       done = True
       reward = -1
+    elif  self.steps > 125:
+      done = True
+      reward = 0
     return reward, done
