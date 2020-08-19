@@ -105,27 +105,27 @@ class goToBallEnv(GrSimSSLEnv):
     return [goalKeeper, attacker], ball
     
   def _calculateRewardsAndDoneFlag(self):
-    #To Change
     reward = 0
+    rewardContact = 0
+    rewardDistance = 0
     done = False
 
-    if self.state.ball.x < -6000:
+    if self.state.ball.x < -6000 or self.state.ball.y > 4500 or self.stat.ball.y < -4500:
       # the ball out the field limits
       done = True
-      if self.state.ball.y < 600 and self.state.ball.y > -600:
-          # ball entered the goal
-          reward = 1
-      else:
-          # the ball went out the bottom line
-          reward = -1
-    elif self.state.ball.x < -5000 and self.state.ball.vx > -1:
-        # goalkeeper caught the ball
-      done = True
-      reward = -1
-    elif mod(self.state.ball.vx, self.state.ball.vy) < 10 and self.steps > 15: # 1 cm/s
-      done = True
-      reward = -1
+      rewardContact += 0
+      rewardDistance += (5 / pow(2 * math.pi, 1 / 2)) * math.exp(-(self.distance**2 + self.theta**2) / 2) - 2
     elif  self.steps > 125:
+      #finished the episode
       done = True
-      reward = 0
+      if self.distance <= 0.080:
+        rewardContact += 100
+      rewardDistance += (5 / pow(2 * math.pi, 1 / 2)) * math.exp(-(self.distance**2 + self.theta**2) / 2) - 2
+    else:
+      # the ball in the field limits
+      if self.distance <= 0.080:
+        rewardContact += 100
+      rewardDistance += (5 / pow(2 * math.pi, 1 / 2)) * math.exp(-(self.distance**2 + self.theta**2) / 2) - 2
+      
+    reward = rewardContact + rewardDistance
     return reward, done
