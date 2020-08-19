@@ -7,3 +7,7 @@ register(id='grSimSSLPenalty-v0',
 register(id='grSimSSLShootGoalie-v0',
     entry_point='gym_ssl.grsim_ssl:shootGoalieEnv'
     )
+
+register(id='grSimSSLGoToBall-v0',
+    entry_point='gym_ssl.grsim_ssl:goToBallEnv'
+    )
