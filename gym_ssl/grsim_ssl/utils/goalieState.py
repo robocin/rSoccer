@@ -9,7 +9,7 @@ LEFT_GOAL_X = -6000
 LEFT_GOALY = -600
 
 RIGHT_GOAL_X = -6000
-RIGHT_GOALY = -600
+RIGHT_GOALY = 600
 
 ROBOT_RADIUS = 90
 
@@ -38,30 +38,31 @@ class GoalieState:
 
   def get_l_angle(self, frame):
     dist_left = [frame.robotsBlue[0].x - LEFT_GOAL_X, frame.robotsBlue[0].y - LEFT_GOALY]
-    angle_left = angle(dist_left[0], dist_left[1]) + (math.pi - frame.robotsBlue[0].w)
+    angle_left = to_pi_range(angle(dist_left[0], dist_left[1]) + (math.pi - frame.robotsBlue[0].w))
     return math.sin(angle_left), math.cos(angle_left)
 
   def get_r_angle(self, frame):
     dist_right = [frame.robotsBlue[0].x - RIGHT_GOAL_X, frame.robotsBlue[0].y - RIGHT_GOALY]
-    angle_right = angle(dist_right[0], dist_right[1]) - (math.pi - frame.robotsBlue[0].w)
+    angle_right = to_pi_range(angle(dist_right[0], dist_right[1]) + (math.pi - frame.robotsBlue[0].w))
     return math.sin(angle_right), math.cos(angle_right)
 
   def get_goalie_c_unify_angle(self, frame):
-    angle_c = angle(frame.robotsBlue[0].x - frame.robotsYellow[0].x, frame.robotsBlue[0].y - frame.robotsYellow[0].y)
+    angle_c = to_pi_range(angle(frame.robotsBlue[0].x - frame.robotsYellow[0].x, frame.robotsBlue[0].y - frame.robotsYellow[0].y))
     return angle_c
   
   def get_goalie_c_angle(self, frame):
-    angle_c = angle(frame.robotsBlue[0].x - frame.robotsYellow[0].x, frame.robotsBlue[0].y - frame.robotsYellow[0].y)
+    angle_c = self.get_goalie_c_unify_angle(frame)
     return math.sin(angle_c), math.cos(angle_c)
 
   def get_goalie_l_angle(self, frame):
-    dist_left = [frame.robotsBlue[0].x - frame.robotsYellow[0].x, frame.robotsBlue[0].y - (frame.robotsYellow[0].x - ROBOT_RADIUS)]
-    angle_left = angle(dist_left[0], dist_left[1]) - (math.pi - self.get_goalie_c_unify_angle(frame))
+
+    dist_left = [frame.robotsBlue[0].x - frame.robotsYellow[0].x, frame.robotsBlue[0].y - (frame.robotsYellow[0].y - ROBOT_RADIUS)]
+    angle_left = to_pi_range(angle(dist_left[0], dist_left[1]) + (math.pi - frame.robotsBlue[0].w))
     return math.sin(angle_left), math.cos(angle_left)
 
   def get_goalie_r_angle(self, frame):
-    dist_right = [frame.robotsBlue[0].x - frame.robotsYellow[0].x, frame.robotsBlue[0].y - (frame.robotsYellow[0].x + ROBOT_RADIUS)]
-    angle_right = angle(dist_right[0], dist_right[1]) - (math.pi - self.get_goalie_c_unify_angle(frame))
+    dist_right = [frame.robotsBlue[0].x - frame.robotsYellow[0].x, frame.robotsBlue[0].y - (frame.robotsYellow[0].y + ROBOT_RADIUS)]
+    angle_right = to_pi_range(angle(dist_right[0], dist_right[1]) + (math.pi - frame.robotsBlue[0].w))
     return math.sin(angle_right), math.cos(angle_right)
   
   def getObservation(self, frame):
