@@ -1,26 +1,17 @@
 import gym
 import math
 import numpy as np
-from gym_ssl.utils import * 
 
+from gym_ssl.utils import distance
+from gym_ssl.grsim_ssl.Entities import Ball, Frame, Robot
 from gym_ssl.grsim_ssl.grSimSSL_env import GrSimSSLEnv
 from gym_ssl.grsim_ssl.Communication.grSimClient import grSimClient
-from gym_ssl.grsim_ssl.Entities.Ball import Ball
-from gym_ssl.grsim_ssl.Entities.Robot import Robot
-from gym_ssl.grsim_ssl.Entities.Frame import Frame
-
 
 class GrSimSSLPenaltyEnv(GrSimSSLEnv):
     """
-    Using cartpole env description as base example for our documentation
     Description:
-        A pole is attached by an un-actuated joint to a cart, which moves along
-        a frictionless track. The pendulum starts upright, and the goal is to
-        prevent it from falling over by increasing and reducing the cart's
-        velocity.
-    Source:
-        This environment corresponds to the version of the cart-pole problem
-        described by Barto, Sutton, and Anderson
+        This environment controls a robot soccer goalkeeper in a Robocup 
+        Small Size League penalty situation
     Observation:
         Type: Box(11)
         Num     Observation                         Min                     Max
@@ -41,28 +32,19 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         Num     Action                        Min                     Max
         0       id 0 Blue Team Robot Vy       -1                      1
 
-        Note: The amount the velocity that is reduced or increased is not
-        fixed; it depends on the angle the pole is pointing. This is because
-        the center of gravity of the pole increases the amount of energy needed
-        to move the cart underneath it
+        Note: Global reference
     Reward:
-        Reward is 1 for every step taken, including the termination step
     Starting State:
-        All observations are assigned a uniform random value in [-0.05..0.05]
+        Ball on penalty position, goalkeeper on goal line in center of goal,
+        and attacker behind ball facing goal
     Episode Termination:
-        Pole Angle is more than 12 degrees.
-        Cart Position is more than 2.4 (center of the cart reaches the edge of
-        the display).
-        Episode length is greater than 200.
-        Solved Requirements:
-        Considered solved when the average return is greater than or equal to
-        195.0 over 100 consecutive trials.
     """
 
     def __init__(self):
         super().__init__()
 
         self.steps = 0
+        self.maxSteps = 125
         self.deterministicAttacker = None
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)
         # Observation Space thresholds
@@ -109,44 +91,24 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
 
     def _getFormation(self):
         # ball penalty position
-        ball = Ball()
-        ball.x = -4.8
-        ball.y = 0
-        ball.vx = 0
-        ball.vy = 0
+        ball = Ball(x=-4.8, y=0.0)
 
         robotPositions = []
-
         # Goalkeeper penalty position
-        goalKeeper = Robot()
-        goalKeeper.x = -6
-        goalKeeper.y = 0
-        goalKeeper.w = 0
-        goalKeeper.id = 0
-        goalKeeper.yellow = False
-        robotPositions.append(goalKeeper)
-
+        robotPositions.append(Robot(yellow=False, id=0, x=-6, y=0, w=0))
         # Kicker penalty position
-        attacker = Robot()
-        attacker.x = -4
-        attacker.y = 0
-        attacker.w = 180
-        attacker.id = 0
-        attacker.yellow = True
-        robotPositions.append(attacker)
+        robotPositions.append(Robot(yellow=True, id=0, x=-4, y=0, w=180))
 
         return robotPositions, ball
 
     def _getAttackerCommand(self):
-        cmdAttacker = Robot()
-        cmdAttacker.yellow = True
-        cmdAttacker.id = 0
-        cmdAttacker.dribbler = True
+        cmdAttacker = Robot(yellow=True, id=0, dribbler=True)
 
-        vw = 0.5
-        vx = 0.7
-        vkick = 5
+        vw = 0.5    # attacker rotation speed   
+        vx = 0.7    # attacker movement speed
+        vkick = 5   # attacker kick speed
 
+        # If atkState == 0 -> move to ball
         if self.atkState == 0:
             if self.state.robotsYellow[0].x < -4725:
                 cmdAttacker.vx = 0.0
@@ -155,7 +117,8 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
                 else:
                     self.atkState = 2
             else:
-                cmdAttacker.vx = vx        
+                cmdAttacker.vx = vx
+        # If atkState == 1 -> rotate counterclockwise until kick angle        
         if self.atkState == 1:
             self.atkState = 0       
             if -(abs(self.state.robotsYellow[0].w)) < self.target:
@@ -166,7 +129,7 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
                 cmdAttacker.vw = 0.0
                 cmdAttacker.vx = 0.0
                 cmdAttacker.kickVx = vkick
-            #se mandar -0.05 gira pra direita e vai de 3.14 diminuindo
+        # If atkState == 2 -> rotate clockwise until kick angle        
         if self.atkState == 2:
             self.atkState = 0
             if abs(self.state.robotsYellow[0].w) > self.target:
@@ -180,34 +143,20 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
 
         return cmdAttacker
 
-    def render(self):
-        pass
-
-
     def _getCommands(self, actions):
         commands = []
-
-        #cmdGoalKeeper = Robot()
-        #cmdGoalKeeper.id = 0
-        #cmdGoalKeeper.vy = actions
-        #cmdGoalKeeper.yellow = False
 
         cmdGoalKeeper = self._getCorrectGKCommand(actions)
 
         commands.append(cmdGoalKeeper)
 
         cmdAttacker = self._getAttackerCommand()
-        # cmdAttacker = Robot()
-        # cmdAttacker.id = 0
-        # cmdAttacker.yellow = True
-        # cmdAttacker.vx = 0.5
-
+        
         commands.append(cmdAttacker)
 
         return commands
 
     def _getCorrectGKCommand(self,actions):
-
         cmdGoalKeeper = Robot()
         cmdGoalKeeper.id = 0
         cmdGoalKeeper.vy = actions
@@ -232,57 +181,28 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
 
         return cmdGoalKeeper
 
-
     def _calculateRewardsAndDoneFlag(self):
         reward = 0
         done = False
 
+        # If ball crosses the goal line
         if self.state.ball.x < -6000:
             done = True
+            # If ball crosses goal line inside goal bounds GOAL
             if self.state.ball.y < 600 and self.state.ball.y > -600:
+                # Reward based on distance from keeper to ball
                 reward = abs(self.state.ball.y - self.state.robotsYellow[0].y)*(-0.001)
             else:
+                # NOT GOAL
                 reward = 1
-
+        # If ball is moving away from goal after attacker kick NOT GOAL
         if self.state.ball.x < -5000:
             if self.state.ball.vx > -1:
                 done = True
                 reward = 1
 
-        if self.steps > 125:
+        # If exceed limit of episode steps
+        if self.steps > self.maxSteps:
             done = True
 
         return reward, done
-
-
-     # def _calculateRewardsAndDoneFlag(self):
-    #     reward = 0
-    #     done = False
-    #     self.steps += 1
-
-    #     # Ball cross the line
-    #     if self.state.ball.x < -6000:
-    #         done = True
-
-    #         # Goal
-    #         if self.state.ball.y < 600 and self.state.ball.y > -600:
-    #             reward = 0.5 * ((1/distance([self.state.ball.x, self.state.ball.y], \
-    #                 [self.state.robotsBlue[0].x, self.state.robotsBlue[0].y])) - 5)
-    #         # Ball Out
-    #         else:
-    #             reward = 1
-
-    #     # Ball inside area    
-    #     if self.state.ball.x < -5000:
-    #         # Defend
-    #         if self.state.ball.vx > -1:
-    #             done = True
-    #             reward = 1
-
-    #     if self.steps > 120:
-    #         done = True
-        
-    #     if done:
-    #         print("Steps: ", self.steps)
-
-    #     return reward, done

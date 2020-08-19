@@ -4,5 +4,5 @@ from dataclasses import dataclass
 class Ball:
     x: float = None
     y: float = None
-    vx: float = None
-    vy: float = None
+    vx: float = 0.0
+    vy: float = 0.0
