@@ -1,6 +1,7 @@
 import gym
 import math
 import numpy as np
+from gym_ssl.utils import * 
 
 from gym_ssl.grsim_ssl.grSimSSL_env import GrSimSSLEnv
 from gym_ssl.grsim_ssl.Communication.grSimClient import grSimClient
@@ -60,6 +61,8 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
 
     def __init__(self):
         super().__init__()
+
+        self.steps = 0
         self.deterministicAttacker = None
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)
         # Observation Space thresholds
@@ -71,8 +74,10 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         print('Environment initialized')
     
     def reset(self):
-        
+
+        self.steps = 0
         self.atkState = 0
+
         # get a random target kick angle between -20 and 20 degrees
         kickAngle = np.random.uniform(-0.5,0.5)
         if kickAngle < 0:
@@ -81,26 +86,6 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
             self.target = 3.14 - kickAngle
         
         return super().reset()
-
-    def _getCommands(self, actions):
-        commands = []
-
-        cmdGoalKeeper = Robot()
-        cmdGoalKeeper.id = 0
-        cmdGoalKeeper.vy = actions
-        cmdGoalKeeper.yellow = False
-
-        commands.append(cmdGoalKeeper)
-
-        cmdAttacker = self._getAttackerCommand()
-        # cmdAttacker = Robot()
-        # cmdAttacker.id = 0
-        # cmdAttacker.yellow = True
-        # cmdAttacker.vx = 0.5
-
-        commands.append(cmdAttacker)
-
-        return commands
 
     def _parseObservationFromState(self):
         observation = []
@@ -152,24 +137,6 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
 
         return robotPositions, ball
 
-    def _calculateRewardsAndDoneFlag(self):
-        reward = 0
-        done = False
-
-        if self.state.ball.x < -6000:
-            done = True
-            if self.state.ball.y < 600 and self.state.ball.y > -600:
-                reward = 0
-            else:
-                reward = 1
-
-        if self.state.ball.x < -5000:
-            if self.state.ball.vx > -1:
-                done = True
-                reward = 1
-
-        return reward, done
-
     def _getAttackerCommand(self):
         cmdAttacker = Robot()
         cmdAttacker.yellow = True
@@ -216,3 +183,105 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
     def render(self):
         pass
 
+
+    def _getCommands(self, actions):
+        commands = []
+
+        #cmdGoalKeeper = Robot()
+        #cmdGoalKeeper.id = 0
+        #cmdGoalKeeper.vy = actions
+        #cmdGoalKeeper.yellow = False
+
+        cmdGoalKeeper = self._getCorrectGKCommand(actions)
+
+        commands.append(cmdGoalKeeper)
+
+        cmdAttacker = self._getAttackerCommand()
+        # cmdAttacker = Robot()
+        # cmdAttacker.id = 0
+        # cmdAttacker.yellow = True
+        # cmdAttacker.vx = 0.5
+
+        commands.append(cmdAttacker)
+
+        return commands
+
+    def _getCorrectGKCommand(self,actions):
+
+        cmdGoalKeeper = Robot()
+        cmdGoalKeeper.id = 0
+        cmdGoalKeeper.vy = actions
+        cmdGoalKeeper.yellow = False
+        #Proportional Parameters for Vx and Vw
+        Kp_vx = 0.005
+        Kp_vw = 1.6
+        #Error between goal line and goalkeeper
+        err_x = -6000 - self.state.robotsBlue[0].x
+        #If the error is greater than 20mm, correct the goalkeeper
+        if abs(err_x) > 20:
+            cmdGoalKeeper.vx = Kp_vx * err_x
+        else:
+            cmdGoalKeeper.vx = 0.0
+        #Error between the desired angle and goalkeeper angle
+        err_w = 0.0 - self.state.robotsBlue[0].w
+        #If the error is greater than 0.1 rad (5,73 deg), correct the goalkeeper
+        if abs(err_w) > 0.1:
+            cmdGoalKeeper.vw = Kp_vw * err_w
+        else:
+            cmdGoalKeeper.vw = 0.0
+
+        return cmdGoalKeeper
+
+
+    def _calculateRewardsAndDoneFlag(self):
+        reward = 0
+        done = False
+
+        if self.state.ball.x < -6000:
+            done = True
+            if self.state.ball.y < 600 and self.state.ball.y > -600:
+                reward = abs(self.state.ball.y - self.state.robotsYellow[0].y)*(-0.001)
+            else:
+                reward = 1
+
+        if self.state.ball.x < -5000:
+            if self.state.ball.vx > -1:
+                done = True
+                reward = 1
+
+        print(bool(done), reward)
+
+        return reward, done
+
+
+     # def _calculateRewardsAndDoneFlag(self):
+    #     reward = 0
+    #     done = False
+    #     self.steps += 1
+
+    #     # Ball cross the line
+    #     if self.state.ball.x < -6000:
+    #         done = True
+
+    #         # Goal
+    #         if self.state.ball.y < 600 and self.state.ball.y > -600:
+    #             reward = 0.5 * ((1/distance([self.state.ball.x, self.state.ball.y], \
+    #                 [self.state.robotsBlue[0].x, self.state.robotsBlue[0].y])) - 5)
+    #         # Ball Out
+    #         else:
+    #             reward = 1
+
+    #     # Ball inside area    
+    #     if self.state.ball.x < -5000:
+    #         # Defend
+    #         if self.state.ball.vx > -1:
+    #             done = True
+    #             reward = 1
+
+    #     if self.steps > 120:
+    #         done = True
+        
+    #     if done:
+    #         print("Steps: ", self.steps)
+
+    #     return reward, done
