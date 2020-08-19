@@ -9,8 +9,8 @@ from gym_ssl.grsim_ssl.Communication.grSimClient import grSimClient
 from gym_ssl.grsim_ssl.Entities.Ball import Ball
 from gym_ssl.grsim_ssl.Entities.Robot import Robot
 from gym_ssl.grsim_ssl.Entities.Frame import Frame
-from gym_ssl.grsim_ssl.utils.goalieState import GoalieState
-from gym_ssl.grsim_ssl.utils.util import *
+from gym_ssl.grsim_ssl.Utils.goalieState import GoalieState
+from gym_ssl.grsim_ssl.Utils.util import *
 
 
 class shootGoalieEnv(GrSimSSLEnv):
