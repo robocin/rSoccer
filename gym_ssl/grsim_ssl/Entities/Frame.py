@@ -28,7 +28,7 @@ class Frame:
       robot.id = _robot.robot_id
       robot.x = _robot.x
       robot.y = _robot.y
-      robot.w = _robot.orientation
+      robot.theta = _robot.orientation
       robot.vx = _robot.vx
       robot.vy = _robot.vy
       robot.vw = _robot.vorientation
@@ -40,7 +40,7 @@ class Frame:
       robot.id = _robot.robot_id
       robot.x = _robot.x
       robot.y = _robot.y
-      robot.w = _robot.orientation
+      robot.theta = _robot.orientation
       robot.vx = _robot.vx
       robot.vy = _robot.vy
       robot.vw = _robot.vorientation

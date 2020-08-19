@@ -101,5 +101,5 @@ class grSimClient:
                 rbt.id = rbtPosition.id
                 rbt.x = rbtPosition.x
                 rbt.y = rbtPosition.y
-                rbt.dir = rbtPosition.w
+                rbt.dir = rbtPosition.theta
         return packet

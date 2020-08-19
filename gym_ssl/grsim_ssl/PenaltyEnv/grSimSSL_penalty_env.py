@@ -50,7 +50,7 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
 
         self.steps = 0
         self.maxSteps = 125
-        self.action_space = gym.spaces.Box(low=-3, high=3, shape=(1,), dtype=np.float32)
+        self.action_space = gym.spaces.Box(low=-0.5, high=0.5, shape=(1,), dtype=np.float32)
         # Observation Space thresholds
         obsSpaceThresholds = np.array([7000, 6000, 5000, 5000, 7000, 6000, 5000, 5000, 7000, 6000,
                                        1, 1, 5000, 5000, 10], dtype=np.float32)
@@ -88,8 +88,8 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
 
         observation.append(self.state.robotsYellow[0].x)
         observation.append(self.state.robotsYellow[0].y)
-        observation.append(math.sin(self.state.robotsYellow[0].w))
-        observation.append(math.cos(self.state.robotsYellow[0].w))
+        observation.append(math.sin(self.state.robotsYellow[0].theta))
+        observation.append(math.cos(self.state.robotsYellow[0].theta))
         observation.append(self.state.robotsYellow[0].vx)
         observation.append(self.state.robotsYellow[0].vy)
         observation.append(self.state.robotsYellow[0].vw)
@@ -102,18 +102,18 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
 
         robotPositions = []
         # Goalkeeper penalty position
-        robotPositions.append(Robot(yellow=False, id=0, x=-6, y=0, w=0))
+        robotPositions.append(Robot(yellow=False, id=0, x=-6, y=0, theta=0))
         # Kicker penalty position
-        robotPositions.append(Robot(yellow=True, id=0, x=-4, y=0, w=180))
+        robotPositions.append(Robot(yellow=True, id=0, x=-4, y=0, theta=180))
 
         return robotPositions, ball
 
     def _getAttackerCommand(self):
         cmdAttacker = Robot(yellow=True, id=0, dribbler=True)
 
-        vw = 0.5    # attacker rotation speed   
+        vw = 0.4    # attacker rotation speed   
         vx = 0.7    # attacker movement speed
-        vkick = 5   # attacker kick speed
+        vkick = 4   # attacker kick speed
 
         # If atkState == 0 -> move to ball
         if self.atkState == 0:
@@ -128,7 +128,7 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         # If atkState == 1 -> rotate counterclockwise until kick angle        
         if self.atkState == 1:
             self.atkState = 0       
-            if -(abs(self.state.robotsYellow[0].w)) < self.target:
+            if -(abs(self.state.robotsYellow[0].theta)) < self.target:
                 cmdAttacker.vw = vw
                 cmdAttacker.vx = 0.0
             else:
@@ -139,7 +139,7 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         # If atkState == 2 -> rotate clockwise until kick angle        
         if self.atkState == 2:
             self.atkState = 0
-            if abs(self.state.robotsYellow[0].w) > self.target:
+            if abs(self.state.robotsYellow[0].theta) > self.target:
                 cmdAttacker.vw = -vw
                 cmdAttacker.vx = 0.0
             else:
@@ -180,7 +180,7 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         else:
             cmdGoalKeeper.vx = 0.0
         # Error between the desired angle and goalkeeper angle
-        errW = 0.0 - self.state.robotsBlue[0].w
+        errW = 0.0 - self.state.robotsBlue[0].theta
         # If the error is greater than 0.1 rad (5,73 deg), correct the goalkeeper
         if abs(errW) > 0.1:
             cmdGoalKeeper.vw = KpVw * errW
@@ -211,6 +211,7 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
 
         # If exceed limit of episode steps
         if self.steps > self.maxSteps:
+            reward = 1
             done = True
 
         return reward, done

@@ -9,7 +9,7 @@ class Robot:
     vw: float = 0
     x: float = None
     y: float = None
-    w: float = None
+    theta: float = None
     kickVx: float = 0
     kickVz: float = 0
     dribbler: bool = False
