@@ -16,8 +16,10 @@ class GrSimSSLEnv(gym.Env):
         self.observation_space = None
         self.state = None
         self.normalizeObservation = None
+        self.steps = 0
 
     def step(self, action):
+        self.steps += 1
         # Sends actions
         commands = self._getCommands(action)
         self.client.sendCommandsPacket(commands) 
