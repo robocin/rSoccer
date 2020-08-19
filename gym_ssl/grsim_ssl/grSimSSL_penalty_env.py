@@ -249,6 +249,9 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
                 done = True
                 reward = 1
 
+        if self.steps > 125:
+            done = True
+
         return reward, done
 
 
