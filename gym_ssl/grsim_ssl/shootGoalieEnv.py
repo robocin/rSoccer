@@ -11,7 +11,6 @@ from gym_ssl.grsim_ssl.Entities.Robot import Robot
 from gym_ssl.grsim_ssl.Entities.Frame import Frame
 from gym_ssl.grsim_ssl.Utils.goalieState import GoalieState
 from gym_ssl.grsim_ssl.Utils.util import *
-from gym_ssl.grsim_ssl.Utils.normalize import NormalizedObservation
 
 class shootGoalieEnv(GrSimSSLEnv):
   """
@@ -66,8 +65,6 @@ class shootGoalieEnv(GrSimSSLEnv):
     obsSpaceThresholds = np.array([7000, 6000, 10000, 10000, math.pi * 3, 10000, math.pi, math.pi,
                                    math.pi, math.pi, math.pi, math.pi, math.pi, math.pi, math.pi, math.pi], dtype=np.float32)
     self.observation_space = gym.spaces.Box(low=-obsSpaceThresholds, high=obsSpaceThresholds)
-    self.normalizeObservation = NormalizedObservation(self.observation_space)
-
     self.shootGoalieState = None
 
     print('Environment initialized')
