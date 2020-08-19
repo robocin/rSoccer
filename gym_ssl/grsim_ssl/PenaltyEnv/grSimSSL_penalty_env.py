@@ -2,7 +2,7 @@ import gym
 import math
 import numpy as np
 
-from gym_ssl.utils import distance
+from gym_ssl.grsim_ssl.Utils import distance
 from gym_ssl.grsim_ssl.Entities import Ball, Frame, Robot
 from gym_ssl.grsim_ssl.grSimSSL_env import GrSimSSLEnv
 from gym_ssl.grsim_ssl.Communication.grSimClient import grSimClient
@@ -34,10 +34,12 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
 
         Note: Global reference
     Reward:
+        # TODO
     Starting State:
         Ball on penalty position, goalkeeper on goal line in center of goal,
         and attacker behind ball facing goal
     Episode Termination:
+        # TODO
     """
 
     def __init__(self):
