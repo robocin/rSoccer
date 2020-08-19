@@ -151,6 +151,8 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         return cmdAttacker
 
     def _getCommands(self, actions):
+        self.steps += 1
+
         commands = []
 
         cmdGoalKeeper = self._getCorrectGKCommand(actions)
