@@ -14,23 +14,26 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         Small Size League penalty situation
     Observation:
         Type: Box(11)
-        Num     Observation                         Min                     Max
-        0       Ball X   (mm)                       -7000                   7000
-        1       Ball Y   (mm)                       -6000                   6000
-        2       Ball Vx  (mm/s)                     -10000                  10000
-        3       Ball Vy  (mm/s)                     -10000                  10000
-        4       id 0 Blue Robot Y       (mm)        -6000                   6000
-        5       id 0 Blue Robot Vy      (mm/s)      -10000                  10000
-        6       id 0 Yellow Robot X     (mm)        -7000                   7000
-        7       id 0 Yellow Robot Y     (mm)        -6000                   6000
-        8       id 0 Yellow Robot Angle (rad)       -math.pi                math.pi
-        9       id 0 Yellow Robot Vx    (mm/s)      -10000                  10000
-        10      id 0 Yellow Robot Vy    (mm/s)      -10000                  10000
-        11      id 0 Yellow Robot Vy    (rad/s)     -math.pi * 3            math.pi * 3
+        Num     Observation                         Min         Max
+        0       Ball X   (mm)                       -7000       7000
+        1       Ball Y   (mm)                       -6000       6000
+        2       Ball Vx  (mm/s)                     -5000       5000
+        3       Ball Vy  (mm/s)                     -5000       5000
+        6       id 0 Blue Robot X       (mm)        -7000       7000
+        4       id 0 Blue Robot Y       (mm)        -6000       6000
+        9       id 0 Blue Robot Vx      (mm/s)      -5000       5000
+        5       id 0 Blue Robot Vy      (mm/s)      -5000       5000
+        6       id 0 Yellow Robot X     (mm)        -7000       7000
+        7       id 0 Yellow Robot Y     (mm)        -6000       6000
+        8       id 0 Yellow Robot sin(Angle)        -1          1
+        9       id 0 Yellow Robot cos(Angle)        -1          1
+        9       id 0 Yellow Robot Vx    (mm/s)      -5000       5000
+        10      id 0 Yellow Robot Vy    (mm/s)      -5000       5000
+        11      id 0 Yellow Robot Vw    (rad/s)     -10         10
     Actions:
         Type: Box(1)
-        Num     Action                        Min                     Max
-        0       id 0 Blue Team Robot Vy       -1                      1
+        Num     Action                        Min       Max
+        0       id 0 Blue Team Robot Vy       -3        3
         Note: Global reference
     Reward:
         # 1 if NOT GOAL
@@ -47,10 +50,10 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
 
         self.steps = 0
         self.maxSteps = 125
-        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)
+        self.action_space = gym.spaces.Box(low=-3, high=3, shape=(1,), dtype=np.float32)
         # Observation Space thresholds
-        obsSpaceThresholds = np.array([7000, 6000, 10000, 10000, 6000, 10000, 7000, 6000,
-                                       math.pi, 10000, 10000, math.pi * 3], dtype=np.float32)
+        obsSpaceThresholds = np.array([7000, 6000, 5000, 5000, 7000, 6000, 5000, 5000, 7000, 6000,
+                                       1, 1, 5000, 5000, 10], dtype=np.float32)
         self.observation_space = gym.spaces.Box(low=-obsSpaceThresholds, high=obsSpaceThresholds)        
         self.atkState = None
 
@@ -62,7 +65,7 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         self.atkState = 0
 
         # get a random target kick angle between -20 and 20 degrees
-        kickAngle = np.random.uniform(-0.5,0.5)
+        kickAngle = np.random.uniform(-0.445,0.445)
         if kickAngle < 0:
             self.target = -3.14 - kickAngle
         else:
@@ -78,12 +81,15 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         observation.append(self.state.ball.vx)
         observation.append(self.state.ball.vy)
 
+        observation.append(self.state.robotsBlue[0].x)
         observation.append(self.state.robotsBlue[0].y)
+        observation.append(self.state.robotsBlue[0].vx)
         observation.append(self.state.robotsBlue[0].vy)
 
         observation.append(self.state.robotsYellow[0].x)
         observation.append(self.state.robotsYellow[0].y)
-        observation.append(self.state.robotsYellow[0].w)
+        observation.append(math.sin(self.state.robotsYellow[0].w))
+        observation.append(math.cos(self.state.robotsYellow[0].w))
         observation.append(self.state.robotsYellow[0].vx)
         observation.append(self.state.robotsYellow[0].vy)
         observation.append(self.state.robotsYellow[0].vw)
