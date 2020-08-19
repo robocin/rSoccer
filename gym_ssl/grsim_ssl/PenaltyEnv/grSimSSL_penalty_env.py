@@ -31,15 +31,15 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         Type: Box(1)
         Num     Action                        Min                     Max
         0       id 0 Blue Team Robot Vy       -1                      1
-
         Note: Global reference
     Reward:
-        # TODO
+        # 1 if NOT GOAL
+        # -1 * Ball distance from goalkeeper (meters) if GOAL
     Starting State:
         Ball on penalty position, goalkeeper on goal line in center of goal,
         and attacker behind ball facing goal
     Episode Termination:
-        # TODO
+        Ball crosses goal line, or ball has a velocity opposite to goal after attacker kick
     """
 
     def __init__(self):
@@ -47,7 +47,6 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
 
         self.steps = 0
         self.maxSteps = 125
-        self.deterministicAttacker = None
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)
         # Observation Space thresholds
         obsSpaceThresholds = np.array([7000, 6000, 10000, 10000, 6000, 10000, 7000, 6000,
@@ -158,26 +157,25 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
 
         return commands
 
-    def _getCorrectGKCommand(self,actions):
-        cmdGoalKeeper = Robot()
-        cmdGoalKeeper.id = 0
-        cmdGoalKeeper.vy = actions
-        cmdGoalKeeper.yellow = False
-        #Proportional Parameters for Vx and Vw
-        Kp_vx = 0.005
-        Kp_vw = 1.6
-        #Error between goal line and goalkeeper
-        err_x = -6000 - self.state.robotsBlue[0].x
-        #If the error is greater than 20mm, correct the goalkeeper
-        if abs(err_x) > 20:
-            cmdGoalKeeper.vx = Kp_vx * err_x
+    def _getCorrectGKCommand(self,vy):
+        '''Control goalkeeper vw and vx to keep him at goal line'''
+        cmdGoalKeeper = Robot(yellow=False, id=0, vy=vy)
+
+        # Proportional Parameters for Vx and Vw
+        KpVx = 0.005
+        KpVw = 1.6
+        # Error between goal line and goalkeeper
+        errX = -6000 - self.state.robotsBlue[0].x
+        # If the error is greater than 20mm, correct the goalkeeper
+        if abs(errX) > 20:
+            cmdGoalKeeper.vx = KpVx * errX
         else:
             cmdGoalKeeper.vx = 0.0
-        #Error between the desired angle and goalkeeper angle
-        err_w = 0.0 - self.state.robotsBlue[0].w
-        #If the error is greater than 0.1 rad (5,73 deg), correct the goalkeeper
-        if abs(err_w) > 0.1:
-            cmdGoalKeeper.vw = Kp_vw * err_w
+        # Error between the desired angle and goalkeeper angle
+        errW = 0.0 - self.state.robotsBlue[0].w
+        # If the error is greater than 0.1 rad (5,73 deg), correct the goalkeeper
+        if abs(errW) > 0.1:
+            cmdGoalKeeper.vw = KpVw * errW
         else:
             cmdGoalKeeper.vw = 0.0
 
@@ -193,7 +191,7 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
             # If ball crosses goal line inside goal bounds GOAL
             if self.state.ball.y < 600 and self.state.ball.y > -600:
                 # Reward based on distance from keeper to ball
-                reward = abs(self.state.ball.y - self.state.robotsYellow[0].y)*(-0.001)
+                reward = abs(self.state.ball.y - self.state.robotsBlue[0].y)*(-0.001)
             else:
                 # NOT GOAL
                 reward = 1
