@@ -45,7 +45,7 @@ class shootGoalieEnv(GrSimSSLEnv):
       Type: Box(2)
       Num     Action                        Min                     Max
       0       Blue id 0 Vw (rad/s)        -math.pi * 3            math.pi * 3
-      1       Blue Kick Strength (m/s)          -6.5                   6.5
+      1       Blue Kick Strength (m/s)        -6.5                   6.5
   Reward:
       Reward is 1 for success, -1 to fails. 0 otherwise.
 

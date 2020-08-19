@@ -17,14 +17,16 @@ model = DDPG(MlpPolicy, env, verbose=1, actor_lr = 0.001, critic_lr = 0.0001, pa
 
 for i in range(100):
     model.learn(total_timesteps=100000)
-    model.save("ddpg_shootgoalie")
+    model.save("./models/ddpg_shootgoalie")
 
 # del model # remove to demonstrate saving and loading
 
-# model = DDPG.load("ddpg_shootgoalie")
+# model = DDPG.load("./models/ddpg_shootgoalie")
 
 # obs = env.reset()
 # while True:
 #     action, _states = model.predict(obs)
 #     obs, rewards, dones, info = env.step(action)
-#     env.render()
+#     print(rewards)
+#     if dones:
+#         env.reset()
