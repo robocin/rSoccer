@@ -12,11 +12,6 @@ from agents.Utils.networks import ValueNetwork, PolicyNetwork
 from agents.Utils.OUNoise import OUNoise
 from agents.Utils.replayBuffer import ReplayBuffer
 
-# from utils.Networks             import ValueNetwork, PolicyNetwork
-# from utils.NormalizedActions    import NormalizedWrapper
-# from utils.ReplayBuffer         import ReplayBuffer
-# from utils.OUNoise              import OUNoise
-
 use_cuda = torch.cuda.is_available()
 print("use_cuda ->", use_cuda)
 device   = torch.device("cuda" if use_cuda else "cpu")
@@ -79,10 +74,10 @@ if __name__ == "__main__":
     env = NormalizedWrapper(gym.make("grSimSSLPenalty-v0"))
     # env = gym.make("grSimSSLPenalty-v0")
 
-    # print("wrapper action space: low -> {} high -> {} sample -> {}".format(
-    #     env.action_space.low, env.action_space.high, env.action_space.sample()))
-    # print("wrapper obs space: low -> {} high -> {} sample -> {}".format(
-    #     env.observation_space.low, env.observation_space.high, env.observation_space.sample()))
+    print("wrapper action space: low -> {} high -> {} sample -> {}".format(
+        env.action_space.low, env.action_space.high, env.action_space.sample()))
+    print("wrapper obs space: low -> {} high -> {} sample -> {}".format(
+        env.observation_space.low, env.observation_space.high, env.observation_space.sample()))
 
     ou_noise = OUNoise(env.action_space)
 

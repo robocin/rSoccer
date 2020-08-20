@@ -8,26 +8,19 @@ class NormalizedWrapper(gym.Wrapper):
     """
 
     def __init__(self, env):
-        # Retrieve the action space
-        action_space = env.action_space
-        # Retrieve the observation space
-        observation_space = env.observation_space
-
-        assert isinstance(action_space,
-                          gym.spaces.Box), "This wrapper only works with continuous action space (spaces.Box)"
-        assert isinstance(observation_space,
-                          gym.spaces.Box), "This wrapper only works with continuous observation space (spaces.Box)"
-
-        # Retrieve the max/min values
-        self.actLow, self.actHigh = action_space.low, action_space.high
-        self.obsLow, self.obsHigh = observation_space.low, observation_space.high
-
-        # We modify the action space, so all actions will lie in [-1, 1]
-        env.action_space = gym.spaces.Box(low=-1, high=1, shape=action_space.shape, dtype=np.float32)
-        env.observation_space = gym.spaces.Box(low=-1, high=1, shape=observation_space.shape, dtype=np.float32)
-
         # Call the parent constructor, so we can access self.env later
         super(NormalizedWrapper, self).__init__(env)
+
+        assert isinstance(self.env.action_space,
+                          gym.spaces.Box), "This wrapper only works with continuous action space (spaces.Box)"
+        assert isinstance(self.env.observation_space,
+                          gym.spaces.Box), "This wrapper only works with continuous observation space (spaces.Box)"
+
+        # We modify the wrapper action space, so all actions will lie in [-1, 1]
+        self.action_space = gym.spaces.Box(low=-1, high=1, shape=self.env.action_space.shape, dtype=np.float32)
+        self.observation_space = gym.spaces.Box(low=-1, high=1, shape=self.env.observation_space.shape, dtype=np.float32)
+
+
 
     def rescale_action(self, scaled_action):
         """
@@ -36,13 +29,15 @@ class NormalizedWrapper(gym.Wrapper):
         :param scaled_action: (np.ndarray)
         :return: (np.ndarray)
         """
-        return self.actLow + (0.5 * (scaled_action + 1.0) * (self.actHigh - self.actLow))
+        return self.env.action_space.low + (
+                0.5 * (scaled_action + 1.0) * (self.env.action_space.high - self.env.action_space.low))
 
     def scale_observation(self, observation):
         """
         Scale the observation to bounds [-1, 1]
         """
-        return (2 * ((observation - self.obsLow) / (self.obsHigh - self.obsLow))) - 1
+        return (2 * ((observation - self.env.observation_space.low) /
+                     (self.env.observation_space.high - self.env.observation_space.low))) - 1
 
     def reset(self):
         """
