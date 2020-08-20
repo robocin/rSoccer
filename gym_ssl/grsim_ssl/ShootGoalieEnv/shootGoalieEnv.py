@@ -78,19 +78,19 @@ class shootGoalieEnv(GrSimSSLEnv):
     
     commands.append(cmdAttacker)
 
-    # TODO GOALIE
-    # vy = 0
-    # if self.goalieState == 0:
-    #   vy = 0.5
-    #   if self.state.robotsYellow[0].y > 300:
-    #     self.goalieState = 1
-    # elif self.goalieState == 1:
-    #   vy = -0.5
-    #   if self.state.robotsYellow[0].y < -300:
-    #     self.goalieState = 0
-    # cmdGoalie = self._getCorrectGKCommand(vy)
+    # Moving GOALIE
+    vy = 0
+    if self.goalieState == 0:
+      vy = 0.1
+      if self.state.robotsYellow[0].y > 300:
+        self.goalieState = 1
+    elif self.goalieState == 1:
+      vy = -0.1
+      if self.state.robotsYellow[0].y < -300:
+        self.goalieState = 0
+    cmdGoalie = self._getCorrectGKCommand(vy)
     
-    # commands.append(cmdGoalie)
+    commands.append(cmdGoalie)
 
     return commands
 
