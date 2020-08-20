@@ -143,4 +143,6 @@ if __name__ == "__main__":
                 'target_policy_net_dict': target_policy_net.state_dict()
             }, './saved_networks')
 
+    writer.flush()
+
 

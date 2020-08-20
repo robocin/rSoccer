@@ -5,3 +5,7 @@ pb/*
 .vscode/*
 *_pb2.py
 __pycache__
+
+.idea/
+
+*.0
