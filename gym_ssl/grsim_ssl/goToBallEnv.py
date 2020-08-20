@@ -3,6 +3,7 @@ import math
 import numpy as np
 import time
 import gym_ssl.grsim_ssl.Communication.pb.grSim_Packet_pb2 as packet_pb2
+import random
 
 from gym_ssl.grsim_ssl.grSimSSL_env import GrSimSSLEnv
 from gym_ssl.grsim_ssl.Communication.grSimClient import grSimClient
@@ -66,7 +67,6 @@ class goToBallEnv(GrSimSSLEnv):
                                    10000, 10000, 10000, 10000, 10000, 10000], dtype=np.float32)
     self.observation_space = gym.spaces.Box(low=-obsSpaceThresholds, high=obsSpaceThresholds)
     self.goToballState = None
-
     print('Environment initialized')
   
   def _getCommands(self, actions):
@@ -94,13 +94,13 @@ class goToBallEnv(GrSimSSLEnv):
   def _getFormation(self):
     #To CHANGE: 
     # ball penalty position
-    ball = Ball(x=-4.1, y=0, vx=0, vy=0)
+    ball = Ball(x=random.uniform(-4, 0), y=random.uniform(-4, 4), vx=0, vy=0)
     
     # Goalkeeper penalty position
     goalKeeper = Robot(id=0, x=-6, y=0, w=0, yellow = True)
 
     # Kicker penalty position
-    attacker = Robot(id=0, x=-4, y=0, w=180, yellow = False)
+    attacker = Robot(id=0, x=random.uniform(-3.5, 0), y=random.uniform(-4, 4), w=180, yellow = False)
 
     return [goalKeeper, attacker], ball
     
