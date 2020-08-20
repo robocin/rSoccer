@@ -1,9 +1,11 @@
 import gym
 import gym_ssl
-import torch
-import torch.optim  as optim
-import torch.nn     as nn
 import numpy        as np
+
+from    torch.utils.tensorboard    import SummaryWriter
+import  torch.optim  as optim
+import  torch.nn     as nn
+import  torch
 
 from utils.Networks             import ValueNetwork, PolicyNetwork
 from utils.NormalizedActions    import NormalizedActions
@@ -15,11 +17,14 @@ use_cuda = torch.cuda.is_available()
 print("use_cuda ->", use_cuda)
 device   = torch.device("cuda" if use_cuda else "cpu")
 
-max_frames  = 12000
-max_steps   = 500
-frame_idx   = 0
+writer = SummaryWriter()
+
+max_Episodes  = 50000
+max_steps   = 200
+episode   = 0
 rewards     = []
 batch_size  = 128
+replay_buffer_size = 100000
 
 def ddpg_update(batch_size, 
            gamma = 0.99,
@@ -67,13 +72,12 @@ def ddpg_update(batch_size,
 
 if __name__ == "__main__":
     
+    
+
     # env = NormalizedActions(gym.make("grSimSSLPenalty-v0"))
     env = gym.make("grSimSSLPenalty-v0")
     
     ou_noise = OUNoise(env.action_space)
-
-    print("obs sample->", env.observation_space.sample())
-    print("action sample->", env.action_space.sample())
 
     state_dim  = env.observation_space.shape[0]
     action_dim = env.action_space.shape[0]
@@ -99,14 +103,14 @@ if __name__ == "__main__":
 
     value_criterion = nn.MSELoss()
 
-    replay_buffer_size = 1000000
     replay_buffer = ReplayBuffer(replay_buffer_size)
 
-    while frame_idx < max_frames:
+    while episode < max_Episodes:
         state = env.reset()
         ou_noise.reset()
         episode_reward = 0
-        
+        steps_episode = 0
+
         for step in range(max_steps):
             action = policy_net.get_action(state)
             action = ou_noise.get_action(action, step)
@@ -118,14 +122,16 @@ if __name__ == "__main__":
             
             state = next_state
             episode_reward += reward
-            frame_idx += 1
-            
-            # plot not working with environment
-            # if frame_idx % max(1000, max_steps + 1) == 0:
-            #     # plot(frame_idx, rewards)
             
             if done:
+                steps_episode = step
                 break
-    
+
+        episode += 1
+
         rewards.append(episode_reward)
+
+        writer.add_scalar('Train/Reward', episode_reward, episode)
+        writer.add_scalar('Train/Steps', steps_episode, episode)
+
 
