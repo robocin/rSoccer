@@ -18,8 +18,8 @@ device   = torch.device("cuda" if use_cuda else "cpu")
 
 writer = SummaryWriter()
 
-max_episodes  = 1200
-max_steps   = 500
+max_episodes  = 2000000
+max_steps   = 300
 episode   = 0
 rewards     = []
 batch_size  = 128
@@ -79,7 +79,7 @@ if __name__ == "__main__":
 
     state_dim  = env.observation_space.shape[0]
     action_dim = env.action_space.shape[0]
-    hidden_dim = 256
+    hidden_dim = 400
 
     value_net  = ValueNetwork(state_dim, action_dim, hidden_dim).to(device)
     policy_net = PolicyNetwork(state_dim, action_dim, hidden_dim, device=device).to(device)
