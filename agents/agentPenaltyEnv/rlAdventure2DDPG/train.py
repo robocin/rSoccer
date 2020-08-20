@@ -70,14 +70,8 @@ def ddpg_update(batch_size,
             )
 
 if __name__ == "__main__":
-
     env = NormalizedWrapper(gym.make("grSimSSLPenalty-v0"))
     # env = gym.make("grSimSSLPenalty-v0")
-
-    print("wrapper action space: low -> {} high -> {} sample -> {}".format(
-        env.action_space.low, env.action_space.high, env.action_space.sample()))
-    print("wrapper obs space: low -> {} high -> {} sample -> {}".format(
-        env.observation_space.low, env.observation_space.high, env.observation_space.sample()))
 
     ou_noise = OUNoise(env.action_space)
 
@@ -131,7 +125,7 @@ if __name__ == "__main__":
 
         episode += 1
 
-        rewards.append(episode_reward)
+        # rewards.append(episode_reward)
 
         writer.add_scalar('Train/Reward', episode_reward, episode)
         writer.add_scalar('Train/Steps', steps_episode, episode)
