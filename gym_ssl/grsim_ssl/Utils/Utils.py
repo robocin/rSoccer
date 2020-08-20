@@ -24,12 +24,12 @@ def angle(x, y):
     return math.atan2(y, x)
 
 
-def to_positive_angle(angle):
+def toPositiveAngle(angle):
     return math.fmod(angle + 2 * math.pi, 2 * math.pi)
 
 
-def smallest_angle_diff(target, source):
-    a = to_positive_angle(target) - to_positive_angle(source)
+def smallestAngleDiff(target, source):
+    a = toPositiveAngle(target) - toPositiveAngle(source)
 
     if a > math.pi:
         a = a - 2 * math.pi
@@ -38,7 +38,7 @@ def smallest_angle_diff(target, source):
 
     return a
 
-def to_pi_range(angle):
+def toPiRange(angle):
     angle = math.fmod(angle, 2 * math.pi)
     if angle < -math.pi:
         angle = angle + 2 * math.pi

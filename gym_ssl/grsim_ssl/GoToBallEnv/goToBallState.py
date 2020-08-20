@@ -47,7 +47,7 @@ class goToBallState:
     return 0.0, diff_x 
 
   def getRelativeRobotToBallAngle(self, frame):
-    return to_pi_range(angle(frame.robotsBlue[0].y - frame.ball.y, frame.robotsBlue[0].x - frame.ball.x))
+    return toPiRange(angle(frame.robotsBlue[0].y - frame.ball.y, frame.robotsBlue[0].x - frame.ball.x))
   
   def getObservation(self, frame):
     self.ball_x = frame.ball.x
