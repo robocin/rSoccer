@@ -24,7 +24,7 @@ class goToBallState:
   wall_left_y: float = None
   wall_right_x: float = None
   wall_right_y: float = None
-  theta: float = None
+  angle_relative: float = None
   
 
   def getDistance(self, frame) -> float:
@@ -46,7 +46,7 @@ class goToBallState:
     diff_x = frame.robotsBlue[0].x - RIGHT_FIELD
     return 0.0, diff_x 
 
-  def getThetaRelativeRobotToBall(self, frame):
+  def getRelativeRobotToBallAngle(self, frame):
     return to_pi_range(angle(frame.robotsBlue[0].y - frame.ball.y, frame.robotsBlue[0].x - frame.ball.x))
   
   def getObservation(self, frame):
@@ -61,6 +61,7 @@ class goToBallState:
     self.wall_bottom_x, self.wall_bottom_y = self.getBottomPosition(frame)   
     self.wall_left_x, self.wall_left_y = self.getLeftPosition(frame)
     self.wall_right_x, self.wall_right_y = self.getRightPosition(frame)
+    self.angle_relative = self.getRelativeRobotToBallAngle(frame)
 
     
     
@@ -80,6 +81,6 @@ class goToBallState:
     observation.append(self.wall_left_y)
     observation.append(self.wall_right_x)
     observation.append(self.wall_right_y)
-    observation.append(self.theta)
+    observation.append(self.angle_relative)
     
     return observation
