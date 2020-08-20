@@ -14,15 +14,15 @@ from agents.Utils.OUNoise              import OUNoise
 
 use_cuda = torch.cuda.is_available()
 print("use_cuda ->", use_cuda)
-device   = torch.device("cuda" if use_cuda else "cpu")
+device = torch.device("cuda" if use_cuda else "cpu")
 
 writer = SummaryWriter()
 
 max_episodes  = 2000000
-max_steps   = 300
+max_steps   = 130 # Be Careful!
 episode   = 0
 rewards     = []
-batch_size  = 128
+batch_size  = 256
 replay_buffer_size = 100000
 
 # Continuous control with deep reinforcement learning
@@ -113,7 +113,7 @@ if __name__ == "__main__":
             action = policy_net.get_action(state)
             action = ou_noise.get_action(action, step)
             next_state, reward, done, _ = env.step(action)
-            
+
             replay_buffer.push(state, action, reward, next_state, done)
             if len(replay_buffer) > batch_size:
                 ddpg_update(batch_size)
@@ -135,4 +135,4 @@ if __name__ == "__main__":
             torch.save({
                 'target_value_net_dict': target_value_net.state_dict(),
                 'target_policy_net_dict': target_policy_net.state_dict()
-            }, './models/saved_networks')
+            }, './models/saved_networks_penalize')
