@@ -64,6 +64,8 @@ class shootGoalieEnv(GrSimSSLEnv):
                                    math.pi, math.pi, math.pi, math.pi, math.pi, math.pi, math.pi, math.pi], dtype=np.float32)
     self.observation_space = gym.spaces.Box(low=-obsSpaceThresholds, high=obsSpaceThresholds)
     self.shootGoalieState = None
+    self.reward = 0
+    self.done = False
 
     self.goalieState = 0
 
