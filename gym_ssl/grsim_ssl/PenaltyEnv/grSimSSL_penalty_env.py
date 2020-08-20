@@ -47,8 +47,6 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
 
     def __init__(self):
         super().__init__()
-
-        self.steps = 0
         self.maxSteps = 125
         self.action_space = gym.spaces.Box(low=-0.5, high=0.5, shape=(1,), dtype=np.float32)
         # Observation Space thresholds
@@ -60,8 +58,6 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         print('Environment initialized')
     
     def reset(self):
-
-        self.steps = 0
         self.atkState = 0
 
         # get a random target kick angle between -20 and 20 degrees
@@ -151,8 +147,6 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         return cmdAttacker
 
     def _getCommands(self, actions):
-        self.steps += 1
-
         commands = []
 
         cmdGoalKeeper = self._getCorrectGKCommand(actions)
