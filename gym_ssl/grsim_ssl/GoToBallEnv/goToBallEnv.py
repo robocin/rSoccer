@@ -91,16 +91,16 @@ class goToBallEnv(GrSimSSLEnv):
   def _getFormation(self):
     #To CHANGE: 
     # ball penalty position
-    #ball = Ball(x=random.uniform(-4, 0), y=random.uniform(-4, 4), vx=0, vy=0)
-    ball = Ball(x=-6, y=0, vx=0, vy=0)
+    ball = Ball(x=random.uniform(-4, 0), y=random.uniform(-4, 4), vx=0, vy=0)
+    #ball = Ball(x=-6, y=0, vx=0, vy=0)
     
     # Goalkeeper penalty position
-    #goalKeeper = Robot(id=0, x=-6, y=0, theta=0, yellow = True)
-    goalKeeper = Robot(id=0, x=-6, y=1, theta=0, yellow = True)
+    goalKeeper = Robot(id=0, x=-6, y=0, theta=0, yellow = True)
+    #goalKeeper = Robot(id=0, x=-6, y=1, theta=0, yellow = True)
 
     # Kicker penalty position
-    #attacker = Robot(id=0, x=random.uniform(-3.5, 0), y=random.uniform(-4, 4), theta=180, yellow = False)
-    attacker = Robot(id=0, x=6, y=0, theta=180, yellow=False)
+    attacker = Robot(id=0, x=random.uniform(-3.5, 0), y=random.uniform(-4, 4), theta=180, yellow = False)
+    #attacker = Robot(id=0, x=6, y=0, theta=180, yellow=False)
 
     return [goalKeeper, attacker], ball
     
@@ -115,7 +115,7 @@ class goToBallEnv(GrSimSSLEnv):
       done = True
       rewardContact += 0
       rewardDistance += (5 / pow(2 * math.pi, 1 / 2)) * math.exp(-(self.goToBallState.distance**2 + self.goToBallState.angle_relative**2) / 2) - 2
-    elif  self.steps > 125:
+    elif  self.steps > 250:
       #finished the episode
       done = True
       if self.goToBallState.distance <= 0.080:
