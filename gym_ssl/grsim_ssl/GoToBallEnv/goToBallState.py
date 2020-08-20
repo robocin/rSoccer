@@ -60,8 +60,10 @@ class goToBallState:
     return pos_x, pos_y  
 
   def getRelativeRobotToBallAngle(self, frame):
-    #print(toPiRange(angle(frame.robotsBlue[0].x - frame.ball.x, frame.robotsBlue[0].y - frame.ball.y)))
-    return toPiRange(angle(frame.robotsBlue[0].x - frame.ball.x, frame.robotsBlue[0].y - frame.ball.y))
+    dist_left = [frame.ball.x - frame.robotsBlue[0].x, frame.ball.y - frame.robotsBlue[0].y]
+    angle_left = toPiRange(angle(dist_left[0], dist_left[1]) - frame.robotsBlue[0].theta)
+    #print(angle_left)
+    return angle_left
   
   def getObservation(self, frame):
     self.ball_x = frame.ball.x
