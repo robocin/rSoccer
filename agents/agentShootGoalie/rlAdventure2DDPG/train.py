@@ -135,4 +135,4 @@ if __name__ == "__main__":
             torch.save({
                 'target_value_net_dict': target_value_net.state_dict(),
                 'target_policy_net_dict': target_policy_net.state_dict()
-            }, './saved_networks')
+            }, './models/saved_networks')
