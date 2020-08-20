@@ -15,7 +15,7 @@ state_dim  = env.observation_space.shape[0]
 action_dim = env.action_space.shape[0]
 hidden_dim = 256
 
-policy_net = PolicyNetwork(state_dim, action_dim, hidden_dim).to(device)
+policy_net = PolicyNetwork(state_dim, action_dim, hidden_dim, device=device).to(device)
 
 checkpoint = torch.load('./saved_networks')
 policy_net.load_state_dict(checkpoint['target_policy_net_dict'])

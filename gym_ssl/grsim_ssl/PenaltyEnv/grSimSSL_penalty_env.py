@@ -203,9 +203,4 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
                 done = True
                 reward = 1
 
-        # If exceed limit of episode steps
-        if self.steps > self.maxSteps:
-            reward = 1
-            done = True
-
         return reward, done

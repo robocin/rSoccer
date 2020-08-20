@@ -7,11 +7,15 @@ import  torch.optim  as optim
 import  torch.nn     as nn
 import  torch
 
-from utils.Networks             import ValueNetwork, PolicyNetwork
-from utils.NormalizedActions    import NormalizedWrapper
-from utils.ReplayBuffer         import ReplayBuffer
-from utils.OUNoise              import OUNoise
-from utils.Utils                import plot
+from agents.Utils.normalization import NormalizedWrapper
+from agents.Utils.networks import ValueNetwork, PolicyNetwork
+from agents.Utils.OUNoise import OUNoise
+from agents.Utils.replayBuffer import ReplayBuffer
+
+# from utils.Networks             import ValueNetwork, PolicyNetwork
+# from utils.NormalizedActions    import NormalizedWrapper
+# from utils.ReplayBuffer         import ReplayBuffer
+# from utils.OUNoise              import OUNoise
 
 use_cuda = torch.cuda.is_available()
 print("use_cuda ->", use_cuda)
@@ -87,10 +91,10 @@ if __name__ == "__main__":
     hidden_dim = 256
 
     value_net  = ValueNetwork(state_dim, action_dim, hidden_dim).to(device)
-    policy_net = PolicyNetwork(state_dim, action_dim, hidden_dim).to(device)
+    policy_net = PolicyNetwork(state_dim, action_dim, hidden_dim, device=device).to(device)
 
     target_value_net  = ValueNetwork(state_dim, action_dim, hidden_dim).to(device)
-    target_policy_net = PolicyNetwork(state_dim, action_dim, hidden_dim).to(device)
+    target_policy_net = PolicyNetwork(state_dim, action_dim, hidden_dim, device=device).to(device)
 
     for target_param, param in zip(target_value_net.parameters(), value_net.parameters()):
         target_param.data.copy_(param.data)

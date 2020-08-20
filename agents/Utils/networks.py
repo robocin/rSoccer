@@ -23,7 +23,7 @@ class ValueNetwork(nn.Module):
     
 
 class PolicyNetwork(nn.Module):
-    def __init__(self, num_inputs, num_actions, hidden_size, init_w=3e-3, device="cpu"):
+    def __init__(self, num_inputs, num_actions, hidden_size, device, init_w=3e-3):
         super(PolicyNetwork, self).__init__()
         
         self.linear1 = nn.Linear(num_inputs, hidden_size)
@@ -43,4 +43,4 @@ class PolicyNetwork(nn.Module):
     def get_action(self, state):
         state  = torch.FloatTensor(state).unsqueeze(0).to(self.device)
         action = self.forward(state)
-        return action.detach().cpu().numpy()[0, 0]
+        return action.detach().cpu().numpy()[0]
