@@ -67,6 +67,8 @@ class shootGoalieEnv(GrSimSSLEnv):
     self.shootGoalieState = None
     self.goalieState = 0
 
+    self.goalieState = 0
+
     print('Environment initialized')
   
   def _getCommands(self, actions):
