@@ -28,26 +28,40 @@ class goToBallState:
   
 
   def getDistance(self, frame) -> float:
+    #print(float(mod(abs(frame.robotsBlue[0].x-frame.ball.x), abs(frame.robotsBlue[0].y-frame.ball.y))))
     return float(mod(abs(frame.robotsBlue[0].x-frame.ball.x), abs(frame.robotsBlue[0].y-frame.ball.y)))
 
   def getTopPosition(self, frame):
-    diff_y = frame.robotsBlue[0].y - TOP_FIELD
-    return 0.0, diff_y 
+    diff_y = TOP_FIELD - frame.robotsBlue[0].y
+    pos_x = math.sin(frame.robotsBlue[0].theta) * diff_y
+    pos_y = math.cos(frame.robotsBlue[0].theta) * diff_y
+    #print(pos_x, pos_y)
+    return pos_x, pos_y
 
   def getBottomPosition(self, frame):
-    diff_y = frame.robotsBlue[0].y - BOTTOM_FIELD
-    return 0.0, diff_y 
+    diff_y = BOTTOM_FIELD - frame.robotsBlue[0].y
+    pos_x = math.sin(frame.robotsBlue[0].theta) * diff_y
+    pos_y = math.cos(frame.robotsBlue[0].theta) * diff_y
+    #print(pos_x, pos_y)
+    return pos_x, pos_y
 
   def getLeftPosition(self, frame):
-    diff_x = frame.robotsBlue[0].x - LEFT_FIELD
-    return 0.0, diff_x 
+    diff_y = LEFT_FIELD - frame.robotsBlue[0].x
+    pos_x = math.cos(frame.robotsBlue[0].theta) * diff_y
+    pos_y = -math.sin(frame.robotsBlue[0].theta) * diff_y
+    #print(pos_x, pos_y)
+    return pos_x, pos_y 
 
   def getRightPosition(self, frame):
-    diff_x = frame.robotsBlue[0].x - RIGHT_FIELD
-    return 0.0, diff_x 
+    diff_y = RIGHT_FIELD - frame.robotsBlue[0].x
+    pos_x = math.cos(frame.robotsBlue[0].theta) * diff_y
+    pos_y = -math.sin(frame.robotsBlue[0].theta) * diff_y
+    #print(pos_x, pos_y)
+    return pos_x, pos_y  
 
   def getRelativeRobotToBallAngle(self, frame):
-    return toPiRange(angle(frame.robotsBlue[0].y - frame.ball.y, frame.robotsBlue[0].x - frame.ball.x))
+    #print(toPiRange(angle(frame.robotsBlue[0].x - frame.ball.x, frame.robotsBlue[0].y - frame.ball.y)))
+    return toPiRange(angle(frame.robotsBlue[0].x - frame.ball.x, frame.robotsBlue[0].y - frame.ball.y))
   
   def getObservation(self, frame):
     self.ball_x = frame.ball.x
