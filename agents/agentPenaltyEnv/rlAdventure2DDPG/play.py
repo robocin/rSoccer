@@ -2,7 +2,7 @@ import gym
 import gym_ssl
 import torch
 
-from utils.Networks             import PolicyNetwork
+from agents.Utils.networks             import PolicyNetwork
 
 # Using penalty env
 env = gym.make('grSimSSLPenalty-v0')

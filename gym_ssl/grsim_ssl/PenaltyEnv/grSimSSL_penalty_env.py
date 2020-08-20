@@ -47,26 +47,25 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
 
     def __init__(self):
         super().__init__()
-        self.maxSteps = 125
-        self.action_space = gym.spaces.Box(low=-0.5, high=0.5, shape=(1,), dtype=np.float32)
+        self.action_space = gym.spaces.Box(low=-2, high=2, shape=(1,), dtype=np.float32)
         # Observation Space thresholds
         obsSpaceThresholds = np.array([7000, 6000, 5000, 5000, 7000, 6000, 5000, 5000, 7000, 6000,
                                        1, 1, 5000, 5000, 10], dtype=np.float32)
-        self.observation_space = gym.spaces.Box(low=-obsSpaceThresholds, high=obsSpaceThresholds)        
+        self.observation_space = gym.spaces.Box(low=-obsSpaceThresholds, high=obsSpaceThresholds)
         self.atkState = None
+        self.kickTargetAngle = None
 
         print('Environment initialized')
-    
+
     def reset(self):
         self.atkState = 0
 
         # get a random target kick angle between -20 and 20 degrees
-        kickAngle = np.random.uniform(-0.445,0.445)
+        kickAngle = np.random.uniform(-0.445, 0.445)
         if kickAngle < 0:
-            self.target = -3.14 - kickAngle
+            self.kickTargetAngle = -3.14 - kickAngle
         else:
-            self.target = 3.14 - kickAngle
-        
+            self.kickTargetAngle = 3.14 - kickAngle
         return super().reset()
 
     def _parseObservationFromState(self):
@@ -107,7 +106,7 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
     def _getAttackerCommand(self):
         cmdAttacker = Robot(yellow=True, id=0, dribbler=True)
 
-        vw = 0.4    # attacker rotation speed   
+        vw = 0.4    # attacker rotation speed
         vx = 0.7    # attacker movement speed
         vkick = 4   # attacker kick speed
 
@@ -115,7 +114,7 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         if self.atkState == 0:
             if self.state.robotsYellow[0].x < -4725:
                 cmdAttacker.vx = 0.0
-                if self.target < 0:
+                if self.kickTargetAngle < 0:
                     self.atkState = 1
                 else:
                     self.atkState = 2
@@ -123,8 +122,8 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
                 cmdAttacker.vx = vx
         # If atkState == 1 -> rotate counterclockwise until kick angle        
         if self.atkState == 1:
-            self.atkState = 0       
-            if -(abs(self.state.robotsYellow[0].theta)) < self.target:
+            self.atkState = 0
+            if -(abs(self.state.robotsYellow[0].theta)) < self.kickTargetAngle:
                 cmdAttacker.vw = vw
                 cmdAttacker.vx = 0.0
             else:
@@ -135,7 +134,7 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         # If atkState == 2 -> rotate clockwise until kick angle        
         if self.atkState == 2:
             self.atkState = 0
-            if abs(self.state.robotsYellow[0].theta) > self.target:
+            if abs(self.state.robotsYellow[0].theta) > self.kickTargetAngle:
                 cmdAttacker.vw = -vw
                 cmdAttacker.vx = 0.0
             else:
@@ -154,12 +153,12 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         commands.append(cmdGoalKeeper)
 
         cmdAttacker = self._getAttackerCommand()
-        
+
         commands.append(cmdAttacker)
 
         return commands
 
-    def _getCorrectGKCommand(self,vy):
+    def _getCorrectGKCommand(self, vy):
         '''Control goalkeeper vw and vx to keep him at goal line'''
         cmdGoalKeeper = Robot(yellow=False, id=0, vy=vy)
 
@@ -188,18 +187,18 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         done = False
 
         # If ball crosses the goal line
-        if self.state.ball.x < -6000:
+        if self.state.ball.x < -6025:
             done = True
             # If ball crosses goal line inside goal bounds GOAL
             if self.state.ball.y < 600 and self.state.ball.y > -600:
                 # Reward based on distance from keeper to ball
-                reward = abs(self.state.ball.y - self.state.robotsBlue[0].y)*(-0.001)
+                reward = abs(self.state.ball.y - self.state.robotsBlue[0].y) * (-0.001)
             else:
                 # NOT GOAL
                 reward = 1
         # If ball is moving away from goal after attacker kick NOT GOAL
         if self.state.ball.x < -5000:
-            if self.state.ball.vx > -1:
+            if self.state.ball.vx > 0:
                 done = True
                 reward = 1
 
