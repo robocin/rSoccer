@@ -44,4 +44,4 @@ class PolicyNetwork(nn.Module):
     def get_action(self, state):
         state  = torch.FloatTensor(state).unsqueeze(0).to(device)
         action = self.forward(state)
-        return action.detach().cpu().numpy()[0, 0]
+        return action.detach().cpu().numpy()[0]
