@@ -8,7 +8,7 @@ import  torch.nn     as nn
 import  torch
 
 from utils.Networks             import ValueNetwork, PolicyNetwork
-from utils.NormalizedActions    import NormalizedActions
+from utils.NormalizedActions    import NormalizedWrapper
 from utils.ReplayBuffer         import ReplayBuffer
 from utils.OUNoise              import OUNoise
 from utils.Utils                import plot
@@ -19,12 +19,12 @@ device   = torch.device("cuda" if use_cuda else "cpu")
 
 writer = SummaryWriter()
 
-max_Episodes  = 50000
+max_Episodes  = 100000
 max_steps   = 200
 episode   = 0
 rewards     = []
 batch_size  = 256
-replay_buffer_size = 100000
+replay_buffer_size = 200000
 
 def ddpg_update(batch_size, 
            gamma = 0.99,
@@ -74,9 +74,14 @@ if __name__ == "__main__":
     
     
 
-    # env = NormalizedActions(gym.make("grSimSSLPenalty-v0"))
-    env = gym.make("grSimSSLPenalty-v0")
-    
+    env = NormalizedWrapper(gym.make("grSimSSLPenalty-v0"))
+    # env = gym.make("grSimSSLPenalty-v0")
+
+    print("wrapper action space: low -> {} high -> {} sample -> {}".format(
+        env.action_space.low, env.action_space.high, env.action_space.sample()))
+    print("wrapper obs space: low -> {} high -> {} sample -> {}".format(
+        env.observation_space.low, env.observation_space.high, env.observation_space.sample()))
+
     ou_noise = OUNoise(env.action_space)
 
     state_dim  = env.observation_space.shape[0]
