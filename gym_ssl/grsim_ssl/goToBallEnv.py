@@ -110,7 +110,7 @@ class goToBallEnv(GrSimSSLEnv):
     rewardDistance = 0
     done = False
 
-    if self.state.ball.x < -6000 or self.state.ball.y > 4500 or self.stat.ball.y < -4500:
+    if self.state.ball.x < -6000 or self.state.ball.y > 4500 or self.state.ball.y < -4500:
       # the ball out the field limits
       done = True
       rewardContact += 0
