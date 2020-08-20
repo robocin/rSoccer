@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from gym_ssl.grsim_ssl.Utils.util import *
+from gym_ssl.grsim_ssl.Utils import *
 
 
 TOP_FIELD = 4.5

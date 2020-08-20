@@ -5,9 +5,9 @@ import time
 
 from gym_ssl.grsim_ssl.grSimSSL_env import GrSimSSLEnv
 from gym_ssl.grsim_ssl.Communication.grSimClient import grSimClient
-from gym_ssl.grsim_ssl.Utils import mod
 from gym_ssl.grsim_ssl.Entities import Ball, Frame, Robot
 from gym_ssl.grsim_ssl.ShootGoalieEnv import shootGoalieState
+from gym_ssl.grsim_ssl.Utils import mod
 
 
 class shootGoalieEnv(GrSimSSLEnv):

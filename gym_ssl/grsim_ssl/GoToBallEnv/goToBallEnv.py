@@ -2,16 +2,13 @@ import gym
 import math
 import numpy as np
 import time
-import gym_ssl.grsim_ssl.Communication.pb.grSim_Packet_pb2 as packet_pb2
 import random
 
 from gym_ssl.grsim_ssl.grSimSSL_env import GrSimSSLEnv
 from gym_ssl.grsim_ssl.Communication.grSimClient import grSimClient
-from gym_ssl.grsim_ssl.Entities.Ball import Ball
-from gym_ssl.grsim_ssl.Entities.Robot import Robot
-from gym_ssl.grsim_ssl.Entities.Frame import Frame
-from gym_ssl.grsim_ssl.Utils.goToBallState import goToBallState
-from gym_ssl.grsim_ssl.Utils.util import *
+from gym_ssl.grsim_ssl.Entities import Robot, Ball, Frame
+from gym_ssl.grsim_ssl.GoToBallEnv import goToBallState
+from gym_ssl.grsim_ssl.Utils import *
 
 class goToBallEnv(GrSimSSLEnv):
   """
@@ -97,10 +94,10 @@ class goToBallEnv(GrSimSSLEnv):
     ball = Ball(x=random.uniform(-4, 0), y=random.uniform(-4, 4), vx=0, vy=0)
     
     # Goalkeeper penalty position
-    goalKeeper = Robot(id=0, x=-6, y=0, w=0, yellow = True)
+    goalKeeper = Robot(id=0, x=-6, y=0, theta=0, yellow = True)
 
     # Kicker penalty position
-    attacker = Robot(id=0, x=random.uniform(-3.5, 0), y=random.uniform(-4, 4), w=180, yellow = False)
+    attacker = Robot(id=0, x=random.uniform(-3.5, 0), y=random.uniform(-4, 4), theta=180, yellow = False)
 
     return [goalKeeper, attacker], ball
     

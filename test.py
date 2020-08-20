@@ -10,7 +10,7 @@ import gym
 import gym_ssl
 
 # Using penalty env
-env = gym.make('grSimSSLPenalty-v0')
+env = gym.make('grSimSSLGoToBall-v0')
 
 env.reset()
 # Run for 1 episode and print reward at the end
