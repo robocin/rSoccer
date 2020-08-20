@@ -8,7 +8,7 @@ import  torch.nn     as nn
 import  torch
 
 from agents.Utils.Networks             import ValueNetwork, PolicyNetwork
-from agents.Utils.NormalizedActions    import NormalizedActions
+from agents.Utils.Normalization        import NormalizedWrapper
 from agents.Utils.ReplayBuffer         import ReplayBuffer
 from agents.Utils.OUNoise              import OUNoise
 
@@ -73,8 +73,8 @@ def ddpg_update(batch_size,
 
 if __name__ == "__main__":
         
-    # env = NormalizedActions(gym.make('grSimSSLShootGoalie-v0'))
-    env = gym.make('grSimSSLShootGoalie-v0')
+    env = NormalizedWrapper(gym.make('grSimSSLShootGoalie-v0'))
+    # env = gym.make('grSimSSLShootGoalie-v0')
     ou_noise = OUNoise(env.action_space)
 
     state_dim  = env.observation_space.shape[0]
@@ -108,10 +108,10 @@ if __name__ == "__main__":
         ou_noise.reset()
         episode_reward = 0
         steps_episode = 0
-        
-        for step in range(max_steps):
+        goal = 0
+        while steps_episode <= max_steps:
             action = policy_net.get_action(state)
-            action = ou_noise.get_action(action, step)
+            action = ou_noise.get_action(action, steps_episode)
             next_state, reward, done, _ = env.step(action)
 
             replay_buffer.push(state, action, reward, next_state, done)
@@ -121,15 +121,19 @@ if __name__ == "__main__":
             state = next_state
             episode_reward += reward
             
+            steps_episode += 1
+
             if done:
-                steps_episode = step
+                if reward > 0:
+                    goal = 1
                 break
         
         episode += 1
-        rewards.append(episode_reward)
+        # rewards.append(episode_reward)
 
         writer.add_scalar('Train/Reward', episode_reward, episode)
         writer.add_scalar('Train/Steps', steps_episode, episode)
+        writer.add_scalar('Episodes/Goals', goal, episode)
 
         if (episode % 1000) == 0:
             torch.save({
