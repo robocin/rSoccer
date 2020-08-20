@@ -2,17 +2,16 @@ import gym
 import math
 import numpy as np
 import time
-import gym_ssl.grsim_ssl.Communication.pb.grSim_Packet_pb2 as packet_pb2
 
 from gym_ssl.grsim_ssl.grSimSSL_env import GrSimSSLEnv
 from gym_ssl.grsim_ssl.Communication.grSimClient import grSimClient
-from gym_ssl.grsim_ssl.Entities.Ball import Ball
-from gym_ssl.grsim_ssl.Entities.Robot import Robot
-from gym_ssl.grsim_ssl.Entities.Frame import Frame
-from gym_ssl.grsim_ssl.Utils.goalieState import GoalieState
-from gym_ssl.grsim_ssl.Utils.util import *
+from gym_ssl.grsim_ssl.Utils import mod
+from gym_ssl.grsim_ssl.Entities import Ball, Frame, Robot
+from gym_ssl.grsim_ssl.ShootGoalieEnv import shootGoalieState
+
 
 class shootGoalieEnv(GrSimSSLEnv):
+
   """
   Using cartpole env description as base example for our documentation
   Description:
@@ -86,7 +85,7 @@ class shootGoalieEnv(GrSimSSLEnv):
   def _parseObservationFromState(self):
     observation = []
 
-    self.shootGoalieState = GoalieState()
+    self.shootGoalieState = shootGoalieState()
     observation = self.shootGoalieState.getObservation(self.state)
 
     return np.array(observation)
@@ -96,10 +95,10 @@ class shootGoalieEnv(GrSimSSLEnv):
     ball = Ball(x=-4.1, y=0, vx=0, vy=0)
     
     # Goalkeeper penalty position
-    goalKeeper = Robot(id=0, x=-6, y=0, w=0, yellow = True)
+    goalKeeper = Robot(id=0, x=-6, y=0, theta=0, yellow = True)
 
     # Kicker penalty position
-    attacker = Robot(id=0, x=-4, y=0, w=180, yellow = False)
+    attacker = Robot(id=0, x=-4, y=0, theta=180, yellow = False)
 
     return [goalKeeper, attacker], ball
     

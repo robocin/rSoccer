@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from gym_ssl.grsim_ssl.Utils.util import *
+from gym_ssl.grsim_ssl.Utils import *
 
 
 CENTER_GOAL_X = -6000
@@ -14,7 +14,7 @@ RIGHT_GOALY = 600
 ROBOT_RADIUS = 90
 
 @dataclass
-class GoalieState:
+class shootGoalieState:
   """Init Frame object."""
   ball_x: float = None
   ballY: float = None
@@ -38,12 +38,12 @@ class GoalieState:
 
   def get_l_angle(self, frame):
     dist_left = [frame.robotsBlue[0].x - LEFT_GOAL_X, frame.robotsBlue[0].y - LEFT_GOALY]
-    angle_left = to_pi_range(angle(dist_left[0], dist_left[1]) + (math.pi - frame.robotsBlue[0].w))
+    angle_left = to_pi_range(angle(dist_left[0], dist_left[1]) + (math.pi - frame.robotsBlue[0].theta))
     return math.sin(angle_left), math.cos(angle_left)
 
   def get_r_angle(self, frame):
     dist_right = [frame.robotsBlue[0].x - RIGHT_GOAL_X, frame.robotsBlue[0].y - RIGHT_GOALY]
-    angle_right = to_pi_range(angle(dist_right[0], dist_right[1]) + (math.pi - frame.robotsBlue[0].w))
+    angle_right = to_pi_range(angle(dist_right[0], dist_right[1]) + (math.pi - frame.robotsBlue[0].theta))
     return math.sin(angle_right), math.cos(angle_right)
 
   def get_goalie_c_unify_angle(self, frame):
@@ -57,12 +57,12 @@ class GoalieState:
   def get_goalie_l_angle(self, frame):
 
     dist_left = [frame.robotsBlue[0].x - frame.robotsYellow[0].x, frame.robotsBlue[0].y - (frame.robotsYellow[0].y - ROBOT_RADIUS)]
-    angle_left = to_pi_range(angle(dist_left[0], dist_left[1]) + (math.pi - frame.robotsBlue[0].w))
+    angle_left = to_pi_range(angle(dist_left[0], dist_left[1]) + (math.pi - frame.robotsBlue[0].theta))
     return math.sin(angle_left), math.cos(angle_left)
 
   def get_goalie_r_angle(self, frame):
     dist_right = [frame.robotsBlue[0].x - frame.robotsYellow[0].x, frame.robotsBlue[0].y - (frame.robotsYellow[0].y + ROBOT_RADIUS)]
-    angle_right = to_pi_range(angle(dist_right[0], dist_right[1]) + (math.pi - frame.robotsBlue[0].w))
+    angle_right = to_pi_range(angle(dist_right[0], dist_right[1]) + (math.pi - frame.robotsBlue[0].theta))
     return math.sin(angle_right), math.cos(angle_right)
   
   def getObservation(self, frame):

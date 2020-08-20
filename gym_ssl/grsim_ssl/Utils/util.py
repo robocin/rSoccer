@@ -57,7 +57,6 @@ def smallest_angle_diff(target, source):
 
     return a
 
-
 def to_pi_range(angle):
     angle = math.fmod(angle, 2 * math.pi)
     if angle < -math.pi:

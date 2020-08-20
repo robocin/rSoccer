@@ -23,7 +23,7 @@ model = DDPG(MlpPolicy, env, verbose=1, actor_lr = 0.001, critic_lr = 0.0001, no
 
 for i in range(200):
     model.learn(total_timesteps=100000)
-    model.save("./models/ddpg_shootgoalie2")
+    model.save("./models/ddpg_shootgoalie-v0")
 
 # del model # remove to demonstrate saving and loading
 

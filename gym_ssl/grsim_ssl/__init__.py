@@ -1,2 +1,2 @@
 from gym_ssl.grsim_ssl.PenaltyEnv.grSimSSL_penalty_env import GrSimSSLPenaltyEnv
-from gym_ssl.grsim_ssl.shootGoalieEnv import shootGoalieEnv
+from gym_ssl.grsim_ssl.ShootGoalieEnv.shootGoalieEnv import shootGoalieEnv
