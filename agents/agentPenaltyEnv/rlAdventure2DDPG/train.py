@@ -27,10 +27,10 @@ batch_size  = 256
 replay_buffer_size = 200000
 
 def ddpg_update(batch_size, 
-           gamma = 0.99,
-           min_value=-np.inf,
-           max_value=np.inf,
-           soft_tau=1e-2):
+                gamma=0.99,
+                min_value=-np.inf,
+                max_value=np.inf,
+                soft_tau=1e-2):
     
     state, action, reward, next_state, done = replay_buffer.sample(batch_size)
     
@@ -71,16 +71,14 @@ def ddpg_update(batch_size,
             )
 
 if __name__ == "__main__":
-    
-    
 
     env = NormalizedWrapper(gym.make("grSimSSLPenalty-v0"))
     # env = gym.make("grSimSSLPenalty-v0")
 
-    print("wrapper action space: low -> {} high -> {} sample -> {}".format(
-        env.action_space.low, env.action_space.high, env.action_space.sample()))
-    print("wrapper obs space: low -> {} high -> {} sample -> {}".format(
-        env.observation_space.low, env.observation_space.high, env.observation_space.sample()))
+    # print("wrapper action space: low -> {} high -> {} sample -> {}".format(
+    #     env.action_space.low, env.action_space.high, env.action_space.sample()))
+    # print("wrapper obs space: low -> {} high -> {} sample -> {}".format(
+    #     env.observation_space.low, env.observation_space.high, env.observation_space.sample()))
 
     ou_noise = OUNoise(env.action_space)
 
