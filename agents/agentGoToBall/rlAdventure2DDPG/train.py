@@ -8,7 +8,7 @@ import  torch.nn     as nn
 import  torch
 
 from agents.Utils.Networks             import ValueNetwork, PolicyNetwork
-from agents.Utils.Normalization        import NormalizedWrapper
+from agents.Utils.NormalizedActions    import NormalizedActions
 from agents.Utils.ReplayBuffer         import ReplayBuffer
 from agents.Utils.OUNoise              import OUNoise
 
@@ -18,11 +18,11 @@ device   = torch.device("cuda" if use_cuda else "cpu")
 
 writer = SummaryWriter()
 
-max_episodes  = 2000000
-max_steps   = 250
+max_episodes  = 1200
+max_steps   = 500
 episode   = 0
 rewards     = []
-batch_size  = 256
+batch_size  = 128
 replay_buffer_size = 100000
 
 # Continuous control with deep reinforcement learning
@@ -73,8 +73,8 @@ def ddpg_update(batch_size,
 
 if __name__ == "__main__":
         
-    env = NormalizedWrapper(gym.make('grSimSSLGoToBall-v0'))
-    #env = gym.make('grSimSSLGoToBall-v0')
+    # env = NormalizedActions(gym.make('grSimSSLGoToBall-v0'))
+    env = gym.make('grSimSSLGoToBall-v0')
     ou_noise = OUNoise(env.action_space)
 
     state_dim  = env.observation_space.shape[0]
@@ -109,9 +109,9 @@ if __name__ == "__main__":
         episode_reward = 0
         steps_episode = 0
         
-        while steps_episode < max_steps:
+        for step in range(max_steps):
             action = policy_net.get_action(state)
-            action = ou_noise.get_action(action, steps_episode)
+            action = ou_noise.get_action(action, step)
             next_state, reward, done, _ = env.step(action)
             
             replay_buffer.push(state, action, reward, next_state, done)
@@ -120,12 +120,10 @@ if __name__ == "__main__":
             
             state = next_state
             episode_reward += reward
-            steps_episode += 1
-
             
             if done:
+                steps_episode = step
                 break
-        
         
         episode += 1
         rewards.append(episode_reward)
@@ -137,4 +135,4 @@ if __name__ == "__main__":
             torch.save({
                 'target_value_net_dict': target_value_net.state_dict(),
                 'target_policy_net_dict': target_policy_net.state_dict()
-            }, './models/test_go_to_ball')
+            }, './models/saved_networks')

@@ -5,7 +5,7 @@ import torch
 from agents.Utils.Networks             import PolicyNetwork
 
 # Using penalty env
-env = gym.make('grSimSSLGoToBall-v0')
+env = gym.make('grSimGoToBall-v0')
 
 use_cuda = torch.cuda.is_available()
 print("use_cuda ->", use_cuda)
@@ -17,7 +17,7 @@ hidden_dim = 256
 
 policy_net = PolicyNetwork(state_dim, action_dim, hidden_dim, device=device).to(device)
 
-checkpoint = torch.load('./models/test_go_to_ball')
+checkpoint = torch.load('./models/saved_networks')
 policy_net.load_state_dict(checkpoint['target_policy_net_dict'])
 
 env.reset()
