@@ -97,6 +97,5 @@ class goToBallState:
     observation.append(self.wall_left_y)
     observation.append(self.wall_right_x)
     observation.append(self.wall_right_y)
-    #observation.append(self.angle_relative)
     
     return observation
