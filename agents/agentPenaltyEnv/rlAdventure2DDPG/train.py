@@ -23,7 +23,7 @@ max_Episodes  = 50000
 max_steps   = 200
 episode   = 0
 rewards     = []
-batch_size  = 128
+batch_size  = 256
 replay_buffer_size = 100000
 
 def ddpg_update(batch_size, 
@@ -133,5 +133,11 @@ if __name__ == "__main__":
 
         writer.add_scalar('Train/Reward', episode_reward, episode)
         writer.add_scalar('Train/Steps', steps_episode, episode)
+
+        if (episode % 1000) == 0:
+            torch.save({
+                'target_value_net_dict': target_value_net.state_dict(),
+                'target_policy_net_dict': target_policy_net.state_dict()
+            }, './saved_networks')
 
 
