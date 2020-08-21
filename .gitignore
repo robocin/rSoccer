@@ -7,3 +7,4 @@ pb/*
 __pycache__
 .idea/
 *.0
+agents/agentPenaltyEnv/rlAdventure2DDPG/runs/
