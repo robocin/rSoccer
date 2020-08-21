@@ -114,7 +114,7 @@ class goToBallEnv(GrSimSSLEnv):
       # the ball out the field limits
       done = True
       rewardContact += 0
-      rewardDistance += (5 / pow(2 * math.pi, 1 / 2)) * math.exp(-(self.goToBallState.distance**2 + self.goToBallState.angle_relative**2) / 2) - 2
+      rewardDistance += (5 / pow(2 * math.pi, 1 / 2)) * math.exp(-((self.goToBallState.distance*0.001)**2 + self.goToBallState.angle_relative**2) / 2) - 2
     elif  self.steps > 250:
       #finished the episode
       done = True
