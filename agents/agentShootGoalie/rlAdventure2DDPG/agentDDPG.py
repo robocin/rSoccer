@@ -136,7 +136,7 @@ class AgentDDPG:
                     self._update(self.batchSize)
 
                 state = next_state
-                episodeReward += reward
+                episodeReward = reward
                 nStepsInEpisode += 1
 
                 if done:
