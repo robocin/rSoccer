@@ -19,7 +19,7 @@ from agents.Utils.Buffers import ReplayBuffer, AverageBuffer
 class AgentDDPG:
 
     def __init__(self, name='DDPG',
-                 maxEpisodes=60000, maxSteps=150, batchSize=256, replayBufferSize=200000, valueLR=1e-3, policyLR=1e-4,
+                 maxEpisodes=30000, maxSteps=150, batchSize=256, replayBufferSize=200000, valueLR=1e-3, policyLR=1e-4,
                  hiddenDim=256, nEpisodesPerCheckpoint=5000):
         # Training Parameters
         self.batchSize = batchSize
