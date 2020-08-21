@@ -136,7 +136,7 @@ class AgentDDPG:
                     self._update(self.batchSize)
 
                 state = next_state
-                episodeReward = reward
+                episodeReward += reward
                 nStepsInEpisode += 1
 
                 if done:
@@ -149,6 +149,8 @@ class AgentDDPG:
 
             self.rewardsBuffer.push(episodeReward)
             self.nEpisodes += 1
+
+            print("DONE", episodeReward, nStepsInEpisode, self.env.unwrapped.state.ball.x, self.env.unwrapped.state.ball.x)
 
             # TODO trocar por lista circular
             # rewards.append(episodeReward)
