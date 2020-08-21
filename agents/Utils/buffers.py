@@ -20,3 +20,22 @@ class ReplayBuffer:
     
     def __len__(self):
         return len(self.buffer)
+
+class AverageBuffer:
+    def __init__(self, capacity = 100):
+        self.capacity = capacity
+        self.buffer = []
+        self.index = 0
+    
+    def push(self, goal):
+        if len(self.buffer) < self.capacity:
+            self.buffer.append(None)
+         
+        self.buffer[self.index] = goal
+        self.index = (self.index + 1) % self.capacity
+    
+    def average(self):
+        return np.mean(self.buffer if len(self.buffer) > 0 else [0])
+    
+    def __len__(self):
+        return len(self.buffer)

@@ -3,6 +3,7 @@ import gym_ssl
 import numpy as np
 import os
 import sys
+import time
 
 from torch.utils.tensorboard import SummaryWriter
 import torch.optim as optim
@@ -12,7 +13,7 @@ import torch
 from agents.Utils.normalization import NormalizedWrapper
 from agents.Utils.networks import ValueNetwork, PolicyNetwork
 from agents.Utils.OUNoise import OUNoise
-from agents.Utils.replayBuffer import ReplayBuffer
+from agents.Utils.buffers import ReplayBuffer, AverageBuffer
 
 
 class AgentDDPG:
@@ -55,6 +56,13 @@ class AgentDDPG:
 
         # Init replay buffer
         self.replayBuffer = ReplayBuffer(replayBufferSize)
+
+        # Init goals buffer
+        self.goalsBuffer = AverageBuffer()
+
+        # Steps per Seconds Parameters
+        self.startTimeInEpisode  = 0.0
+        self.doneTimeInEpisode = 0.0
 
         # Tensorboard Init
         self.path = './runs/' + name
@@ -112,6 +120,7 @@ class AgentDDPG:
             self.ouNoise.reset()
             episodeReward = 0
             nStepsInEpisode = 0
+            self.startTimeInEpisode = time.time()
 
             while nStepsInEpisode < self.maxSteps:
                 action = self.policyNet.get_action(state)
@@ -127,15 +136,16 @@ class AgentDDPG:
                 nStepsInEpisode += 1
 
                 if done:
+                    self.goalsBuffer.push(1 if reward < 0 else 0)
+                    self.doneTimeInEpisode = time.time()
                     break
 
             self.nEpisodes += 1
 
-            # TODO trocar por lista circular
-            # rewards.append(episodeReward)
-
             self.writer.add_scalar('Train/Reward', episodeReward, self.nEpisodes)
             self.writer.add_scalar('Train/Steps', nStepsInEpisode, self.nEpisodes)
+            self.writer.add_scalar('Train/Goals_average_on_{}_previous_episode'.format(self.goalsBuffer.capacity), self.goalsBuffer.average(), self.nEpisodes)
+            self.writer.add_scalar('Train/Steps_seconds', nStepsInEpisode/(self.doneTimeInEpisode - self.startTimeInEpisode), self.nEpisodes)
 
             # TODO arquivo separado a cada x passos
             if (self.nEpisodes % self.nEpisodesPerCheckpoint) == 0:
@@ -146,7 +156,6 @@ class AgentDDPG:
                     'targetPolicyNetDict': self.targetPolicyNet.state_dict(),
                     'nEpisodes': self.nEpisodes
                 }, self.path + '/checkpoint')
-
         self.writer.flush()
 
     # Playing loop
