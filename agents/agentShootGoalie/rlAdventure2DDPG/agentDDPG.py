@@ -18,7 +18,7 @@ from agents.Utils.ReplayBuffer import ReplayBuffer
 class AgentDDPG:
 
     def __init__(self, name='DDPG',
-                 maxEpisodes=30000, maxSteps=200, batchSize=256, replayBufferSize=200000, valueLR=1e-3, policyLR=1e-4,
+                 maxEpisodes=30000, maxSteps=150, batchSize=256, replayBufferSize=200000, valueLR=1e-3, policyLR=1e-4,
                  hiddenDim=256, nEpisodesPerCheckpoint=10000):
         # Training Parameters
         self.batchSize = batchSize
@@ -29,9 +29,10 @@ class AgentDDPG:
 
         # Check if cuda gpu is available, and select it
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+        print('Cuda Activated? ', torch.cuda.is_available())
+            
         # Create Environment using a wrapper which scales actions and observations to [-1, 1]
-        self.env = NormalizedWrapper(gym.make("grSimSSLPenalty-v0"))
+        self.env = NormalizedWrapper(gym.make("grSimSSLShootGoalie-v0"))
 
         # Init action noise object
         self.ouNoise = OUNoise(self.env.action_space)
@@ -58,8 +59,15 @@ class AgentDDPG:
 
         # Tensorboard Init
         self.path = './runs/' + name
-        self._load()
-        self.writer = SummaryWriter(log_dir=self.path)
+        self.loadedModel = self._load()
+        if sys.argv[2] == 'train':
+            import socket
+            from datetime import datetime
+            current_time = datetime.now().strftime('%b%d_%H-%M-%S')
+            log_dir = os.path.join(
+                self.path, current_time + '_' + socket.gethostname())
+            self.writer = SummaryWriter(log_dir=log_dir)
+        
 
     def _update(self, batch_size,
                 gamma=0.99,
@@ -123,7 +131,7 @@ class AgentDDPG:
                     self._update(self.batchSize)
 
                 state = next_state
-                episodeReward += reward
+                episodeReward = reward
                 nStepsInEpisode += 1
 
                 if done:
@@ -151,12 +159,15 @@ class AgentDDPG:
 
     # Playing loop
     def play(self):
-        while True:
-            done = False
-            obs = self.env.reset()
-            while not done:
-                action = self.policyNet.get_action(obs)
-                obs, reward, done, _ = self.env.step(action)
+        if self.loadedModel:
+            while True:
+                done = False
+                obs = self.env.reset()
+                while not done:
+                    action = self.policyNet.get_action(obs)
+                    obs, reward, done, _ = self.env.step(action)
+        else:
+            print("Correct usage: python train.py {name} (play | train)")
 
     def _load(self):
         # Check if checkpoint file exists
@@ -170,8 +181,10 @@ class AgentDDPG:
             # Load number of episodes on checkpoint
             self.nEpisodes = checkpoint['nEpisodes']
             print("Checkpoint with {} episodes successfully loaded".format(self.nEpisodes))
+            return True
         else:
-            print("No checkpoint " + self.path + '/checkpoint' + " loaded!")
+            print("- No checkpoint " + self.path + '/checkpoint' + " loaded!")
+            return False
 
 if __name__ == '__main__':
 
