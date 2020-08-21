@@ -19,7 +19,7 @@ class AgentDDPG:
 
     def __init__(self, name='DDPG',
                  maxEpisodes=10000, maxSteps=200, batchSize=256, replayBufferSize=200000, valueLR=1e-3, policyLR=1e-4,
-                 hiddenDim=256, nEpisodesPerCheckpoint=10):
+                 hiddenDim=256, nEpisodesPerCheckpoint=10000):
         # Training Parameters
         self.batchSize = batchSize
         self.maxSteps = maxSteps
@@ -149,29 +149,39 @@ class AgentDDPG:
 
         self.writer.flush()
 
-    def _load(self):
-        # Check if folder exists
-        if os.path.exists(self.path):
-            try:
-                checkpoint = torch.load(self.path + '/checkpoint')
-                # Load networks parameters checkpoint
-                self.valueNet.load_state_dict(checkpoint['valueNetDict'])
-                self.policyNet.load_state_dict(checkpoint['policyNetDict'])
-                self.targetValueNet.load_state_dict(checkpoint['targetValueNetDict'])
-                self.targetPolicyNet.load_state_dict(checkpoint['targetPolicyNetDict'])
-                # Load number of episodes on checkpoint
-                self.nEpisodes = checkpoint['nEpisodes']
-                print(self.nEpisodes)
-            except FileNotFoundError as e:
-                print(e)
-            except IOError as e:
-                print(e)
+    # Playing loop
+    def play(self):
+        while True:
+            done = False
+            obs = self.env.reset()
+            while not done:
+                action = self.policyNet.get_action(obs)
+                obs, reward, done, _ = self.env.step(action)
 
+    def _load(self):
+        # Check if checkpoint file exists
+        if os.path.exists(self.path + '/checkpoint'):
+            checkpoint = torch.load(self.path + '/checkpoint')
+            # Load networks parameters checkpoint
+            self.valueNet.load_state_dict(checkpoint['valueNetDict'])
+            self.policyNet.load_state_dict(checkpoint['policyNetDict'])
+            self.targetValueNet.load_state_dict(checkpoint['targetValueNetDict'])
+            self.targetPolicyNet.load_state_dict(checkpoint['targetPolicyNetDict'])
+            # Load number of episodes on checkpoint
+            self.nEpisodes = checkpoint['nEpisodes']
+            print("Checkpoint with {} episodes successfully loaded".format(self.nEpisodes))
+        else:
+            print("No checkpoint loaded")
 
 if __name__ == '__main__':
 
-    if len(sys.argv) == 2:
+    if len(sys.argv) == 3:
         agent = AgentDDPG(name=sys.argv[1])
-        agent.train()
+        if sys.argv[2] == 'play':
+            agent.play()
+        elif sys.argv[2] == 'train':
+            agent.train()
+        else:
+            print("correct usage: python train.py {name} [play or train]")
     else:
-        print("correct usage: python train.py {name}")
+        print("correct usage: python train.py {name} [play or train]")
