@@ -188,6 +188,16 @@ class AgentDDPG:
             'goalsBuffer': self.goalsBuffer.state_dict()
         }, self.path + '/checkpoint')
 
+        torch.save({
+            'valueNetDict': self.valueNet.state_dict(),
+            'policyNetDict': self.targetPolicyNet.state_dict(),
+            'targetValueNetDict': self.targetValueNet.state_dict(),
+            'targetPolicyNetDict': self.targetPolicyNet.state_dict(),
+            'nEpisodes': self.nEpisodes,
+            'goalsBuffer': self.goalsBuffer.state_dict()
+        }, self.path + '/checkpoint_' + str(self.nEpisodes))
+
+
 if __name__ == '__main__':
     try:
         if len(sys.argv) >= 3:
