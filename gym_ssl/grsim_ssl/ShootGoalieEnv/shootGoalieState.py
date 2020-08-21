@@ -46,16 +46,15 @@ class shootGoalieState:
     angle_right = toPiRange(angle(dist_right[0], dist_right[1]) + (math.pi - frame.robotsBlue[0].theta))
     return math.sin(angle_right), math.cos(angle_right)
 
-  def getDoalieCenterUnifiedAngle(self, frame):
+  def getGoalieCenterUnifiedAngle(self, frame):
     angle_c = toPiRange(angle(frame.robotsBlue[0].x - frame.robotsYellow[0].x, frame.robotsBlue[0].y - frame.robotsYellow[0].y))
     return angle_c
   
   def getGoalieCenterAngle(self, frame):
-    angle_c = self.getDoalieCenterUnifiedAngle(frame)
+    angle_c = self.getGoalieCenterUnifiedAngle(frame)
     return math.sin(angle_c), math.cos(angle_c)
 
   def getGoalieLeftAngle(self, frame):
-
     dist_left = [frame.robotsBlue[0].x - frame.robotsYellow[0].x, frame.robotsBlue[0].y - (frame.robotsYellow[0].y - ROBOT_RADIUS)]
     angle_left = toPiRange(angle(dist_left[0], dist_left[1]) + (math.pi - frame.robotsBlue[0].theta))
     return math.sin(angle_left), math.cos(angle_left)
