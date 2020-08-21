@@ -60,6 +60,9 @@ class AgentDDPG:
         # Init goals buffer
         self.goalsBuffer = AverageBuffer()
 
+        # Init rewars buffer
+        self.rewardsBuffer = AverageBuffer()
+
         # Steps per Seconds Parameters
         self.startTimeInEpisode  = 0.0
 
@@ -141,12 +144,14 @@ class AgentDDPG:
             if nStepsInEpisode > 1:
                 stepSeg = nStepsInEpisode/(time.time() - self.startTimeInEpisode)
 
+            self.rewardsBuffer.push(episodeReward)
             self.nEpisodes += 1
 
             self.writer.add_scalar('Train/Reward', episodeReward, self.nEpisodes)
             self.writer.add_scalar('Train/Steps', nStepsInEpisode, self.nEpisodes)
-            self.writer.add_scalar('Train/Goals_average_on_{}_previous_episode'.format(self.goalsBuffer.capacity), self.goalsBuffer.average(), self.nEpisodes)
+            self.writer.add_scalar('Train/Goals_average_on_{}_previous_episodes'.format(self.goalsBuffer.capacity), self.goalsBuffer.average(), self.nEpisodes)
             self.writer.add_scalar('Train/Steps_seconds',stepSeg, self.nEpisodes)
+            self.writer.add_scalar('Train/Reward_average_on_{}_previous_episodes'.format(self.rewardsBuffer.capacity), self.rewardsBuffer.average(), self.nEpisodes)
 
             # TODO arquivo separado a cada x passos
             if (self.nEpisodes % self.nEpisodesPerCheckpoint) == 0:
@@ -172,6 +177,7 @@ class AgentDDPG:
             self.targetValueNet.load_state_dict(checkpoint['targetValueNetDict'])
             self.targetPolicyNet.load_state_dict(checkpoint['targetPolicyNetDict'])
             self.goalsBuffer.load_state_dict(checkpoint['goalsBuffer'])
+            self.rewardsBuffer.load_state_dict(checkpoint['rewardsBuffer'])
             # Load number of episodes on checkpoint
             self.nEpisodes = checkpoint['nEpisodes']
             self.maxEpisodes += checkpoint['nEpisodes']
@@ -187,7 +193,8 @@ class AgentDDPG:
             'targetValueNetDict': self.targetValueNet.state_dict(),
             'targetPolicyNetDict': self.targetPolicyNet.state_dict(),
             'nEpisodes': self.nEpisodes,
-            'goalsBuffer': self.goalsBuffer.state_dict()
+            'goalsBuffer': self.goalsBuffer.state_dict(),
+            'rewardsBuffer': self.rewardsBuffer.state_dict()
         }, self.path + '/checkpoint')
 
         torch.save({
@@ -196,7 +203,8 @@ class AgentDDPG:
             'targetValueNetDict': self.targetValueNet.state_dict(),
             'targetPolicyNetDict': self.targetPolicyNet.state_dict(),
             'nEpisodes': self.nEpisodes,
-            'goalsBuffer': self.goalsBuffer.state_dict()
+            'goalsBuffer': self.goalsBuffer.state_dict(),
+            'rewardsBuffer': self.rewardsBuffer.state_dict()
         }, self.path + '/checkpoint_' + str(self.nEpisodes))
 
 
