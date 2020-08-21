@@ -56,6 +56,8 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         self.kickTargetAngle = None
         self.AttackerVw = None
         self.AtackerVKick = None
+        self.ball_x = None
+        self.ball_y = None
 
         print('Environment initialized')
 
@@ -63,8 +65,10 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         self.atkState = 0
         self.AttackerVw = np.random.uniform(0.4, 1.2)
         self.AtackerVKick = np.random.uniform(4.5, 6.5)
+        self.ball_x = np.random.uniform(-0.015,0.05)
+        self.ball_y = np.random.uniform(-0.03,0.03)
         # get a random target kick angle between -20 and 20 degrees
-        kickAngle = np.random.uniform(-0.445, 0.445)
+        kickAngle = np.random.uniform(-0.4, 0.4)
         if kickAngle < 0:
             self.kickTargetAngle = -3.14 - kickAngle
         else:
@@ -95,8 +99,9 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         return np.array(observation)
 
     def _getFormation(self):
+        # returns robot's and ball initial position        
         # ball penalty position
-        ball = Ball(x=-4.8, y=0.0)
+        ball = Ball(x=-4.8 + self.ball_x, y=0.0 + self.ball_y)
 
         robotPositions = []
         # Goalkeeper penalty position
