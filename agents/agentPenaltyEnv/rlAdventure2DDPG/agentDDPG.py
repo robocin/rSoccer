@@ -136,8 +136,10 @@ class AgentDDPG:
 
                 if done:
                     self.goalsBuffer.push(1 if reward < 0 else 0)
-                    stepSeg = nStepsInEpisode/(time.time() - self.startTimeInEpisode)
                     break
+            
+            if nStepsInEpisode > 1:
+                stepSeg = nStepsInEpisode/(time.time() - self.startTimeInEpisode)
 
             self.nEpisodes += 1
 
