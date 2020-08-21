@@ -1,141 +1,141 @@
 import gym
 import gym_ssl
-import numpy        as np
+import numpy as np
 
-from    torch.utils.tensorboard    import SummaryWriter
-import  torch.optim  as optim
-import  torch.nn     as nn
-import  torch
+from torch.utils.tensorboard import SummaryWriter
+import torch.optim as optim
+import torch.nn as nn
+import torch
 
 from agents.Utils.normalization import NormalizedWrapper
 from agents.Utils.networks import ValueNetwork, PolicyNetwork
 from agents.Utils.OUNoise import OUNoise
 from agents.Utils.replayBuffer import ReplayBuffer
 
-use_cuda = torch.cuda.is_available()
-print("use_cuda ->", use_cuda)
-device   = torch.device("cuda" if use_cuda else "cpu")
 
-writer = SummaryWriter()
+class AgentDDPG:
 
-max_Episodes  = 100000
-max_steps   = 200
-episode   = 0
-rewards     = []
-batch_size  = 256
-replay_buffer_size = 200000
+    def __init__(self,
+                 maxEpisodes=10000, maxSteps=200, batchSize=256, replayBufferSize=200000, valueLR=1e-3, policyLR=1e-4,
+                 hiddenDim=256):
+        # Training Parameters
+        self.batchSize = batchSize
+        self.maxSteps = maxSteps
+        self.maxEpisodes = maxEpisodes
+        self.episode = 0
 
-def ddpg_update(batch_size, 
+        # Check if cuda gpu is available, and select it
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        # Create Environment using a wrapper which scales actions and observations to [-1, 1]
+        self.env = NormalizedWrapper(gym.make("grSimSSLPenalty-v0"))
+
+        # Init action noise object
+        self.ouNoise = OUNoise(self.env.action_space)
+
+        # Init networks
+        stateDim = self.env.observation_space.shape[0]
+        actionDim = self.env.action_space.shape[0]
+        self.valueNet = ValueNetwork(stateDim, actionDim, hiddenDim).to(self.device)
+        self.policyNet = PolicyNetwork(stateDim, actionDim, hiddenDim, device=self.device).to(self.device)
+        self.targetValueNet = ValueNetwork(stateDim, actionDim, hiddenDim).to(self.device)
+        self.targetPolicyNet = PolicyNetwork(stateDim, actionDim, hiddenDim, device=self.device).to(self.device)
+        # Same initial parameters for target networks
+        for target_param, param in zip(self.targetValueNet.parameters(), self.valueNet.parameters()):
+            target_param.data.copy_(param.data)
+        for target_param, param in zip(self.targetPolicyNet.parameters(), self.policyNet.parameters()):
+            target_param.data.copy_(param.data)
+
+        # Init optimizers
+        self.valueOptimizer = optim.Adam(self.valueNet.parameters(), lr=valueLR)
+        self.policyOptimizer = optim.Adam(self.policyNet.parameters(), lr=policyLR)
+
+        # Init replay buffer
+        self.replayBuffer = ReplayBuffer(replayBufferSize)
+
+        # Tensorboard Init
+        self.path = './runs/'
+        # self._load
+        self.writer = SummaryWriter(log_dir=self.path)
+
+    def _update(self, batch_size,
                 gamma=0.99,
                 min_value=-np.inf,
                 max_value=np.inf,
                 soft_tau=1e-2):
-    
-    state, action, reward, next_state, done = replay_buffer.sample(batch_size)
-    
-    state      = torch.FloatTensor(state).to(device)
-    next_state = torch.FloatTensor(next_state).to(device)
-    action     = torch.FloatTensor(action).to(device)
-    reward     = torch.FloatTensor(reward).unsqueeze(1).to(device)
-    done       = torch.FloatTensor(np.float32(done)).unsqueeze(1).to(device)
+        state, action, reward, next_state, done = self.replayBuffer.sample(batch_size)
 
-    policy_loss = value_net(state, policy_net(state))
-    policy_loss = -policy_loss.mean()
+        state = torch.FloatTensor(state).to(self.device)
+        next_state = torch.FloatTensor(next_state).to(self.device)
+        action = torch.FloatTensor(action).to(self.device)
+        reward = torch.FloatTensor(reward).unsqueeze(1).to(self.device)
+        done = torch.FloatTensor(np.float32(done)).unsqueeze(1).to(self.device)
 
-    next_action    = target_policy_net(next_state)
-    target_value   = target_value_net(next_state, next_action.detach())
-    expected_value = reward + (1.0 - done) * gamma * target_value
-    expected_value = torch.clamp(expected_value, min_value, max_value)
+        policyLoss = self.valueNet(state, self.policyNet(state))
+        policyLoss = -policyLoss.mean()
 
-    value = value_net(state, action)
-    value_loss = value_criterion(value, expected_value.detach())
+        next_action = self.targetPolicyNet(next_state)
+        target_value = self.targetValueNet(next_state, next_action.detach())
+        expected_value = reward + (1.0 - done) * gamma * target_value
+        expected_value = torch.clamp(expected_value, min_value, max_value)
 
+        value = self.valueNet(state, action)
+        value_criterion = nn.MSELoss()
+        value_loss = value_criterion(value, expected_value.detach())
 
-    policy_optimizer.zero_grad()
-    policy_loss.backward()
-    policy_optimizer.step()
+        self.policyOptimizer.zero_grad()
+        policyLoss.backward()
+        self.policyOptimizer.step()
 
-    value_optimizer.zero_grad()
-    value_loss.backward()
-    value_optimizer.step()
+        self.valueOptimizer.zero_grad()
+        value_loss.backward()
+        self.valueOptimizer.step()
 
-    for target_param, param in zip(target_value_net.parameters(), value_net.parameters()):
+        for target_param, param in zip(self.targetValueNet.parameters(), self.valueNet.parameters()):
             target_param.data.copy_(
                 target_param.data * (1.0 - soft_tau) + param.data * soft_tau
             )
 
-    for target_param, param in zip(target_policy_net.parameters(), policy_net.parameters()):
+        for target_param, param in zip(self.targetPolicyNet.parameters(), self.policyNet.parameters()):
             target_param.data.copy_(
                 target_param.data * (1.0 - soft_tau) + param.data * soft_tau
             )
 
-if __name__ == "__main__":
-    env = NormalizedWrapper(gym.make("grSimSSLPenalty-v0"))
-    # env = gym.make("grSimSSLPenalty-v0")
+    # Training Loop
+    def train(self):
+        while self.episode < self.maxEpisodes:
+            state = self.env.reset()
+            self.ouNoise.reset()
+            episode_reward = 0
+            steps_episode = 0
 
-    ou_noise = OUNoise(env.action_space)
+            for step in range(self.maxSteps):
+                action = self.policyNet.get_action(state)
+                action = self.ouNoise.get_action(action, step)
+                next_state, reward, done, _ = self.env.step(action)
 
-    state_dim  = env.observation_space.shape[0]
-    action_dim = env.action_space.shape[0]
-    hidden_dim = 256
+                self.replayBuffer.push(state, action, reward, next_state, done)
+                if len(self.replayBuffer) > self.batchSize:
+                    self._update(self.batchSize)
 
-    value_net  = ValueNetwork(state_dim, action_dim, hidden_dim).to(device)
-    policy_net = PolicyNetwork(state_dim, action_dim, hidden_dim, device=device).to(device)
+                state = next_state
+                episode_reward += reward
 
-    target_value_net  = ValueNetwork(state_dim, action_dim, hidden_dim).to(device)
-    target_policy_net = PolicyNetwork(state_dim, action_dim, hidden_dim, device=device).to(device)
+                if done:
+                    steps_episode = step
+                    break
 
-    for target_param, param in zip(target_value_net.parameters(), value_net.parameters()):
-        target_param.data.copy_(param.data)
+            self.episode += 1
 
-    for target_param, param in zip(target_policy_net.parameters(), policy_net.parameters()):
-        target_param.data.copy_(param.data)
-        
-    value_lr  = 1e-3
-    policy_lr = 1e-4
+            # rewards.append(episode_reward)
 
-    value_optimizer  = optim.Adam(value_net.parameters(),  lr=value_lr)
-    policy_optimizer = optim.Adam(policy_net.parameters(), lr=policy_lr)
+            self.writer.add_scalar('Train/Reward', episode_reward, self.episode)
+            self.writer.add_scalar('Train/Steps', steps_episode, self.episode)
 
-    value_criterion = nn.MSELoss()
+            # if (episode % 1000) == 0:
+            #     torch.save({
+            #         'target_value_net_dict': target_value_net.state_dict(),
+            #         'target_policy_net_dict': target_policy_net.state_dict(),
+            #     }, './saved_networks')
 
-    replay_buffer = ReplayBuffer(replay_buffer_size)
-
-    while episode < max_Episodes:
-        state = env.reset()
-        ou_noise.reset()
-        episode_reward = 0
-        steps_episode = 0
-
-        for step in range(max_steps):
-            action = policy_net.get_action(state)
-            action = ou_noise.get_action(action, step)
-            next_state, reward, done, _ = env.step(action)
-            
-            replay_buffer.push(state, action, reward, next_state, done)
-            if len(replay_buffer) > batch_size:
-                ddpg_update(batch_size)
-            
-            state = next_state
-            episode_reward += reward
-            
-            if done:
-                steps_episode = step
-                break
-
-        episode += 1
-
-        # rewards.append(episode_reward)
-
-        writer.add_scalar('Train/Reward', episode_reward, episode)
-        writer.add_scalar('Train/Steps', steps_episode, episode)
-
-        if (episode % 1000) == 0:
-            torch.save({
-                'target_value_net_dict': target_value_net.state_dict(),
-                'target_policy_net_dict': target_policy_net.state_dict()
-            }, './saved_networks')
-
-    writer.flush()
-
-
+        self.writer.flush()
