@@ -15,6 +15,8 @@ class GrSimSSLEnv(gym.Env):
         self.observation_space = None
         self.state = None
         self.steps = 0
+        self.reward = 0
+        self.done = False
 
     def step(self, action):
         self.steps += 1
@@ -33,6 +35,8 @@ class GrSimSSLEnv(gym.Env):
 
     def reset(self):
         self.steps = 0
+        self.reward = 0
+        self.done = False
         # Place robots on reset positions
         resetRobotPositions, resetBallPosition = self._getFormation() 
         self.client.sendReplacementPacket(robotPositions=resetRobotPositions, ballPosition=resetBallPosition) 
