@@ -149,13 +149,7 @@ class AgentDDPG:
 
             # TODO arquivo separado a cada x passos
             if (self.nEpisodes % self.nEpisodesPerCheckpoint) == 0:
-                torch.save({
-                    'valueNetDict': self.valueNet.state_dict(),
-                    'policyNetDict': self.targetPolicyNet.state_dict(),
-                    'targetValueNetDict': self.targetValueNet.state_dict(),
-                    'targetPolicyNetDict': self.targetPolicyNet.state_dict(),
-                    'nEpisodes': self.nEpisodes
-                }, self.path + '/checkpoint')
+                self._save()
         self.writer.flush()
 
     # Playing loop
@@ -181,16 +175,29 @@ class AgentDDPG:
             print("Checkpoint with {} episodes successfully loaded".format(self.nEpisodes))
         else:
             print("No checkpoint loaded")
+    
+    def _save(self):
+        print("Save network parameters in episode ", self.nEpisodes)
+        torch.save({
+            'valueNetDict': self.valueNet.state_dict(),
+            'policyNetDict': self.targetPolicyNet.state_dict(),
+            'targetValueNetDict': self.targetValueNet.state_dict(),
+            'targetPolicyNetDict': self.targetPolicyNet.state_dict(),
+            'nEpisodes': self.nEpisodes
+        }, self.path + '/checkpoint')
 
 if __name__ == '__main__':
-
-    if len(sys.argv) == 3:
-        agent = AgentDDPG(name=sys.argv[1])
-        if sys.argv[2] == 'play':
-            agent.play()
-        elif sys.argv[2] == 'train':
-            agent.train()
+    try:
+        if len(sys.argv) >= 3:
+            agent = AgentDDPG(name=sys.argv[1])
+            if sys.argv[2] == 'play':
+                agent.play()
+            elif sys.argv[2] == 'train':
+                agent.train()
+            else:
+                print("correct usage: python train.py {name} [play or train]")
         else:
             print("correct usage: python train.py {name} [play or train]")
-    else:
-        print("correct usage: python train.py {name} [play or train]")
+    except KeyboardInterrupt:
+        if len(sys.argv) >= 4 and sys.argv[3] == '-cs':
+            agent._save()
