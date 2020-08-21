@@ -79,7 +79,7 @@ if __name__ == "__main__":
 
     state_dim  = env.observation_space.shape[0]
     action_dim = env.action_space.shape[0]
-    hidden_dim = 400
+    hidden_dim = 300
 
     value_net  = ValueNetwork(state_dim, action_dim, hidden_dim).to(device)
     policy_net = PolicyNetwork(state_dim, action_dim, hidden_dim, device=device).to(device)
@@ -119,7 +119,7 @@ if __name__ == "__main__":
                 ddpg_update(batch_size)
             
             state = next_state
-            episode_reward += reward
+            episode_reward = reward
             
             steps_episode += 1
 
@@ -139,4 +139,4 @@ if __name__ == "__main__":
             torch.save({
                 'target_value_net_dict': target_value_net.state_dict(),
                 'target_policy_net_dict': target_policy_net.state_dict()
-            }, './models/saved_networks_penalize')
+            }, './models/saved_networks_penalize_fix')
