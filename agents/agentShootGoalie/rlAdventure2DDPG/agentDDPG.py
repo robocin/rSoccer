@@ -131,13 +131,15 @@ class AgentDDPG:
                     self._update(self.batchSize)
 
                 state = next_state
-                episodeReward = reward
+                episodeReward += reward
                 nStepsInEpisode += 1
 
                 if done:
                     break
 
             self.nEpisodes += 1
+
+            print("DONE", episodeReward, nStepsInEpisode, self.env.unwrapped.state.ball.x, self.env.unwrapped.state.ball.x)
 
             # TODO trocar por lista circular
             # rewards.append(episodeReward)
@@ -163,9 +165,13 @@ class AgentDDPG:
             while True:
                 done = False
                 obs = self.env.reset()
-                while not done:
+                steps = 0
+                while not done and steps < self.maxSteps:
+                    steps += 1
                     action = self.policyNet.get_action(obs)
                     obs, reward, done, _ = self.env.step(action)
+
+                print("DONE", reward, steps, self.env.unwrapped.state.ball.x, self.env.unwrapped.state.ball.x)
         else:
             print("Correct usage: python train.py {name} (play | train)")
 

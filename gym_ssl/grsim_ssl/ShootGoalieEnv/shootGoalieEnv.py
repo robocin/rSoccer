@@ -64,9 +64,6 @@ class shootGoalieEnv(GrSimSSLEnv):
                                    math.pi, math.pi, math.pi, math.pi, math.pi, math.pi, math.pi, math.pi], dtype=np.float32)
     self.observation_space = gym.spaces.Box(low=-obsSpaceThresholds, high=obsSpaceThresholds)
     self.shootGoalieState = None
-    self.reward = 0
-    self.done = False
-
     self.goalieState = 0
 
     print('Environment initialized')
@@ -113,10 +110,11 @@ class shootGoalieEnv(GrSimSSLEnv):
     return [goalKeeper, attacker], ball
     
   def _calculateRewardsAndDoneFlag(self):
-    self.reward, self.done = self._penalizeRewardFunction(self.reward, self.done)
-    return self.reward, self.done
+    return self._penalizeRewardFunction()
 
-  def _firstRewardFunction(self, reward, done):
+  def _firstRewardFunction(self):
+    reward = 0
+    done = False
     if self.state.ball.x < -6000:
       # the ball out the field limits
       done = True
@@ -135,14 +133,15 @@ class shootGoalieEnv(GrSimSSLEnv):
       reward = -1
     return reward, done
 
-  def _penalizeRewardFunction(self, reward, done):
-    reward -= 0.01
+  def _penalizeRewardFunction(self):
+    reward = -0.01
+    done = False
     if self.state.ball.x < -6000:
       # the ball out the field limits
       done = True
       if self.state.ball.y < 600 and self.state.ball.y > -600:
           # ball entered the goal
-          reward += 2
+          reward = 2
     return reward, done
 
 
