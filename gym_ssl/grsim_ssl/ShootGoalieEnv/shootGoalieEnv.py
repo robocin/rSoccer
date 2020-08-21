@@ -64,8 +64,6 @@ class shootGoalieEnv(GrSimSSLEnv):
                                    math.pi, math.pi, math.pi, math.pi, math.pi, math.pi, math.pi, math.pi], dtype=np.float32)
     self.observation_space = gym.spaces.Box(low=-obsSpaceThresholds, high=obsSpaceThresholds)
     self.shootGoalieState = None
-    self.reward = 0
-    self.done = False
 
     self.goalieState = 0
 
@@ -104,7 +102,7 @@ class shootGoalieEnv(GrSimSSLEnv):
 
   def _getFormation(self):
     # ball penalty position
-    ball = Ball(x=-4.1, y=0, vx=0, vy=0)
+    ball = Ball(x=-4.099, y=0, vx=0, vy=0)
     # Goalkeeper penalty position
     goalKeeper = Robot(id=0, x=-6, y=0, theta=0, yellow = True)
     # Kicker penalty position
@@ -113,7 +111,8 @@ class shootGoalieEnv(GrSimSSLEnv):
     return [goalKeeper, attacker], ball
     
   def _calculateRewardsAndDoneFlag(self):
-    return self._penalizeRewardFunction(self.reward, self.done)
+    self.reward, self.done = self._penalizeRewardFunction(self.reward, self.done)
+    return self.reward, self.done
 
   def _firstRewardFunction(self, reward, done):
     if self.state.ball.x < -6000:
