@@ -62,7 +62,6 @@ class AgentDDPG:
 
         # Steps per Seconds Parameters
         self.startTimeInEpisode  = 0.0
-        self.doneTimeInEpisode = 0.0
 
         # Tensorboard Init
         self.path = './runs/' + name
@@ -114,12 +113,12 @@ class AgentDDPG:
 
     # Training Loop
     def train(self):
-        # TODO pausar treino quando apertar algum botão e salvar estado
         while self.nEpisodes < self.maxEpisodes:
             state = self.env.reset()
             self.ouNoise.reset()
             episodeReward = 0
             nStepsInEpisode = 0
+            stepSeg = -1
             self.startTimeInEpisode = time.time()
 
             while nStepsInEpisode < self.maxSteps:
@@ -137,7 +136,7 @@ class AgentDDPG:
 
                 if done:
                     self.goalsBuffer.push(1 if reward < 0 else 0)
-                    self.doneTimeInEpisode = time.time()
+                    stepSeg = nStepsInEpisode/(time.time() - self.startTimeInEpisode)
                     break
 
             self.nEpisodes += 1
@@ -145,7 +144,7 @@ class AgentDDPG:
             self.writer.add_scalar('Train/Reward', episodeReward, self.nEpisodes)
             self.writer.add_scalar('Train/Steps', nStepsInEpisode, self.nEpisodes)
             self.writer.add_scalar('Train/Goals_average_on_{}_previous_episode'.format(self.goalsBuffer.capacity), self.goalsBuffer.average(), self.nEpisodes)
-            self.writer.add_scalar('Train/Steps_seconds', nStepsInEpisode/(self.doneTimeInEpisode - self.startTimeInEpisode), self.nEpisodes)
+            self.writer.add_scalar('Train/Steps_seconds',stepSeg, self.nEpisodes)
 
             # TODO arquivo separado a cada x passos
             if (self.nEpisodes % self.nEpisodesPerCheckpoint) == 0:
@@ -172,6 +171,7 @@ class AgentDDPG:
             self.targetPolicyNet.load_state_dict(checkpoint['targetPolicyNetDict'])
             # Load number of episodes on checkpoint
             self.nEpisodes = checkpoint['nEpisodes']
+            self.maxEpisodes += checkpoint['nEpisodes']
             print("Checkpoint with {} episodes successfully loaded".format(self.nEpisodes))
         else:
             print("No checkpoint loaded")
