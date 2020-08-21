@@ -169,6 +169,7 @@ class AgentDDPG:
             self.policyNet.load_state_dict(checkpoint['policyNetDict'])
             self.targetValueNet.load_state_dict(checkpoint['targetValueNetDict'])
             self.targetPolicyNet.load_state_dict(checkpoint['targetPolicyNetDict'])
+            self.goalsBuffer.load_state_dict(checkpoint['goalsBuffer'])
             # Load number of episodes on checkpoint
             self.nEpisodes = checkpoint['nEpisodes']
             self.maxEpisodes += checkpoint['nEpisodes']
@@ -183,7 +184,8 @@ class AgentDDPG:
             'policyNetDict': self.targetPolicyNet.state_dict(),
             'targetValueNetDict': self.targetValueNet.state_dict(),
             'targetPolicyNetDict': self.targetPolicyNet.state_dict(),
-            'nEpisodes': self.nEpisodes
+            'nEpisodes': self.nEpisodes,
+            'goalsBuffer': self.goalsBuffer.state_dict()
         }, self.path + '/checkpoint')
 
 if __name__ == '__main__':
