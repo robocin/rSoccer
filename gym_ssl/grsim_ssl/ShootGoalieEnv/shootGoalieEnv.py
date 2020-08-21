@@ -102,7 +102,7 @@ class shootGoalieEnv(GrSimSSLEnv):
 
   def _getFormation(self):
     # ball penalty position
-    ball = Ball(x=-4.099, y=0, vx=0, vy=0)
+    ball = Ball(x=-4.1, y=0, vx=0, vy=0)
     # Goalkeeper penalty position
     goalKeeper = Robot(id=0, x=-6, y=0, theta=0, yellow = True)
     # Kicker penalty position
@@ -140,7 +140,7 @@ class shootGoalieEnv(GrSimSSLEnv):
       done = True
       if self.state.ball.y < 600 and self.state.ball.y > -600:
           # ball entered the goal
-          reward += 1.5
+          reward += 2
     return reward, done
 
 
