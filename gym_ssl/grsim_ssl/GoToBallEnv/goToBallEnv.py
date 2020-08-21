@@ -1,5 +1,5 @@
 import gym
-import math
+from math import *
 import numpy as np
 import time
 import random
@@ -114,17 +114,19 @@ class goToBallEnv(GrSimSSLEnv):
       # the ball out the field limits
       done = True
       rewardContact += 0
-      rewardDistance += (5 / pow(2 * math.pi, 1 / 2)) * math.exp(-(self.goToBallState.distance**2 + self.goToBallState.angle_relative**2) / 2) - 2
+      rewardDistance += (5 / pow(2 * math.pi, 1 / 2)) * math.exp(-((self.goToBallState.distance*0.001)**2 + self.goToBallState.angle_relative**2) / 2) - 2
     elif  self.steps > 250:
       #finished the episode
       done = True
-      if self.goToBallState.distance <= 0.080:
+      if (self.goToBallState.distance*0.001) <= 0.080:
         rewardContact += 100
-      rewardDistance += (5 / pow(2 * math.pi, 1 / 2)) * math.exp(-(self.goToBallState.distance**2 + self.goToBallState.angle_relative**2) / 2) - 2
+      rewardDistance += (5 / pow(2 * math.pi, 1 / 2)) * math.exp(-((self.goToBallState.distance*0.001)**2 + self.goToBallState.angle_relative**2) / 2) - 2
     else:
       # the ball in the field limits
-      if self.goToBallState.distance <= 0.080:
+      if (self.goToBallState.distance*0.001) <= 0.080:
         rewardContact += 100
-      rewardDistance += (5 / pow(2 * math.pi, 1 / 2)) * math.exp(-(self.goToBallState.distance**2 + self.goToBallState.angle_relative**2) / 2) - 2 
+      rewardDistance += (5 / pow(2 * math.pi, 1 / 2)) * math.exp(-((self.goToBallState.distance*0.001)**2 + self.goToBallState.angle_relative**2) / 2) - 2 
+
     reward = rewardContact + rewardDistance
+    #print(reward)
     return reward, done
