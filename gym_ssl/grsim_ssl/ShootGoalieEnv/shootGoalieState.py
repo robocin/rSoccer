@@ -47,8 +47,9 @@ class shootGoalieState:
     return math.sin(angle_right), math.cos(angle_right)
 
   def getGoalieCenterUnifiedAngle(self, frame):
-    angle_c = toPiRange(angle(frame.robotsBlue[0].x - frame.robotsYellow[0].x, frame.robotsBlue[0].y - frame.robotsYellow[0].y))
-    return angle_c
+    dist_g = [frame.robotsBlue[0].x - frame.robotsYellow[0].x, frame.robotsBlue[0].y - frame.robotsYellow[0].y]
+    angle_g = toPiRange(angle(dist_g[0], dist_g[1]) + (math.pi - frame.robotsBlue[0].theta))
+    return angle_g
   
   def getGoalieCenterAngle(self, frame):
     angle_c = self.getGoalieCenterUnifiedAngle(frame)
@@ -64,11 +65,27 @@ class shootGoalieState:
     angle_right = toPiRange(angle(dist_right[0], dist_right[1]) + (math.pi - frame.robotsBlue[0].theta))
     return math.sin(angle_right), math.cos(angle_right)
   
+  def getBallLocalCoordinates(self, frame):
+    robot_ball = [frame.robotsBlue[0].x - frame.ball.x, frame.robotsBlue[0].y - frame.ball.y]
+    mod_to_ball = mod(robot_ball[0], robot_ball[1])
+    angle_to_ball = toPiRange(angle(robot_ball[0], robot_ball[1]) + (math.pi - frame.robotsBlue[0].theta))
+    robot_ball_x = mod_to_ball* math.cos(angle_to_ball)
+    robot_ball_y = mod_to_ball* math.sin(angle_to_ball)
+    return robot_ball_x, robot_ball_y
+  
+  def getBallLocalSpeed(self, frame):
+    robot_ball = [frame.robotsBlue[0].vx - frame.ball.vx, frame.robotsBlue[0].vy - frame.ball.vy]
+    mod_to_ball = mod(robot_ball[0], robot_ball[1])
+    angle_to_ball = toPiRange(angle(robot_ball[0], robot_ball[1]) + (math.pi - frame.robotsBlue[0].theta))
+    robot_ball_vx = mod_to_ball* math.cos(angle_to_ball)
+    robot_ball_vy = mod_to_ball* math.sin(angle_to_ball)
+    return robot_ball_vx, robot_ball_vy
+
+  
   def getObservation(self, frame):
-    self.ball_x = frame.ball.x
-    self.ballY = frame.ball.y
-    self.ball_vx = frame.ball.vx
-    self.ball_vy = frame.ball.vy
+
+    self.ball_x, self.ballY = self.getBallLocalCoordinates(frame)
+    self.ball_vx, self.ball_vy = self.getBallLocalSpeed(frame)
     
     self.distance = self.getDistance(frame)
     self.robot_w = frame.robotsBlue[0].vw
