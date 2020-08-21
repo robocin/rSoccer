@@ -54,12 +54,15 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         self.observation_space = gym.spaces.Box(low=-obsSpaceThresholds, high=obsSpaceThresholds)
         self.atkState = None
         self.kickTargetAngle = None
+        self.AttackerVw = None
+        self.AtackerVKick = None
 
         print('Environment initialized')
 
     def reset(self):
         self.atkState = 0
-
+        self.AttackerVw = np.random.uniform(0.4, 1.2)
+        self.AtackerVKick = np.random.uniform(4.5, 6.5)
         # get a random target kick angle between -20 and 20 degrees
         kickAngle = np.random.uniform(-0.445, 0.445)
         if kickAngle < 0:
@@ -106,13 +109,12 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
     def _getAttackerCommand(self):
         cmdAttacker = Robot(yellow=True, id=0, dribbler=True)
 
-        vw = 0.4    # attacker rotation speed
-        vx = 0.7    # attacker movement speed
-        vkick = 4   # attacker kick speed
+        # attacker movement speed
+        vx = np.clip(((-2) * (self.state.ball.x - self.state.robotsYellow[0].x) * (0.001)), 0.2, 1.5)
 
         # If atkState == 0 -> move to ball
         if self.atkState == 0:
-            if self.state.robotsYellow[0].x < -4725:
+            if self.state.robotsYellow[0].x <= -4700:
                 cmdAttacker.vx = 0.0
                 if self.kickTargetAngle < 0:
                     self.atkState = 1
@@ -124,24 +126,24 @@ class GrSimSSLPenaltyEnv(GrSimSSLEnv):
         if self.atkState == 1:
             self.atkState = 0
             if -(abs(self.state.robotsYellow[0].theta)) < self.kickTargetAngle:
-                cmdAttacker.vw = vw
+                cmdAttacker.vw = self.AttackerVw
                 cmdAttacker.vx = 0.0
             else:
                 cmdAttacker.dribbler = False
                 cmdAttacker.vw = 0.0
                 cmdAttacker.vx = 0.0
-                cmdAttacker.kickVx = vkick
+                cmdAttacker.kickVx = self.AtackerVKick
         # If atkState == 2 -> rotate clockwise until kick angle        
         if self.atkState == 2:
             self.atkState = 0
             if abs(self.state.robotsYellow[0].theta) > self.kickTargetAngle:
-                cmdAttacker.vw = -vw
+                cmdAttacker.vw = -self.AttackerVw
                 cmdAttacker.vx = 0.0
             else:
                 cmdAttacker.dribbler = False
                 cmdAttacker.vw = 0.0
                 cmdAttacker.vx = 0.0
-                cmdAttacker.kickVx = vkick
+                cmdAttacker.kickVx = self.AtackerVKick
 
         return cmdAttacker
 
