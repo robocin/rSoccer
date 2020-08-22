@@ -63,9 +63,6 @@ class AgentDDPG:
         # Init rewars buffer
         self.rewardsBuffer = AverageBuffer()
 
-        # Steps per Seconds Parameters
-        self.startTimeInEpisode  = 0.0
-
         # Tensorboard Init
         self.path = './runs/' + name
         self._load()
@@ -122,7 +119,7 @@ class AgentDDPG:
             episodeReward = 0
             nStepsInEpisode = 0
             stepSeg = -1
-            self.startTimeInEpisode = time.time()
+            startTimeInEpisode = time.time()
 
             while nStepsInEpisode < self.maxSteps:
                 action = self.policyNet.get_action(state)
@@ -142,7 +139,7 @@ class AgentDDPG:
                     break
             
             if nStepsInEpisode > 1:
-                stepSeg = nStepsInEpisode/(time.time() - self.startTimeInEpisode)
+                stepSeg = nStepsInEpisode/(time.time() - startTimeInEpisode)
 
             self.rewardsBuffer.push(episodeReward)
             self.nEpisodes += 1
@@ -153,9 +150,9 @@ class AgentDDPG:
             self.writer.add_scalar('Train/Steps_seconds',stepSeg, self.nEpisodes)
             self.writer.add_scalar('Train/Reward_average_on_{}_previous_episodes'.format(self.rewardsBuffer.capacity), self.rewardsBuffer.average(), self.nEpisodes)
 
-            # TODO arquivo separado a cada x passos
             if (self.nEpisodes % self.nEpisodesPerCheckpoint) == 0:
                 self._save()
+
         self.writer.flush()
 
     # Playing loop
@@ -217,9 +214,9 @@ if __name__ == '__main__':
             elif sys.argv[2] == 'train':
                 agent.train()
             else:
-                print("correct usage: python train.py {name} [play or train]")
+                print("correct usage: python agentDDPG.py {name} (play or train) [-cs]")
         else:
-            print("correct usage: python train.py {name} [play or train]")
+            print("correct usage: python agentDDPG.py {name} (play or train) [-cs]")
     except KeyboardInterrupt:
         if len(sys.argv) >= 4 and sys.argv[3] == '-cs':
             agent._save()
