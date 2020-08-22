@@ -21,7 +21,12 @@ class grSimClient:
         self.commandPort = commandPort
 
         # Connect vision and command sockets
-        self.visionSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.visionSocket = socket.socket(
+            socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        self.visionSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.visionSocket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 128)
+        self.visionSocket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 1)
+
         self.commandSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.visionSocket.bind((self.visionIp, self.visionPort))
         self.commandAddress = (self.commandIp, self.commandPort)
