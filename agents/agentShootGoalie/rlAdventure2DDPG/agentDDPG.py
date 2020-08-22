@@ -3,6 +3,7 @@ import gym_ssl
 import numpy as np
 import os
 import sys
+import time
 
 from torch.utils.tensorboard import SummaryWriter
 import torch.optim as optim
@@ -12,7 +13,7 @@ import torch
 from agents.Utils.Normalization import NormalizedWrapper
 from agents.Utils.Networks import ValueNetwork, PolicyNetwork
 from agents.Utils.OUNoise import OUNoise
-from agents.Utils.ReplayBuffer import ReplayBuffer
+from agents.Utils.ReplayBuffer import ReplayBuffer, AverageBuffer
 
 
 class AgentDDPG:
@@ -56,6 +57,15 @@ class AgentDDPG:
 
         # Init replay buffer
         self.replayBuffer = ReplayBuffer(replayBufferSize)
+
+         # Init goals buffer
+        self.goalsBuffer = AverageBuffer()
+
+        # Init rewars buffer
+        self.rewardsBuffer = AverageBuffer()
+
+        # Steps per Seconds Parameters
+        self.startTimeInEpisode  = 0.0
 
         # Tensorboard Init
         self.path = './runs/' + name
@@ -114,12 +124,13 @@ class AgentDDPG:
 
     # Training Loop
     def train(self):
-        # TODO pausar treino quando apertar algum botão e salvar estado
         while self.nEpisodes < self.maxEpisodes:
             state = self.env.reset()
             self.ouNoise.reset()
             episodeReward = 0
             nStepsInEpisode = 0
+            stepSeg = -1
+            self.startTimeInEpisode = time.time()
 
             while nStepsInEpisode < self.maxSteps:
                 action = self.policyNet.get_action(state)
@@ -135,27 +146,27 @@ class AgentDDPG:
                 nStepsInEpisode += 1
 
                 if done:
-                    break
+                    self.goalsBuffer.push(1 if reward < 0 else 0)
+                    break   
+            
 
+            if nStepsInEpisode > 1:
+                stepSeg = nStepsInEpisode/(time.time() - self.startTimeInEpisode)
+
+            self.rewardsBuffer.push(episodeReward)
             self.nEpisodes += 1
-
-            print("DONE", episodeReward, nStepsInEpisode, self.env.unwrapped.state.ball.x, self.env.unwrapped.state.ball.x)
 
             # TODO trocar por lista circular
             # rewards.append(episodeReward)
 
             self.writer.add_scalar('Train/Reward', episodeReward, self.nEpisodes)
             self.writer.add_scalar('Train/Steps', nStepsInEpisode, self.nEpisodes)
+            self.writer.add_scalar('Train/Goals_average_on_{}_previous_episodes'.format(self.goalsBuffer.capacity), self.goalsBuffer.average(), self.nEpisodes)
+            self.writer.add_scalar('Train/Steps_seconds',stepSeg, self.nEpisodes)
+            self.writer.add_scalar('Train/Reward_average_on_{}_previous_episodes'.format(self.rewardsBuffer.capacity), self.rewardsBuffer.average(), self.nEpisodes)
 
-            # TODO arquivo separado a cada x passos
             if (self.nEpisodes % self.nEpisodesPerCheckpoint) == 0:
-                torch.save({
-                    'valueNetDict': self.valueNet.state_dict(),
-                    'policyNetDict': self.targetPolicyNet.state_dict(),
-                    'targetValueNetDict': self.targetValueNet.state_dict(),
-                    'targetPolicyNetDict': self.targetPolicyNet.state_dict(),
-                    'nEpisodes': self.nEpisodes
-                }, self.path + '/checkpoint')
+                self._save()
 
         self.writer.flush()
 
@@ -170,8 +181,6 @@ class AgentDDPG:
                     steps += 1
                     action = self.policyNet.get_action(obs)
                     obs, reward, done, _ = self.env.step(action)
-
-                print("DONE", reward, steps, self.env.unwrapped.state.ball.x, self.env.unwrapped.state.ball.x)
         else:
             print("Correct usage: python train.py {name} (play | train)")
 
@@ -192,15 +201,41 @@ class AgentDDPG:
             print("- No checkpoint " + self.path + '/checkpoint' + " loaded!")
             return False
 
-if __name__ == '__main__':
+    def _save(self):
+        print("Save network parameters in episode ", self.nEpisodes)
+        torch.save({
+            'valueNetDict': self.valueNet.state_dict(),
+            'policyNetDict': self.targetPolicyNet.state_dict(),
+            'targetValueNetDict': self.targetValueNet.state_dict(),
+            'targetPolicyNetDict': self.targetPolicyNet.state_dict(),
+            'nEpisodes': self.nEpisodes,
+            'goalsBuffer': self.goalsBuffer.state_dict(),
+            'rewardsBuffer': self.rewardsBuffer.state_dict()
+        }, self.path + '/checkpoint')
 
-    if len(sys.argv) == 3:
-        agent = AgentDDPG(name=sys.argv[1])
-        if sys.argv[2] == 'play':
-            agent.play()
-        elif sys.argv[2] == 'train':
-            agent.train()
+        torch.save({
+            'valueNetDict': self.valueNet.state_dict(),
+            'policyNetDict': self.targetPolicyNet.state_dict(),
+            'targetValueNetDict': self.targetValueNet.state_dict(),
+            'targetPolicyNetDict': self.targetPolicyNet.state_dict(),
+            'nEpisodes': self.nEpisodes,
+            'goalsBuffer': self.goalsBuffer.state_dict(),
+            'rewardsBuffer': self.rewardsBuffer.state_dict()
+        }, self.path + '/checkpoint_' + str(self.nEpisodes))
+
+
+if __name__ == '__main__':
+    try:
+        if len(sys.argv) >= 3:
+            agent = AgentDDPG(name=sys.argv[1])
+            if sys.argv[2] == 'play':
+                agent.play()
+            elif sys.argv[2] == 'train':
+                agent.train()
+            else:
+                print("correct usage: python train.py {name} (play | train) [-cs]")
         else:
-            print("Correct usage: python train.py {name} (play | train)")
-    else:
-        print("Correct usage: python train.py {name} (play | train)")
+            print("correct usage: python train.py {name} (play | train) [-cs]")
+    except KeyboardInterrupt:
+        if len(sys.argv) >= 4 and sys.argv[3] == '-cs':
+            agent._save()
