@@ -70,13 +70,7 @@ class AgentDDPG:
         # Tensorboard Init
         self.path = './runs/' + name
         self.loadedModel = self._load()
-        if sys.argv[2] == 'train':
-            import socket
-            from datetime import datetime
-            current_time = datetime.now().strftime('%b%d_%H-%M-%S')
-            log_dir = os.path.join(
-                self.path, current_time + '_' + socket.gethostname())
-            self.writer = SummaryWriter(log_dir=log_dir)
+        self.writer = SummaryWriter(log_dir=self.path)
         
 
     def _update(self, batch_size,
@@ -146,7 +140,7 @@ class AgentDDPG:
                 nStepsInEpisode += 1
 
                 if done:
-                    self.goalsBuffer.push(1 if reward < 0 else 0)
+                    self.goalsBuffer.push(1 if reward > 0 else 0)
                     break   
             
 

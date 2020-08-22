@@ -8,3 +8,4 @@ __pycache__
 .idea/
 *.0
 runs/*
+agents/agentShootGoalie/rlAdventure2DDPG/runs/*
