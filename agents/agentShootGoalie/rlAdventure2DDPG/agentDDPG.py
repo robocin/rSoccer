@@ -182,7 +182,7 @@ class AgentDDPG:
                     action = self.policyNet.get_action(obs)
                     obs, reward, done, _ = self.env.step(action)
         else:
-            print("Correct usage: python train.py {name} (play | train)")
+            print("Correct usage: python train.py {name} (play | train) [-cs]")
 
     def _load(self):
         # Check if checkpoint file exists

@@ -7,4 +7,4 @@ pb/*
 __pycache__
 .idea/
 *.0
-*/runs/*
+runs/*
