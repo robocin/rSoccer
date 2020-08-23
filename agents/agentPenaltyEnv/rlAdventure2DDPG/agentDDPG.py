@@ -13,7 +13,7 @@ import torch
 from agents.Utils.Normalization import NormalizedWrapper
 from agents.Utils.Networks import ValueNetwork, PolicyNetwork
 from agents.Utils.OUNoise import OUNoise
-from agents.Utils.buffers import ReplayBuffer, AverageBuffer
+from agents.Utils.Buffers import ReplayBuffer, AverageBuffer
 
 
 class AgentDDPG:

@@ -91,6 +91,12 @@ class shootGoalieEnv(GrSimSSLEnv):
 
     return commands
 
+  def reset(self):
+    # Remove ball from Robot
+    self.client.sendCommandsPacket([Robot(yellow=False, id = 0, kickVx=3), Robot(yellow=True, id = 0, kickVx=3)]) 
+    self.client.receiveState()
+    return super().reset()
+
   def _parseObservationFromState(self):
     observation = []
 
