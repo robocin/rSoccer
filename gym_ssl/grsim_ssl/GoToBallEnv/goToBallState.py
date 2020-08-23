@@ -60,14 +60,56 @@ class goToBallState:
     return pos_x, pos_y  
 
   def getRelativeRobotToBallAngle(self, frame):
-    dist_left = [frame.ball.x - frame.robotsBlue[0].x, frame.ball.y - frame.robotsBlue[0].y]
-    angle_left = toPiRange(angle(dist_left[0], dist_left[1]) - frame.robotsBlue[0].theta)
-    #print(angle_left)
-    return angle_left
+    #dist_left = [abs(frame.ball.x - frame.robotsBlue[0].x), abs(frame.ball.y - frame.robotsBlue[0].y)]
+    #angle_ball = angle(dist_left[0], dist_left[1])
+    # print(angle_ball)
+    # if frame.robotsBlue[0].theta * frame.ball.y >=0:
+    #   # the direction of the robot and the position of the ball are both in the same side of the fild (top or bottom)
+    #   angle_relative = 
+    # print(frame.robotsBlue[0].theta)
+    #sign = lambda x: (1, -1)[x<0]
+    #if frame.ball.x <= frame.robotsBlue[0].x:
+    #
+    #  if sign(frame.ball.y) ^ sign(frame.robotsBlue[0].y) >= 0:
+    #    #if both values have the same signal
+    #    angle_relative = abs(angle_ball - (math.pi - abs(frame.robotsBlue[0].theta)))
+    #  else:
+    #    angle_relative = abs(angle_ball + (math.pi - abs(frame.robotsBlue[0].theta)))
+    #else:
+    #  if sign(frame.ball.y) ^ sign(frame.robotsBlue[0].y) >= 0: 
+    #    angle_relative = abs(abs(frame.robotsBlue[0].theta) - angle_ball)
+    #  else:
+    #    angle_relative = abs(abs(frame.robotsBlue[0].theta) + angle_ball)
+    #
+    #print(angle_relative)
+    #
+    robot_ball = [frame.robotsBlue[0].x - frame.ball.x, frame.robotsBlue[0].y - frame.ball.y]
+    angle_to_ball = toPiRange(angle(robot_ball[0], robot_ball[1]) + (math.pi - frame.robotsBlue[0].theta))
+    #print(angle_to_ball)
+    return angle_to_ball
+
+  def getBallLocalCoordinates(self, frame):
+    robot_ball = [frame.robotsBlue[0].x - frame.ball.x, frame.robotsBlue[0].y - frame.ball.y]
+    mod_to_ball = mod(robot_ball[0], robot_ball[1])
+    angle_to_ball = toPiRange(angle(robot_ball[0], robot_ball[1]) + (math.pi - frame.robotsBlue[0].theta))
+    robot_ball_x = mod_to_ball* math.cos(angle_to_ball)
+    robot_ball_y = mod_to_ball* math.sin(angle_to_ball)
+    return robot_ball_x, robot_ball_y
+  
+  def getBallLocalSpeed(self, frame):
+    robot_ball = [frame.robotsBlue[0].vx - frame.ball.vx, frame.robotsBlue[0].vy - frame.ball.vy]
+    mod_to_ball = mod(robot_ball[0], robot_ball[1])
+    angle_to_ball = toPiRange(angle(robot_ball[0], robot_ball[1]) + (math.pi - frame.robotsBlue[0].theta))
+    robot_ball_vx = mod_to_ball* math.cos(angle_to_ball)
+    robot_ball_vy = mod_to_ball* math.sin(angle_to_ball)
+    return robot_ball_vx, robot_ball_vy
+
+
+    
   
   def getObservation(self, frame):
-    self.ball_x = frame.ball.x
-    self.ball_y = frame.ball.y
+    self.ball_x, self.ball_y = self.getBallLocalCoordinates(frame)
+    self.ball_vx, self.ball_vy = self.getBallLocalSpeed(frame)
     self.robot_vx = frame.robotsBlue[0].vx
     self.robot_vy = frame.robotsBlue[0].vy
     

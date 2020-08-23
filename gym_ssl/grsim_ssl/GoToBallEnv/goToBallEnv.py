@@ -64,6 +64,7 @@ class goToBallEnv(GrSimSSLEnv):
                                    10000, 10000, 10000, 10000, 10000, 10000], dtype=np.float32)
     self.observation_space = gym.spaces.Box(low=-obsSpaceThresholds, high=obsSpaceThresholds)
     self.goToballState = None
+
     print('Environment initialized')
   
   def _getCommands(self, actions):
@@ -92,15 +93,15 @@ class goToBallEnv(GrSimSSLEnv):
     #To CHANGE: 
     # ball penalty position
     ball = Ball(x=random.uniform(-4, 0), y=random.uniform(-4, 4), vx=0, vy=0)
-    #ball = Ball(x=-6, y=0, vx=0, vy=0)
+    #ball = Ball(x=random.uniform(-6,-3.5), y=random.uniform(-1.5, 1.5), vx=0, vy=0)
     
     # Goalkeeper penalty position
-    goalKeeper = Robot(id=0, x=-6, y=0, theta=0, yellow = True)
-    #goalKeeper = Robot(id=0, x=-6, y=1, theta=0, yellow = True)
+    #goalKeeper = Robot(id=0, x=-6, y=0, theta=0, yellow = True)
+    goalKeeper = Robot(id=0, x=6, y=1, theta=0, yellow = True)
 
     # Kicker penalty position
-    attacker = Robot(id=0, x=random.uniform(-3.5, 0), y=random.uniform(-4, 4), theta=180, yellow = False)
-    #attacker = Robot(id=0, x=6, y=0, theta=180, yellow=False)
+    #attacker = Robot(id=0, x=random.uniform(-3.5, 0), y=random.uniform(-4, 4), theta=180, yellow = False)
+    attacker = Robot(id=0, x=random.uniform(-3,-1), y=random.uniform(-2.5, 2.5), theta=180, yellow = False)
 
     return [goalKeeper, attacker], ball
     
@@ -110,22 +111,32 @@ class goToBallEnv(GrSimSSLEnv):
     rewardDistance = 0
     done = False
 
+    
+    
+
+    rewardDistance += (5 / pow(2 * math.pi, 1 / 2)) * math.exp(-((self.goToBallState.distance*0.001)**2 + self.goToBallState.angle_relative**2) / 2) - 2
+    
+
+    self.distAnt = self.goToBallState.distance
+    self.timestampAnt = self.state.timestamp
+
     if self.state.ball.x < -6000 or self.state.ball.y > 4500 or self.state.ball.y < -4500:
       # the ball out the field limits
       done = True
       rewardContact += 0
-      rewardDistance += (5 / pow(2 * math.pi, 1 / 2)) * math.exp(-((self.goToBallState.distance*0.001)**2 + self.goToBallState.angle_relative**2) / 2) - 2
+      
     elif  self.steps > 250:
       #finished the episode
       done = True
-      if (self.goToBallState.distance*0.001) <= 0.080:
+      if (self.goToBallState.distance*0.001 <= 0.095 and abs(self.goToBallState.angle_relative)<0.33):
         rewardContact += 100
-      rewardDistance += (5 / pow(2 * math.pi, 1 / 2)) * math.exp(-((self.goToBallState.distance*0.001)**2 + self.goToBallState.angle_relative**2) / 2) - 2
+      #rewardDistance += (5 / pow(2 * math.pi, 1 / 2)) * math.exp(-((self.goToBallState.distance*0.001)**2 + self.goToBallState.angle_relative**2) / 2) - 2
     else:
       # the ball in the field limits
-      if (self.goToBallState.distance*0.001) <= 0.080:
+      if (self.goToBallState.distance*0.001 <= 0.095 and abs(self.goToBallState.angle_relative)<0.33) :
+        done = True
         rewardContact += 100
-      rewardDistance += (5 / pow(2 * math.pi, 1 / 2)) * math.exp(-((self.goToBallState.distance*0.001)**2 + self.goToBallState.angle_relative**2) / 2) - 2 
+      #rewardDistance += (5 / pow(2 * math.pi, 1 / 2)) * math.exp(-((self.goToBallState.distance*0.001)**2 + self.goToBallState.angle_relative**2) / 2) - 2 
 
     reward = rewardContact + rewardDistance
     #print(reward)
