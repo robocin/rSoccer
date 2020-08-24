@@ -84,15 +84,7 @@ class shootGoalieEnv(GrSimSSLEnv):
       vy = 0
     if self.state.robotsYellow[0].y < -500 and vy < 0:
       vy = 0
-
-    # if self.goalieState == 0:
-    #   vy = 0
-    #   if self.state.robotsYellow[0].y > 300:
-    #     self.goalieState = 1
-    # elif self.goalieState == 1:
-    #   vy = -0
-    #   if self.state.robotsYellow[0].y < -300:
-    #     self.goalieState = 0
+      
     cmdGoalie = self._getCorrectGKCommand(vy)
     
     commands.append(cmdGoalie)
