@@ -72,6 +72,7 @@ class shootGoalieEnv(GrSimSSLEnv):
   def _getCommands(self, actions):
     commands = []
     cmdAttacker = Robot(id=0, yellow=False, vw=actions[0], kickVx=actions[1], dribbler=True)
+    
     commands.append(cmdAttacker)
 
 
@@ -124,6 +125,12 @@ class shootGoalieEnv(GrSimSSLEnv):
     goalKeeper = Robot(id=0, x=-6, y=0, theta=0, yellow = True)
     # Kicker penalty position
     attacker = Robot(id=0, x=attacker_x, y=attacker_y, theta=robot_theta, yellow = False)
+
+    # ball = Ball(x=-4.1, y=0, vx=0, vy=0)
+    # # Goalkeeper penalty position
+    # goalKeeper = Robot(id=0, x=-6, y=0, theta=0, yellow = True)
+    # # Kicker penalty position
+    # attacker = Robot(id=0, x=-4, y=0, theta=180, yellow = False)
 
     return [goalKeeper, attacker], ball
     
