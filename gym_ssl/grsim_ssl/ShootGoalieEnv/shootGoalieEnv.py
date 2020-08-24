@@ -118,6 +118,7 @@ class shootGoalieEnv(GrSimSSLEnv):
     # Kicker penalty position
     attacker = Robot(id=0, x=attacker_x, y=attacker_y, theta=robot_theta, yellow = False)
 
+    # For fixed positions!
     # ball = Ball(x=-4.1, y=0, vx=0, vy=0)
     # # Goalkeeper penalty position
     # goalKeeper = Robot(id=0, x=-6, y=0, theta=0, yellow = True)
