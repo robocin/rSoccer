@@ -2,6 +2,7 @@ import gym
 import math
 import numpy as np
 import time
+import random
 
 from gym_ssl.grsim_ssl.grSimSSL_env import GrSimSSLEnv
 from gym_ssl.grsim_ssl.Communication.grSimClient import grSimClient
@@ -71,31 +72,31 @@ class shootGoalieEnv(GrSimSSLEnv):
   def _getCommands(self, actions):
     commands = []
     cmdAttacker = Robot(id=0, yellow=False, vw=actions[0], kickVx=actions[1], dribbler=True)
-    # cmdAttacker = Robot(id=0, yellow=False, vw=0, kickVx=0, dribbler=True)
-    
     commands.append(cmdAttacker)
 
+
     # Moving GOALIE
-    vy = 0
-    if self.goalieState == 0:
-      vy = 0.1
-      if self.state.robotsYellow[0].y > 300:
-        self.goalieState = 1
-    elif self.goalieState == 1:
-      vy = -0.1
-      if self.state.robotsYellow[0].y < -300:
-        self.goalieState = 0
+    vy = (self.state.ball.y - self.state.robotsYellow[0].y)/1000
+    if abs(vy) > 0.4:
+      vy = 0.4*(vy/abs(vy))
+    if self.state.robotsYellow[0].y > 500 and vy > 0:
+      vy = 0
+    if self.state.robotsYellow[0].y < -500 and vy < 0:
+      vy = 0
+
+    # if self.goalieState == 0:
+    #   vy = 0
+    #   if self.state.robotsYellow[0].y > 300:
+    #     self.goalieState = 1
+    # elif self.goalieState == 1:
+    #   vy = -0
+    #   if self.state.robotsYellow[0].y < -300:
+    #     self.goalieState = 0
     cmdGoalie = self._getCorrectGKCommand(vy)
     
     commands.append(cmdGoalie)
 
     return commands
-
-  def reset(self):
-    # Remove ball from Robot
-    self.client.sendCommandsPacket([Robot(yellow=False, id = 0, kickVx=3), Robot(yellow=True, id = 0, kickVx=3)]) 
-    self.client.receiveState()
-    return super().reset()
 
   def _parseObservationFromState(self):
     observation = []
@@ -105,13 +106,24 @@ class shootGoalieEnv(GrSimSSLEnv):
 
     return np.array(observation)
 
+  def reset(self):
+    # Remove ball from Robot
+    self.client.sendCommandsPacket([Robot(yellow=False, id = 0, kickVx=0), Robot(yellow=True, id = 0, kickVx=3)]) 
+    self.client.receiveState()
+    return super().reset()
+
   def _getFormation(self):
+    attacker_x = -4
+    attacker_y = random.randrange(-20, 20, 2)/10
+    robot_theta = random.randrange(0, 359, 5)
+    ball_x = 0.1*math.cos(math.radians(robot_theta)) + attacker_x
+    ball_y = 0.1*math.sin(math.radians(robot_theta)) + attacker_y
     # ball penalty position
-    ball = Ball(x=-4.1, y=0, vx=0, vy=0)
+    ball = Ball(x=ball_x, y=ball_y, vx=0, vy=0)
     # Goalkeeper penalty position
     goalKeeper = Robot(id=0, x=-6, y=0, theta=0, yellow = True)
     # Kicker penalty position
-    attacker = Robot(id=0, x=-4, y=0, theta=180, yellow = False)
+    attacker = Robot(id=0, x=attacker_x, y=attacker_y, theta=robot_theta, yellow = False)
 
     return [goalKeeper, attacker], ball
     
@@ -148,6 +160,10 @@ class shootGoalieEnv(GrSimSSLEnv):
       if self.state.ball.y < 600 and self.state.ball.y > -600:
           # ball entered the goal
           reward = 2
+    elif self.state.ball.x < -5000 and self.state.ball.vx > -1:
+      done = True
+      reward = -0.3
+       
     return reward, done
 
 
