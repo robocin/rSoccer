@@ -175,13 +175,14 @@ class AgentDDPG:
                     steps += 1
                     action = self.policyNet.get_action(obs)
                     obs, reward, done, _ = self.env.step(action)
+                time.sleep(0.1)
         else:
             print("Correct usage: python train.py {name} (play | train) [-cs]")
 
     def _load(self):
         # Check if checkpoint file exists
         if os.path.exists(self.path + '/checkpoint'):
-            checkpoint = torch.load(self.path + '/checkpoint')
+            checkpoint = torch.load(self.path + '/checkpoint', map_location=self.device)
             # Load networks parameters checkpoint
             self.valueNet.load_state_dict(checkpoint['valueNetDict'])
             self.policyNet.load_state_dict(checkpoint['policyNetDict'])
