@@ -38,6 +38,7 @@ $ pip install -e .
 ```
 # Available Envs
 - **grSimSSLPenalty-v0**
+- **grSimSSLShootGoalie-v0**
 
 # Example code
 ```python
