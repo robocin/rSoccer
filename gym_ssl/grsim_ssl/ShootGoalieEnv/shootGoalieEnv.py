@@ -111,18 +111,19 @@ class shootGoalieEnv(GrSimSSLEnv):
     robot_theta = random.randrange(0, 359, 5)
     ball_x = 0.1*math.cos(math.radians(robot_theta)) + attacker_x
     ball_y = 0.1*math.sin(math.radians(robot_theta)) + attacker_y
-    # ball penalty position
+    # ball position
     ball = Ball(x=ball_x, y=ball_y, vx=0, vy=0)
-    # Goalkeeper penalty position
-    goalKeeper = Robot(id=0, x=-6, y=0, theta=0, yellow = True)
-    # Kicker penalty position
+    # Goalkeeper position
+    goalkeeper_y = random.randrange(-5, 5, 1)/10
+    goalKeeper = Robot(id=0, x=-6, y=goalkeeper_y, theta=0, yellow = True)
+    # Kicker position
     attacker = Robot(id=0, x=attacker_x, y=attacker_y, theta=robot_theta, yellow = False)
 
     # For fixed positions!
     # ball = Ball(x=-4.1, y=0, vx=0, vy=0)
-    # # Goalkeeper penalty position
+    # # Goalkeeper position
     # goalKeeper = Robot(id=0, x=-6, y=0, theta=0, yellow = True)
-    # # Kicker penalty position
+    # # Kicker position
     # attacker = Robot(id=0, x=-4, y=0, theta=180, yellow = False)
 
     return [goalKeeper, attacker], ball
