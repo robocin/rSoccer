@@ -65,6 +65,7 @@ class goToBallEnv(GrSimSSLEnv):
     self.observation_space = gym.spaces.Box(low=-obsSpaceThresholds, high=obsSpaceThresholds)
     self.goToballState = None
     self.distAnt = 1000
+    self.angleAnt = 0
     self.timestampAnt = 0
     print('Environment initialized')
   
@@ -110,6 +111,7 @@ class goToBallEnv(GrSimSSLEnv):
     reward = 0
     rewardContact = 0
     rewardDistance = 0
+    rewardAngle =0
     done = False
     #print(self.state.timestamp)
 
@@ -119,11 +121,13 @@ class goToBallEnv(GrSimSSLEnv):
     if(dt==0):
       dt =1
 
-    #rewardDistance += (5 / pow(2 * math.pi, 1 / 2)) * math.exp(-((self.goToBallState.distance*0.001)**2 + self.goToBallState.angle_relative**2) / 2) - 2
-    rewardDistance -= (0.1*(self.goToBallState.distance - self.distAnt))/dt
+    rewardDistance += (5 / pow(2 * math.pi, 1 / 2)) * math.exp(-((self.goToBallState.distance*0.001)**2 + self.goToBallState.angle_relative**2) / 2) - 2
+    #rewardDistance -= (0.1*(self.goToBallState.distance - self.distAnt))/dt
+    #rewardAngle -=(0.02*(self.goToBallState.angle_relative - self.angleAnt))/dt
 
     self.distAnt = self.goToBallState.distance
     self.timestampAnt = self.state.timestamp
+    self.angleAnt = self.goToBallState.angle_relative
 
     if self.state.ball.x < -6000 or self.state.ball.y > 4500 or self.state.ball.y < -4500:
       # the ball out the field limits
@@ -133,15 +137,17 @@ class goToBallEnv(GrSimSSLEnv):
     elif  self.steps > 250:
       #finished the episode
       done = True
-      if (self.goToBallState.distance*0.001) <= 0.080:
+      if (self.goToBallState.distance*0.001 <= 0.130 and abs(self.goToBallState.angle_relative)<0.5):
+        #print("OI")
         rewardContact += 100
       #rewardDistance += (5 / pow(2 * math.pi, 1 / 2)) * math.exp(-((self.goToBallState.distance*0.001)**2 + self.goToBallState.angle_relative**2) / 2) - 2
     else:
       # the ball in the field limits
-      if (self.goToBallState.distance*0.001) <= 0.080:
+      if (self.goToBallState.distance*0.001 <= 0.130 and abs(self.goToBallState.angle_relative)<0.5):
+        #print("OI")
         rewardContact += 100
       #rewardDistance += (5 / pow(2 * math.pi, 1 / 2)) * math.exp(-((self.goToBallState.distance*0.001)**2 + self.goToBallState.angle_relative**2) / 2) - 2 
 
-    reward = rewardContact + rewardDistance
+    reward = rewardContact + rewardDistance + rewardAngle
     #print(reward)
     return reward, done
