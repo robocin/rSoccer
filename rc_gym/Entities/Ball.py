@@ -5,5 +5,6 @@ class Ball:
     x: float = None
     y: float = None
     z: float = None
-    vx: float = 0.0
-    vy: float = 0.0
+    v_x: float = 0.0
+    v_y: float = 0.0
+    v_z: float = 0.0

@@ -8,7 +8,7 @@
 import gym
 import robosim
 import numpy as np
-from rc_gym.rsim_vss.Entities import VSSFrame
+from rc_gym.Entities import Frame
 from rc_gym.rsim_vss.render import RCRender
 
 class rSimVSSEnv(gym.Env):
@@ -38,7 +38,7 @@ class rSimVSSEnv(gym.Env):
         state = self.simulator.get_state()
         status = self.simulator.get_status()
         # Update frame with new status and state
-        self.frame = VSSFrame()
+        self.frame = Frame()
         self.frame.parse(state, status, self.n_robots)
         
         # Calculate environment observation, reward and done condition
@@ -57,7 +57,7 @@ class rSimVSSEnv(gym.Env):
         state = self.simulator.get_state()
         status = self.simulator.get_status()
         # Update frame with new status and state
-        self.frame = VSSFrame()
+        self.frame = Frame()
         self.frame.parse(state, status, self.n_robots)
 
         return self._frame_to_observations()

@@ -3,9 +3,9 @@ import math
 import numpy as np
 
 from rc_gym.Utils import distance
-# from rc_gym.rsim_vss.Entities import VSSFrame, VSSRobot, Ball
-from rc_gym.rsim_vss.Entities import VSSRobot
+from rc_gym.Entities import Robot
 from rc_gym.rsim_vss.rSimVSS_env import rSimVSSEnv
+
 
 class rSimVSS3v3Env(rSimVSSEnv):
     """
@@ -59,19 +59,23 @@ class rSimVSS3v3Env(rSimVSSEnv):
 
     def __init__(self):
         super().__init__(field_type=0, n_robots=3)
-        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(1, 2), dtype=np.float32)
-        
+        self.action_space = gym.spaces.Box(
+            low=-1, high=1, shape=(1, 2), dtype=np.float32)
+
         # Define observation space bound
-        bound_x = (self.field_params['field_length'] / 2) + self.field_params['goal_depth']
+        bound_x = (self.field_params['field_length'] /
+                   2) + self.field_params['goal_depth']
         bound_y = self.field_params['field_width'] / 2
         bound_v = 2
         # ball bounds
         obs_bounds = [bound_x, bound_y] + [0.2] + [bound_v, bound_v]
         # concatenate robot bounds
-        obs_bounds = obs_bounds + (self.n_robots * 2) * [bound_x, bound_y, bound_v, bound_v]
+        obs_bounds = obs_bounds + (self.n_robots * 2) * \
+            [bound_x, bound_y, bound_v, bound_v]
         obs_bounds = np.array(obs_bounds, dtype=np.float32)
 
-        self.observation_space = gym.spaces.Box(low=-obs_bounds, high=obs_bounds, dtype=np.float32)
+        self.observation_space = gym.spaces.Box(
+            low=-obs_bounds, high=obs_bounds, dtype=np.float32)
 
         self.last_frame = None
         print('Environment initialized')
@@ -82,29 +86,28 @@ class rSimVSS3v3Env(rSimVSSEnv):
         observation.append(self.frame.ball.x)
         observation.append(self.frame.ball.y)
         observation.append(self.frame.ball.z)
-        observation.append(self.frame.ball.vx)
-        observation.append(self.frame.ball.vy)
+        observation.append(self.frame.ball.v_x)
+        observation.append(self.frame.ball.v_y)
 
         for i in range(self.n_robots):
             observation.append(self.frame.robots_blue[i].x)
             observation.append(self.frame.robots_blue[i].y)
-            observation.append(self.frame.robots_blue[i].vx)
-            observation.append(self.frame.robots_blue[i].vy)
+            observation.append(self.frame.robots_blue[i].v_x)
+            observation.append(self.frame.robots_blue[i].v_y)
 
         for i in range(self.n_robots):
             observation.append(self.frame.robots_yellow[i].x)
             observation.append(self.frame.robots_yellow[i].y)
-            observation.append(self.frame.robots_yellow[i].vx)
-            observation.append(self.frame.robots_yellow[i].vy)
-
+            observation.append(self.frame.robots_yellow[i].v_x)
+            observation.append(self.frame.robots_yellow[i].v_y)
 
         return np.array(observation)
 
     def _get_commands(self, actions):
         commands = []
 
-        commands.append(VSSRobot(yellow=False, id=0, v_wheel1=actions[0][0],
-                                 v_wheel2=actions[0][1]))
+        commands.append(Robot(yellow=False, id=0, v_wheel1=actions[0][0],
+                              v_wheel2=actions[0][1]))
 
         return commands
 
@@ -116,10 +119,10 @@ class rSimVSS3v3Env(rSimVSSEnv):
             if self.last_frame.goals_yellow > self.frame.goals_yellow:
                 reward += 1
             if self.last_frame.goals_blue > self.frame.goals_blue:
-                reward -=1
+                reward -= 1
 
         self.last_frame = self.frame
-        
+
         done = self.frame.time >= 300000
 
         return reward, done
