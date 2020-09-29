@@ -8,7 +8,7 @@
 import socket
 import rc_gym.grsim_ssl.Communication.pb.messages_robocup_ssl_wrapper_pb2 as wrapper_pb2
 import rc_gym.grsim_ssl.Communication.pb.grSim_Packet_pb2 as packet_pb2
-from rc_gym.Entities import Robot, Ball, Frame
+from rc_gym.grsim_ssl.Entities import Robot, Ball, Frame
 
 class grSimClient:
 

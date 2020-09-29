@@ -3,7 +3,7 @@ import math
 import numpy as np
 
 from rc_gym.Utils import distance
-from rc_gym.Entities import Ball, Frame, Robot
+from rc_gym.grsim_ssl.Entities import Ball, Frame, Robot
 from rc_gym.grsim_ssl.grSimSSL_env import GrSimSSLEnv
 from rc_gym.grsim_ssl.Communication.grSimClient import grSimClient
 

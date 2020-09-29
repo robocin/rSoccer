@@ -6,7 +6,7 @@ import random
 
 from rc_gym.grsim_ssl.grSimSSL_env import GrSimSSLEnv
 from rc_gym.grsim_ssl.Communication.grSimClient import grSimClient
-from rc_gym.Entities import Robot, Ball, Frame
+from rc_gym.grsim_ssl.Entities import Robot, Ball, Frame
 from rc_gym.grsim_ssl.GoToBallEnv import goToBallState
 from rc_gym.Utils import *
 
