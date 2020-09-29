@@ -4,11 +4,11 @@
 ## Compile protobuf files
 ```bash
 $ sudo apt-get install libprotobuf-dev protobuf-compiler -y
-$ cd gym_ssl/grsim_ssl/Communication/pb/proto
+$ cd rc_gym/grsim_ssl/Communication/pb/proto
 $ protoc --python_out=../ *.proto
 ```
 ## Fix protobuf compiled files from relative reference to absolute
-On file **gym_ssl/grsim_ssl/Communication/pb/messages_robocup_ssl_wrapper_pb2.py**:
+On file **rc_gym/grsim_ssl/Communication/pb/messages_robocup_ssl_wrapper_pb2.py**:
 
 
 ``` python
@@ -17,19 +17,19 @@ On file **gym_ssl/grsim_ssl/Communication/pb/messages_robocup_ssl_wrapper_pb2.py
 16 - import messages_robocup_ssl_geometry_pb2 as messages__robocup__ssl__geometry__pb2
 
 'after:'
-15 + import gym_ssl.grsim_ssl.Communication.pb.messages_robocup_ssl_detection_pb2 as messages__robocup__ssl__detection__pb2
-16 + import gym_ssl.grsim_ssl.Communication.pb.messages_robocup_ssl_geometry_pb2 as messages__robocup__ssl__geometry__pb2
+15 + import rc_gym.grsim_ssl.Communication.pb.messages_robocup_ssl_detection_pb2 as messages__robocup__ssl__detection__pb2
+16 + import rc_gym.grsim_ssl.Communication.pb.messages_robocup_ssl_geometry_pb2 as messages__robocup__ssl__geometry__pb2
 ```
 
-On file **gym_ssl/grsim_ssl/Communication/pb/grSim_Packet_pb2.py**:
+On file **rc_gym/grsim_ssl/Communication/pb/grSim_Packet_pb2.py**:
 
 ``` python
 'before:'
 15 - import grSim_Commands_pb2 as grSim__Commands__pb2
 16 - import grSim_Replacement_pb2 as grSim__Replacement__pb2
 'after:'
-15 + import gym_ssl.grsim_ssl.Communication.pb.grSim_Commands_pb2 as grSim__Commands__pb2
-16 + import gym_ssl.grsim_ssl.Communication.pb.grSim_Replacement_pb2 as grSim__Replacement__pb2
+15 + import rc_gym.grsim_ssl.Communication.pb.grSim_Commands_pb2 as grSim__Commands__pb2
+16 + import rc_gym.grsim_ssl.Communication.pb.grSim_Replacement_pb2 as grSim__Replacement__pb2
 ```
 ## Install environments
 
@@ -43,7 +43,7 @@ $ pip install -e .
 # Example code
 ```python
 import gym
-import gym_ssl
+import rc_gym
 
 # Using penalty env
 env = gym.make('grSimSSLPenalty-v0')

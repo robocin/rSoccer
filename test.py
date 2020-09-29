@@ -7,7 +7,7 @@
 # '''
 
 import gym
-import gym_ssl
+import rc_gym
 
 # Using penalty env
 env = gym.make('grSimSSLGoToBall-v0')

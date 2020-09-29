@@ -1,5 +1,5 @@
 import gym
-import gym_ssl
+import rc_gym
 import numpy        as np
 
 from    torch.utils.tensorboard    import SummaryWriter

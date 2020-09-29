@@ -1,5 +1,5 @@
 import gym
-import gym_ssl
+import rc_gym
 import torch
 
 from agents.Utils.Networks             import PolicyNetwork

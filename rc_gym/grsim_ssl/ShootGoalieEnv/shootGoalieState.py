@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from gym_ssl.grsim_ssl.Utils import *
+from rc_gym.Utils import *
 
 
 CENTER_GOAL_X = -6000

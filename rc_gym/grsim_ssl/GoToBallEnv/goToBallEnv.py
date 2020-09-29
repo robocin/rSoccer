@@ -4,11 +4,11 @@ import numpy as np
 import time
 import random
 
-from gym_ssl.grsim_ssl.grSimSSL_env import GrSimSSLEnv
-from gym_ssl.grsim_ssl.Communication.grSimClient import grSimClient
-from gym_ssl.grsim_ssl.Entities import Robot, Ball, Frame
-from gym_ssl.grsim_ssl.GoToBallEnv import goToBallState
-from gym_ssl.grsim_ssl.Utils import *
+from rc_gym.grsim_ssl.grSimSSL_env import GrSimSSLEnv
+from rc_gym.grsim_ssl.Communication.grSimClient import grSimClient
+from rc_gym.Entities import Robot, Ball, Frame
+from rc_gym.grsim_ssl.GoToBallEnv import goToBallState
+from rc_gym.Utils import *
 
 class goToBallEnv(GrSimSSLEnv):
   """

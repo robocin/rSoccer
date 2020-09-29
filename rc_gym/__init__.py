@@ -1,13 +1,13 @@
 from gym.envs.registration import register
 
 register(id='grSimSSLPenalty-v0',
-    entry_point='gym_ssl.grsim_ssl:GrSimSSLPenaltyEnv'
+    entry_point='rc_gym.grsim_ssl:GrSimSSLPenaltyEnv'
     )
 
 register(id='grSimSSLShootGoalie-v0',
-    entry_point='gym_ssl.grsim_ssl:shootGoalieEnv'
+    entry_point='rc_gym.grsim_ssl:shootGoalieEnv'
     )
 
 register(id='grSimSSLGoToBall-v0',
-    entry_point='gym_ssl.grsim_ssl:goToBallEnv'
+    entry_point='rc_gym.grsim_ssl:goToBallEnv'
     )

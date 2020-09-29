@@ -2,10 +2,10 @@ import gym
 import math
 import numpy as np
 
-from gym_ssl.grsim_ssl.Utils import distance
-from gym_ssl.grsim_ssl.Entities import Ball, Frame, Robot
-from gym_ssl.grsim_ssl.grSimSSL_env import GrSimSSLEnv
-from gym_ssl.grsim_ssl.Communication.grSimClient import grSimClient
+from rc_gym.Utils import distance
+from rc_gym.Entities import Ball, Frame, Robot
+from rc_gym.grsim_ssl.grSimSSL_env import GrSimSSLEnv
+from rc_gym.grsim_ssl.Communication.grSimClient import grSimClient
 
 class GrSimSSLPenaltyEnv(GrSimSSLEnv):
     """

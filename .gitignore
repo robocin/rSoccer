@@ -1,6 +1,6 @@
 .DS_Store
 *.pyc
-gym_ssl.egg-info/
+rc_gym.egg-info/
 pb/*
 .vscode/*
 *_pb2.py
