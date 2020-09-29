@@ -12,45 +12,45 @@ class rSimVSS3v3Env(rSimVSSEnv):
     Description:
         This environment controls a robot soccer in VSS League 3v3 match
     Observation:
-        Type: Box(11)
+        Type: Box(29)
         Num     Observation
         0       Ball X
         1       Ball Y
         2       Ball Z
         3       Ball Vx
         4       Ball Vy
-        5       id 0 Yellow Robot X
-        6       id 0 Yellow Robot Y
-        7       id 0 Yellow Robot Vx
-        8       id 0 Yellow Robot Vy
-        9       id 1 Yellow Robot X
-        10      id 1 Yellow Robot Y
-        11      id 1 Yellow Robot Vx
-        12      id 1 Yellow Robot Vy
-        13      id 2 Yellow Robot X
-        14      id 2 Yellow Robot Y
-        15      id 2 Yellow Robot Vx
-        16      id 2 Yellow Robot Vy
-        17      id 0 Blue Robot X
-        18      id 0 Blue Robot Y
-        19      id 0 Blue Robot Vx
-        20      id 0 Blue Robot Vy
-        21      id 1 Blue Robot X
-        22      id 1 Blue Robot Y
-        23      id 1 Blue Robot Vx
-        24      id 1 Blue Robot Vy
-        25      id 2 Blue Robot X
-        26      id 2 Blue Robot Y
-        27      id 2 Blue Robot Vx
-        28      id 2 Blue Robot Vy
+        5       id 0 Blue Robot X
+        6       id 0 Blue Robot Y
+        7       id 0 Blue Robot Vx
+        8       id 0 Blue Robot Vy
+        9       id 1 Blue Robot X
+        10      id 1 Blue Robot Y
+        11      id 1 Blue Robot Vx
+        12      id 1 Blue Robot Vy
+        13      id 2 Blue Robot X
+        14      id 2 Blue Robot Y
+        15      id 2 Blue Robot Vx
+        16      id 2 Blue Robot Vy
+        17      id 0 Yellow Robot X
+        18      id 0 Yellow Robot Y
+        19      id 0 Yellow Robot Vx
+        20      id 0 Yellow Robot Vy
+        21      id 1 Yellow Robot X
+        22      id 1 Yellow Robot Y
+        23      id 1 Yellow Robot Vx
+        24      id 1 Yellow Robot Vy
+        25      id 2 Yellow Robot X
+        26      id 2 Yellow Robot Y
+        27      id 2 Yellow Robot Vx
+        28      id 2 Yellow Robot Vy
     Actions:
-        Type: Box(2)
+        Type: Box(1, 2)
         Num     Action
-        0       id 0 Yellow Robot Wheel 1 Speed
-        1       id 0 Yellow Robot Wheel 2 Speed
+        0       id 0 Blue Robot Wheel 1 Speed
+        1       id 0 Blue Robot Wheel 2 Speed
     Reward:
-        1 if Yellow Team Goal
-        -1 if Blue Team Goal
+        1 if Blue Team Goal
+        -1 if Yellow Team Goal
     Starting State:
         TODO
     Episode Termination:
@@ -58,7 +58,7 @@ class rSimVSS3v3Env(rSimVSSEnv):
     """
 
     def __init__(self):
-        self.action_space = gym.spaces.Box(low=-10, high=10, shape=(1, 2), dtype=np.float32)
+        self.action_space = gym.spaces.Box(low=0, high=1, shape=(1, 2), dtype=np.float32)
         self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(28,), dtype=np.float32)
         self.n_robots = 3
         self.field_type = 0
@@ -75,24 +75,25 @@ class rSimVSS3v3Env(rSimVSSEnv):
         observation.append(self.frame.ball.vy)
 
         for i in range(self.n_robots):
+            observation.append(self.frame.robots_blue[i].x)
+            observation.append(self.frame.robots_blue[i].y)
+            observation.append(self.frame.robots_blue[i].vx)
+            observation.append(self.frame.robots_blue[i].vy)
+
+        for i in range(self.n_robots):
             observation.append(self.frame.robots_yellow[i].x)
             observation.append(self.frame.robots_yellow[i].y)
             observation.append(self.frame.robots_yellow[i].vx)
             observation.append(self.frame.robots_yellow[i].vy)
         
-        for i in range(self.n_robots):
-            observation.append(self.frame.robots_blue[i].x)
-            observation.append(self.frame.robots_blue[i].y)
-            observation.append(self.frame.robots_blue[i].vx)
-            observation.append(self.frame.robots_blue[i].vy)
 
         return np.array(observation)
 
     def _get_commands(self, actions):
         commands = []
 
-        commands.append(VSSRobot(yellow=True, id=0,
-                              vwheel1=actions[0][0], vwheel2=actions[0][1]))
+        commands.append(VSSRobot(yellow=False, id=0,
+                              v_wheel1=actions[0][0], v_wheel2=actions[0][1]))
 
         return commands
 

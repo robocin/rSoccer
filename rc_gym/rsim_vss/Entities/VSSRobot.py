@@ -8,5 +8,5 @@ class VSSRobot:
     y: float = None
     vx: float = None
     vy: float = None
-    vwheel1: float = 0
-    vwheel2: float = 0
+    v_wheel1: float = 0
+    v_wheel2: float = 0

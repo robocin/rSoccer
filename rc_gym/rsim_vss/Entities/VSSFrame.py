@@ -33,6 +33,6 @@ class VSSFrame:
       robot.vy = state[5 + (4 * i) + 3]
       
       if i < n_robots:
-        self.robots_yellow[robot.id] = robot
-      else:
         self.robots_blue[robot.id] = robot
+      else:
+        self.robots_yellow[robot.id] = robot

@@ -31,6 +31,7 @@ class rSimVSSEnv(gym.Env):
         # Convert commands to simulator commands format
         sim_commands = self.commands_to_sim_commands(commands)
         # step simulation
+        # print(sim_commands)
         self.simulator.step(sim_commands)
         
         # Get status and state from simulator
@@ -77,6 +78,7 @@ class rSimVSSEnv(gym.Env):
         '''
         if self.view == None:
             self.view = RCRender(self.n_robots, self.n_robots, self.field_params)
+            
         state = self.simulator.get_state()
         ball = (state[0], state[1])
         blues = list()
@@ -85,18 +87,19 @@ class rSimVSSEnv(gym.Env):
         yellows = list()
         for i in range(self.n_robots*4+5, len(state), 4):
             yellows.append((state[i], state[i+1]))
+
         self.view.view(ball, blues, yellows)
     
     def commands_to_sim_commands(self, commands):
-        sim_commands = np.zeros((self.n_robots, 2), dtype=np.float64)
+        sim_commands = np.zeros((self.n_robots * 2, 2), dtype=np.float64)
         
         for cmd in commands:
             if cmd.yellow:
-                rbt_id = cmd.id
-            else:
                 rbt_id = self.n_robots + cmd.id
-            sim_commands[rbt_id][0] = cmd.vwheel1
-            sim_commands[rbt_id][1] = cmd.vwheel2
+            else:
+                rbt_id = cmd.id
+            sim_commands[rbt_id][0] = cmd.v_wheel1
+            sim_commands[rbt_id][1] = cmd.v_wheel2
         
         return sim_commands
 
