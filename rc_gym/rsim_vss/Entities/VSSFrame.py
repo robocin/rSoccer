@@ -14,7 +14,7 @@ class VSSFrame:
 
   def parse(self, state, status, n_robots):
     '''It parses the state received from grSim in a common state for environment'''
-    self.timestamp = status['time']
+    self.time = status['time']
     self.goals_yellow = status['goals_yellow']
     self.goals_blue = status['goals_blue']
 
@@ -24,7 +24,7 @@ class VSSFrame:
     self.ball.vx = state[3]
     self.ball.vy = state[4]
     
-    for i in range(n_robots):
+    for i in range(n_robots * 2):
       robot = VSSRobot()
       robot.id = i % n_robots
       robot.x = state[5 + (4 * i) + 0]

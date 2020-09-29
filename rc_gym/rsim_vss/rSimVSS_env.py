@@ -8,15 +8,18 @@
 import gym
 import robosim
 import numpy as np
-from rc_gym.rsim_ssl.Entities import VSSFrame, VSSRobot
+from rc_gym.rsim_vss.Entities import VSSFrame
+from rc_gym.rsim_vss.render import RCRender
 
-class GrSimSSLEnv(gym.Env):
+class rSimVSSEnv(gym.Env):
     def __init__(self):
         self.simulator = robosim.SimulatorVSS(field_type=self.field_type,
                                               n_robots=self.n_robots)
-        if self.action_space == None or self.observation_space = None:
+        if self.action_space == None or self.observation_space == None:
             raise Exception
+        self.field_params: Dict[str, np.float64] = self.simulator.get_field_params()
         self.frame = None
+        self.view = None
         self.steps = 0
 
     def step(self, action):
@@ -58,13 +61,42 @@ class GrSimSSLEnv(gym.Env):
 
         return self._frame_to_observations()
     
-    def commands_to_sim_commands(self, commands: List[VSSRobot]):
+    def render(self) -> None:
+        '''
+        Renders the game depending on 
+        ball's and players' positions.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
+
+        '''
+        if self.view == None:
+            self.view = RCRender(self.n_robots, self.n_robots, self.field_params)
+        state = self.simulator.get_state()
+        ball = (state[0], state[1])
+        blues = list()
+        for i in range(5, self.n_robots*4+6, 4):
+            blues.append((state[i], state[i+1]))
+        yellows = list()
+        for i in range(self.n_robots*4+5, len(state), 4):
+            yellows.append((state[i], state[i+1]))
+        self.view.view(ball, blues, yellows)
+    
+    def commands_to_sim_commands(self, commands):
         sim_commands = np.zeros((self.n_robots, 2), dtype=np.float64)
         
         for cmd in commands:
-            rbt_id = (self.n_robots * cmd.yellow) + cmd.id
-            sim_commands[rbt_id][0] = cmd.wheel1
-            sim_commands[rbt_id][1] = cmd.wheel2
+            if cmd.yellow:
+                rbt_id = cmd.id
+            else:
+                rbt_id = self.n_robots + cmd.id
+            sim_commands[rbt_id][0] = cmd.vwheel1
+            sim_commands[rbt_id][1] = cmd.vwheel2
         
         return sim_commands
 

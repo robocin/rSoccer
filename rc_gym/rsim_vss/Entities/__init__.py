@@ -1,3 +1,3 @@
-from rc_gym.grsim_ssl.Entities.Ball import Ball
-from rc_gym.grsim_ssl.Entities.Frame import VSSFrame
-from rc_gym.grsim_ssl.Entities.Robot import VSSRobot
+from rc_gym.rsim_vss.Entities.Ball import Ball
+from rc_gym.rsim_vss.Entities.VSSFrame import VSSFrame
+from rc_gym.rsim_vss.Entities.VSSRobot import VSSRobot
