@@ -34,21 +34,21 @@ class shootGoalieState:
   theta_goalie_r_cos: float = None
 
   def getDistance(self, frame) -> float:
-    return float(mod(abs(frame.robotsBlue[0].x-CENTER_GOAL_X), abs(frame.robotsBlue[0].y-CENTER_GOALY)))
+    return float(mod(abs(frame.robots_blue[0].x-CENTER_GOAL_X), abs(frame.robots_blue[0].y-CENTER_GOALY)))
 
   def getLeftPoleAngle(self, frame):
-    dist_left = [frame.robotsBlue[0].x - LEFT_GOAL_X, frame.robotsBlue[0].y - LEFT_GOALY]
-    angle_left = toPiRange(angle(dist_left[0], dist_left[1]) + (math.pi - frame.robotsBlue[0].theta))
+    dist_left = [frame.robots_blue[0].x - LEFT_GOAL_X, frame.robots_blue[0].y - LEFT_GOALY]
+    angle_left = toPiRange(angle(dist_left[0], dist_left[1]) + (math.pi - frame.robots_blue[0].theta))
     return math.sin(angle_left), math.cos(angle_left)
 
   def getRightPoleAngle(self, frame):
-    dist_right = [frame.robotsBlue[0].x - RIGHT_GOAL_X, frame.robotsBlue[0].y - RIGHT_GOALY]
-    angle_right = toPiRange(angle(dist_right[0], dist_right[1]) + (math.pi - frame.robotsBlue[0].theta))
+    dist_right = [frame.robots_blue[0].x - RIGHT_GOAL_X, frame.robots_blue[0].y - RIGHT_GOALY]
+    angle_right = toPiRange(angle(dist_right[0], dist_right[1]) + (math.pi - frame.robots_blue[0].theta))
     return math.sin(angle_right), math.cos(angle_right)
 
   def getGoalieCenterUnifiedAngle(self, frame):
-    dist_g = [frame.robotsBlue[0].x - frame.robotsYellow[0].x, frame.robotsBlue[0].y - frame.robotsYellow[0].y]
-    angle_g = toPiRange(angle(dist_g[0], dist_g[1]) + (math.pi - frame.robotsBlue[0].theta))
+    dist_g = [frame.robots_blue[0].x - frame.robots_yellow[0].x, frame.robots_blue[0].y - frame.robots_yellow[0].y]
+    angle_g = toPiRange(angle(dist_g[0], dist_g[1]) + (math.pi - frame.robots_blue[0].theta))
     return angle_g
   
   def getGoalieCenterAngle(self, frame):
@@ -56,27 +56,27 @@ class shootGoalieState:
     return math.sin(angle_c), math.cos(angle_c)
 
   def getGoalieLeftAngle(self, frame):
-    dist_left = [frame.robotsBlue[0].x - frame.robotsYellow[0].x, frame.robotsBlue[0].y - (frame.robotsYellow[0].y - ROBOT_RADIUS)]
-    angle_left = toPiRange(angle(dist_left[0], dist_left[1]) + (math.pi - frame.robotsBlue[0].theta))
+    dist_left = [frame.robots_blue[0].x - frame.robots_yellow[0].x, frame.robots_blue[0].y - (frame.robots_yellow[0].y - ROBOT_RADIUS)]
+    angle_left = toPiRange(angle(dist_left[0], dist_left[1]) + (math.pi - frame.robots_blue[0].theta))
     return math.sin(angle_left), math.cos(angle_left)
 
   def getGoalieRightAngle(self, frame):
-    dist_right = [frame.robotsBlue[0].x - frame.robotsYellow[0].x, frame.robotsBlue[0].y - (frame.robotsYellow[0].y + ROBOT_RADIUS)]
-    angle_right = toPiRange(angle(dist_right[0], dist_right[1]) + (math.pi - frame.robotsBlue[0].theta))
+    dist_right = [frame.robots_blue[0].x - frame.robots_yellow[0].x, frame.robots_blue[0].y - (frame.robots_yellow[0].y + ROBOT_RADIUS)]
+    angle_right = toPiRange(angle(dist_right[0], dist_right[1]) + (math.pi - frame.robots_blue[0].theta))
     return math.sin(angle_right), math.cos(angle_right)
   
   def getBallLocalCoordinates(self, frame):
-    robot_ball = [frame.robotsBlue[0].x - frame.ball.x, frame.robotsBlue[0].y - frame.ball.y]
+    robot_ball = [frame.robots_blue[0].x - frame.ball.x, frame.robots_blue[0].y - frame.ball.y]
     mod_to_ball = mod(robot_ball[0], robot_ball[1])
-    angle_to_ball = toPiRange(angle(robot_ball[0], robot_ball[1]) + (math.pi - frame.robotsBlue[0].theta))
+    angle_to_ball = toPiRange(angle(robot_ball[0], robot_ball[1]) + (math.pi - frame.robots_blue[0].theta))
     robot_ball_x = mod_to_ball* math.cos(angle_to_ball)
     robot_ball_y = mod_to_ball* math.sin(angle_to_ball)
     return robot_ball_x, robot_ball_y
   
   def getBallLocalSpeed(self, frame):
-    robot_ball = [frame.robotsBlue[0].vx - frame.ball.vx, frame.robotsBlue[0].vy - frame.ball.vy]
+    robot_ball = [frame.robots_blue[0].v_x - frame.ball.v_x, frame.robots_blue[0].v_y - frame.ball.v_y]
     mod_to_ball = mod(robot_ball[0], robot_ball[1])
-    angle_to_ball = toPiRange(angle(robot_ball[0], robot_ball[1]) + (math.pi - frame.robotsBlue[0].theta))
+    angle_to_ball = toPiRange(angle(robot_ball[0], robot_ball[1]) + (math.pi - frame.robots_blue[0].theta))
     robot_ball_vx = mod_to_ball* math.cos(angle_to_ball)
     robot_ball_vy = mod_to_ball* math.sin(angle_to_ball)
     return robot_ball_vx, robot_ball_vy
@@ -88,7 +88,7 @@ class shootGoalieState:
     self.ball_vx, self.ball_vy = self.getBallLocalSpeed(frame)
     
     self.distance = self.getDistance(frame)
-    self.robot_w = frame.robotsBlue[0].vw
+    self.robot_w = frame.robots_blue[0].v_theta
     self.theta_l_sen, self.theta_l_cos = self.getLeftPoleAngle(frame)
     self.theta_r_sen, self.theta_r_cos = self.getRightPoleAngle(frame)
     self.theta_goalie_c_sen, self.theta_goalie_c_cos = self.getGoalieCenterAngle(frame)

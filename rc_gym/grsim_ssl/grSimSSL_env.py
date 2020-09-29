@@ -7,7 +7,7 @@
 
 import gym
 from rc_gym.grsim_ssl.Communication.grSimClient import grSimClient
-from rc_gym.grsim_ssl.Entities import Robot
+from rc_gym.Entities import Robot
 
 class GrSimSSLEnv(gym.Env):
     def __init__(self):

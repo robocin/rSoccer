@@ -6,7 +6,7 @@ import random
 
 from rc_gym.grsim_ssl.grSimSSL_env import GrSimSSLEnv
 from rc_gym.grsim_ssl.Communication.grSimClient import grSimClient
-from rc_gym.grsim_ssl.Entities import Robot, Ball, Frame
+from rc_gym.Entities import Robot, Ball, Frame
 from rc_gym.grsim_ssl.GoToBallEnv import goToBallState
 from rc_gym.Utils import *
 
@@ -71,8 +71,8 @@ class goToBallEnv(GrSimSSLEnv):
   
   def _getCommands(self, actions):
     commands = []
-    cmdAttacker = Robot(id=0, yellow=False, vx=actions[0], vy=actions[1], vw=actions[2])
-    # cmdAttacker = Robot(id=0, yellow=False, vw=0, kickVx=0, dribbler=True)
+    cmdAttacker = Robot(id=0, yellow=False, v_x=actions[0], v_y=actions[1], v_theta=actions[2])
+    # cmdAttacker = Robot(id=0, yellow=False, v_theta=0, kick_v_x=0, dribbler=True)
     
     commands.append(cmdAttacker)
 

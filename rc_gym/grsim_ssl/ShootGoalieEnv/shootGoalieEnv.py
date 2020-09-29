@@ -6,7 +6,7 @@ import random
 
 from rc_gym.grsim_ssl.grSimSSL_env import GrSimSSLEnv
 from rc_gym.grsim_ssl.Communication.grSimClient import grSimClient
-from rc_gym.grsim_ssl.Entities import Ball, Frame, Robot
+from rc_gym.Entities import Ball, Frame, Robot
 from rc_gym.grsim_ssl.ShootGoalieEnv import shootGoalieState
 from rc_gym.Utils import mod
 
@@ -73,18 +73,18 @@ class shootGoalieEnv(GrSimSSLEnv):
   
   def _getCommands(self, actions):
     commands = []
-    cmdAttacker = Robot(id=0, yellow=False, vw=actions[0], kickVx=actions[1], dribbler=True)
+    cmdAttacker = Robot(id=0, yellow=False, v_theta=actions[0], kick_v_x=actions[1], dribbler=True)
     
     commands.append(cmdAttacker)
 
 
     # Moving GOALIE
-    vy = (self.state.ball.y - self.state.robotsYellow[0].y)/1000
+    vy = (self.state.ball.y - self.state.robots_yellow[0].y)/1000
     if abs(vy) > 0.4:
       vy = 0.4*(vy/abs(vy))
-    if self.state.robotsYellow[0].y > 500 and vy > 0:
+    if self.state.robots_yellow[0].y > 500 and vy > 0:
       vy = 0
-    if self.state.robotsYellow[0].y < -500 and vy < 0:
+    if self.state.robots_yellow[0].y < -500 and vy < 0:
       vy = 0
       
     cmdGoalie = self._getCorrectGKCommand(vy)
@@ -95,7 +95,7 @@ class shootGoalieEnv(GrSimSSLEnv):
 
   def reset(self):
     # Remove ball from Robot
-    self.client.sendCommandsPacket([Robot(yellow=False, id = 0, kickVx=3), Robot(yellow=True, id = 0, kickVx=3)]) 
+    self.client.sendCommandsPacket([Robot(yellow=False, id = 0, kick_v_x=3), Robot(yellow=True, id = 0, kick_v_x=3)]) 
     self.client.receiveState()
     return super().reset()
 
@@ -109,7 +109,7 @@ class shootGoalieEnv(GrSimSSLEnv):
 
   def reset(self):
     # Remove ball from Robot
-    self.client.sendCommandsPacket([Robot(yellow=False, id = 0, kickVx=0), Robot(yellow=True, id = 0, kickVx=3)]) 
+    self.client.sendCommandsPacket([Robot(yellow=False, id = 0, kick_v_x=0), Robot(yellow=True, id = 0, kick_v_x=3)]) 
     self.client.receiveState()
     return super().reset()
 
@@ -120,7 +120,7 @@ class shootGoalieEnv(GrSimSSLEnv):
     ball_x = 0.1*math.cos(math.radians(robot_theta)) + attacker_x
     ball_y = 0.1*math.sin(math.radians(robot_theta)) + attacker_y
     # ball position
-    ball = Ball(x=ball_x, y=ball_y, vx=0, vy=0)
+    ball = Ball(x=ball_x, y=ball_y, v_x=0, v_y=0)
     # Goalkeeper position
     goalkeeper_y = random.randrange(-5, 5, 1)/10
     goalKeeper = Robot(id=0, x=-6, y=goalkeeper_y, theta=0, yellow = True)
@@ -128,7 +128,7 @@ class shootGoalieEnv(GrSimSSLEnv):
     attacker = Robot(id=0, x=attacker_x, y=attacker_y, theta=robot_theta, yellow = False)
 
     # For fixed positions!
-    # ball = Ball(x=-4.1, y=0, vx=0, vy=0)
+    # ball = Ball(x=-4.1, y=0, v_x=0, vy=0)
     # # Goalkeeper position
     # goalKeeper = Robot(id=0, x=-6, y=0, theta=0, yellow = True)
     # # Kicker position
@@ -151,11 +151,11 @@ class shootGoalieEnv(GrSimSSLEnv):
       else:
           # the ball went out the bottom line
           reward = -1
-    elif self.state.ball.x < -5000 and self.state.ball.vx > -1:
+    elif self.state.ball.x < -5000 and self.state.ball.v_x > -1:
         # goalkeeper caught the ball
       done = True
       reward = -1
-    elif mod(self.state.ball.vx, self.state.ball.vy) < 10 and self.steps > 15: # 1 cm/s
+    elif mod(self.state.ball.v_x, self.state.ball.v_y) < 10 and self.steps > 15: # 1 cm/s
       done = True
       reward = -1
     return reward, done
@@ -169,33 +169,33 @@ class shootGoalieEnv(GrSimSSLEnv):
       if self.state.ball.y < 600 and self.state.ball.y > -600:
           # ball entered the goal
           reward = 2
-    elif self.state.ball.x < -5000 and self.state.ball.vx > -1:
+    elif self.state.ball.x < -5000 and self.state.ball.v_x > -1:
       done = True
       reward = -0.3
        
     return reward, done
 
 
-  def _getCorrectGKCommand(self,vy):
-    '''Control goalkeeper vw and vx to keep him at goal line'''
-    cmdGoalKeeper = Robot(yellow=True, id=0, vy=vy)
+  def _getCorrectGKCommand(self,v_y):
+    '''Control goalkeeper v_theta and vx to keep him at goal line'''
+    cmdGoalKeeper = Robot(yellow=True, id=0, v_y=v_y)
 
     # Proportional Parameters for Vx and Vw
     KpVx = 0.0006
     KpVw = 1
     # Error between goal line and goalkeeper
-    errX = -6000 - self.state.robotsYellow[0].x
+    errX = -6000 - self.state.robots_yellow[0].x
     # If the error is greater than 20mm, correct the goalkeeper
     if abs(errX) > 20:
-        cmdGoalKeeper.vx = KpVx * errX
+        cmdGoalKeeper.v_x = KpVx * errX
     else:
-        cmdGoalKeeper.vx = 0.0
+        cmdGoalKeeper.v_x = 0.0
     # Error between the desired angle and goalkeeper angle
-    errW = 0.0 - self.state.robotsYellow[0].theta
+    errW = 0.0 - self.state.robots_yellow[0].theta
     # If the error is greater than 0.1 rad (5,73 deg), correct the goalkeeper
     if abs(errW) > 0.1:
-        cmdGoalKeeper.vw = KpVw * errW
+        cmdGoalKeeper.v_theta = KpVw * errW
     else:
-        cmdGoalKeeper.vw = 0.0
+        cmdGoalKeeper.v_theta = 0.0
 
     return cmdGoalKeeper

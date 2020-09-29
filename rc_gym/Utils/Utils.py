@@ -56,8 +56,8 @@ def normX(x):
     return clip(x / 170.0, -0.2, 1.2)
 
 
-def normVx(vx):
-    return clip(vx / 80.0, -1.25, 1.25)
+def normVx(v_x):
+    return clip(v_x / 80.0, -1.25, 1.25)
 
 
 def normVt(vt):

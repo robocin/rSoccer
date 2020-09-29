@@ -59,7 +59,7 @@ class FramePB(Frame):
             robot.v_y = _robot.vy
             robot.v_theta = _robot.vorientation
 
-            self.robotsBlue[robot.id] = robot
+            self.robots_blue[robot.id] = robot
 
         for _robot in packet.detection.robots_yellow:
             robot = Robot()
@@ -71,4 +71,4 @@ class FramePB(Frame):
             robot.v_y = _robot.vy
             robot.v_theta = _robot.vorientation
 
-            self.robotsYellow[robot.id] = robot
+            self.robots_yellow[robot.id] = robot
