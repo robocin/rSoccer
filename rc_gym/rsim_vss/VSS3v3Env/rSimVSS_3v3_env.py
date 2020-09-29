@@ -58,7 +58,7 @@ class rSimVSS3v3Env(rSimVSSEnv):
     """
 
     def __init__(self):
-        super().__init__(field_type=0, n_robots=3)
+        super().__init__(field_type=0, n_robots_blue=2, n_robots_yellow=1)
         self.action_space = gym.spaces.Box(
             low=-1, high=1, shape=(1, 2), dtype=np.float32)
 
@@ -70,8 +70,9 @@ class rSimVSS3v3Env(rSimVSSEnv):
         # ball bounds
         obs_bounds = [bound_x, bound_y] + [0.2] + [bound_v, bound_v]
         # concatenate robot bounds
-        obs_bounds = obs_bounds + (self.n_robots * 2) * \
-            [bound_x, bound_y, bound_v, bound_v]
+        obs_bounds = obs_bounds + self.n_robots_blue * \
+            [bound_x, bound_y, bound_v, bound_v]\
+            + self.n_robots_yellow * [bound_x, bound_y, bound_v, bound_v]
         obs_bounds = np.array(obs_bounds, dtype=np.float32)
 
         self.observation_space = gym.spaces.Box(
@@ -89,13 +90,13 @@ class rSimVSS3v3Env(rSimVSSEnv):
         observation.append(self.frame.ball.v_x)
         observation.append(self.frame.ball.v_y)
 
-        for i in range(self.n_robots):
+        for i in range(self.n_robots_blue):
             observation.append(self.frame.robots_blue[i].x)
             observation.append(self.frame.robots_blue[i].y)
             observation.append(self.frame.robots_blue[i].v_x)
             observation.append(self.frame.robots_blue[i].v_y)
 
-        for i in range(self.n_robots):
+        for i in range(self.n_robots_yellow):
             observation.append(self.frame.robots_yellow[i].x)
             observation.append(self.frame.robots_yellow[i].y)
             observation.append(self.frame.robots_yellow[i].v_x)

@@ -12,7 +12,7 @@ class Frame:
         self.goals_yellow = None
         self.goals_blue = None
 
-    def parse(self, state, status, n_robots):
+    def parse(self, state, status, n_robots_blue=3, n_robots_yellow=3):
         '''It parses the state received from grSim in a common state for environment'''
         self.time = status['time']
         self.goals_yellow = status['goals_yellow']
@@ -24,18 +24,23 @@ class Frame:
         self.ball.v_x = state[3]
         self.ball.v_y = state[4]
 
-        for i in range(n_robots * 2):
+        for i in range(n_robots_blue):
             robot = Robot()
-            robot.id = i % n_robots
+            robot.id = i
             robot.x = state[5 + (4 * i) + 0]
             robot.y = state[5 + (4 * i) + 1]
             robot.v_x = state[5 + (4 * i) + 2]
             robot.v_y = state[5 + (4 * i) + 3]
+            self.robots_blue[robot.id] = robot
 
-            if i < n_robots:
-                self.robots_blue[robot.id] = robot
-            else:
-                self.robots_yellow[robot.id] = robot
+        for i in range(n_robots_yellow):
+            robot = Robot()
+            robot.id = i
+            robot.x = state[5 + n_robots_blue*4 + (4 * i) + 0]
+            robot.y = state[5 + n_robots_blue*4 + (4 * i) + 1]
+            robot.v_x = state[5 + n_robots_blue*4 + (4 * i) + 2]
+            robot.v_y = state[5 + n_robots_blue*4 + (4 * i) + 3]
+            self.robots_yellow[robot.id] = robot
 
 
 class FramePB(Frame):

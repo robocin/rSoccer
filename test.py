@@ -10,8 +10,8 @@ import gym
 import rc_gym
 
 # Using penalty env
-# env = gym.make('rSimVSS3v3-v0')
-env = gym.make('grSimSSLPenalty-v0')
+env = gym.make('rSimVSS3v3-v0')
+# env = gym.make('grSimSSLPenalty-v0')
 
 
 env.reset()
@@ -20,7 +20,7 @@ for i in range(1000):
     done = False
     env.reset()
     while not done:
-        # env.render()
         action = env.action_space.sample()
         next_state, reward, done, _ = env.step(action)
+        env.render()
     print(reward)
