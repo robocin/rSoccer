@@ -13,7 +13,7 @@ class rSimVSS3v3Env(rSimVSSEnv):
         This environment controls a robot soccer in VSS League 3v3 match
     Observation:
         Type: Box(29)
-        Num     Observation
+        Num     Observation units in meters
         0       Ball X
         1       Ball Y
         2       Ball Z
@@ -46,8 +46,8 @@ class rSimVSS3v3Env(rSimVSSEnv):
     Actions:
         Type: Box(1, 2)
         Num     Action
-        0       id 0 Blue Robot Wheel 1 Speed
-        1       id 0 Blue Robot Wheel 2 Speed
+        0       id 0 Blue Robot Wheel 1 Speed (%)
+        1       id 0 Blue Robot Wheel 2 Speed (%)
     Reward:
         1 if Blue Team Goal
         -1 if Yellow Team Goal
@@ -58,12 +58,22 @@ class rSimVSS3v3Env(rSimVSSEnv):
     """
 
     def __init__(self):
-        self.action_space = gym.spaces.Box(low=0, high=1, shape=(1, 2), dtype=np.float32)
-        self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(28,), dtype=np.float32)
-        self.n_robots = 3
-        self.field_type = 0
+        super().__init__(field_type=0, n_robots=3)
+        self.action_space = gym.spaces.Box(low=1, high=1, shape=(1, 2), dtype=np.float32)
+        
+        # Define observation space bound
+        bound_x = (self.field_params['field_length'] / 2) + self.field_params['goal_depth']
+        bound_y = self.field_params['field_width'] / 2
+        bound_v = 2
+        # ball bounds
+        obs_bounds = [bound_x, bound_y] + [0.2] + [bound_v, bound_v]
+        # concatenate robot bounds
+        obs_bounds = obs_bounds + (self.n_robots * 2) * [bound_x, bound_y, bound_v, bound_v]
+        obs_bounds = np.array(obs_bounds, dtype=np.float32)
+
+        self.observation_space = gym.spaces.Box(low=-obs_bounds, high=obs_bounds, dtype=np.float32)
+
         self.last_frame = None
-        super().__init__()
         print('Environment initialized')
 
     def _frame_to_observations(self):
@@ -85,15 +95,15 @@ class rSimVSS3v3Env(rSimVSSEnv):
             observation.append(self.frame.robots_yellow[i].y)
             observation.append(self.frame.robots_yellow[i].vx)
             observation.append(self.frame.robots_yellow[i].vy)
-        
+
 
         return np.array(observation)
 
     def _get_commands(self, actions):
         commands = []
 
-        commands.append(VSSRobot(yellow=False, id=0,
-                              v_wheel1=actions[0][0], v_wheel2=actions[0][1]))
+        commands.append(VSSRobot(yellow=False, id=0, v_wheel1=actions[0][0],
+                                 v_wheel2=actions[0][1]))
 
         return commands
 

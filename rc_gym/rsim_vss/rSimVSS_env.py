@@ -12,13 +12,13 @@ from rc_gym.rsim_vss.Entities import VSSFrame
 from rc_gym.rsim_vss.render import RCRender
 
 class rSimVSSEnv(gym.Env):
-    def __init__(self):
-        self.simulator = robosim.SimulatorVSS(field_type=self.field_type,
-                                              n_robots=self.n_robots)
-        if self.action_space == None or self.observation_space == None:
-            raise Exception
+    def __init__(self, field_type: int, n_robots: int):
+        self.simulator = robosim.SimulatorVSS(field_type=field_type,
+                                              n_robots=n_robots)
+        self.field_type:int = field_type
+        self.n_robots:int = n_robots
         self.field_params: Dict[str, np.float64] = self.simulator.get_field_params()
-        self.frame = None
+        self.frame: Frame = None
         self.view = None
         self.steps = 0
 
@@ -98,8 +98,8 @@ class rSimVSSEnv(gym.Env):
                 rbt_id = self.n_robots + cmd.id
             else:
                 rbt_id = cmd.id
-            sim_commands[rbt_id][0] = cmd.v_wheel1
-            sim_commands[rbt_id][1] = cmd.v_wheel2
+            sim_commands[rbt_id][0] = cmd.v_wheel1 * 100
+            sim_commands[rbt_id][1] = cmd.v_wheel2 * 100
         
         return sim_commands
 
