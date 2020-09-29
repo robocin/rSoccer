@@ -59,7 +59,7 @@ class rSimVSS3v3Env(rSimVSSEnv):
 
     def __init__(self):
         super().__init__(field_type=0, n_robots=3)
-        self.action_space = gym.spaces.Box(low=1, high=1, shape=(1, 2), dtype=np.float32)
+        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(1, 2), dtype=np.float32)
         
         # Define observation space bound
         bound_x = (self.field_params['field_length'] / 2) + self.field_params['goal_depth']
@@ -81,6 +81,7 @@ class rSimVSS3v3Env(rSimVSSEnv):
 
         observation.append(self.frame.ball.x)
         observation.append(self.frame.ball.y)
+        observation.append(self.frame.ball.z)
         observation.append(self.frame.ball.vx)
         observation.append(self.frame.ball.vy)
 
