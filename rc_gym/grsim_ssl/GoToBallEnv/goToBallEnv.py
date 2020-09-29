@@ -94,8 +94,8 @@ class goToBallEnv(GrSimSSLEnv):
   def _getFormation(self):
     #To CHANGE: 
     # ball penalty position
-    #ball = Ball(x=random.uniform(-4, 0), y=random.uniform(-4, 4), vx=0, vy=0)
-    ball = Ball(x=random.uniform(-4.5,-3.5), y=random.uniform(-1.5, 1.5), vx=0, vy=0)
+    #ball = Ball(x=random.uniform(-4, 0), y=random.uniform(-4, 4), v_x=0, v_y=0)
+    ball = Ball(x=random.uniform(-4.5,-3.5), y=random.uniform(-1.5, 1.5), v_x=0, v_y=0)
     
     # Goalkeeper penalty position
     #goalKeeper = Robot(id=0, x=-6, y=0, theta=0, yellow = True)
