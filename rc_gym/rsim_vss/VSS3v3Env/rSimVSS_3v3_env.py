@@ -3,7 +3,7 @@ import math
 import numpy as np
 
 from rc_gym.Utils import distance
-from rc_gym.Entities import Robot
+from rc_gym.Entities import Robot, Frame
 from rc_gym.rsim_vss.rSimVSS_env import rSimVSSEnv
 
 
@@ -127,3 +127,17 @@ class rSimVSS3v3Env(rSimVSSEnv):
         done = self.frame.time >= 300000
 
         return reward, done
+    
+    def _get_initial_positions_frame(self):
+        pos_frame: Frame = Frame()
+        
+        pos_frame.ball.x = 0.0
+        pos_frame.ball.y = 0.0
+        
+        for i in range(self.n_robots_blue):
+            pos_frame.robots_blue[i] = Robot(x=-1, y=(0.5 - (0.5 * i)))
+            
+        for i in range(self.n_robots_yellow):
+            pos_frame.robots_yellow[i] = Robot(x=1, y=(0.5 - (0.5 * i)))
+
+        return pos_frame
