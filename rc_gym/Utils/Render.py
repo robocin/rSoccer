@@ -108,7 +108,7 @@ class RCRender:
 
         Parameters
         ----------
-        None
+        Frame
 
         Returns
         -------

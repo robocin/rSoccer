@@ -20,7 +20,6 @@ for i in range(1000):
     done = False
     env.reset()
     while not done:
-        env.render()
         action = env.action_space.sample()
         next_state, reward, done, _ = env.step(action)
         env.render()

@@ -14,7 +14,7 @@ from rc_gym.Utils.Render import RCRender
 
 class rSimVSSEnv(gym.Env):
     def __init__(self, field_type: int,
-                 n_robots_blue: int = 3, n_robots_yellow: int = 3):
+                 n_robots_blue: int, n_robots_yellow: int):
         self.simulator = robosim.SimulatorVSS(field_type=field_type,
                                               n_robots_blue=n_robots_blue,
                                               n_robots_yellow=n_robots_yellow)
