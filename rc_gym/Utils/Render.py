@@ -3,6 +3,7 @@ import os
 import numpy as np
 import pygame
 from pygame.constants import QUIT
+from rc_gym.Entities import Frame
 
 
 class RCRender:
@@ -101,8 +102,7 @@ class RCRender:
                          pygame.Rect(goal_x, goal_y,
                                      goal_length, goal_width), 1)
 
-    def view(self, ball: np.ndarray,
-             blues: np.ndarray, yellows: np.ndarray) -> None:
+    def render_frame(self, frame:Frame) -> None:
         '''
         Draws the field, ball and players.
 
@@ -124,15 +124,16 @@ class RCRender:
         self.draw_field()
         ball_r = int(0.015*self.scale)
         pygame.draw.circle(self.screen, (254, 139, 0),
-                           self.pos_transform(*ball), ball_r)
+                           self.pos_transform(x=frame.ball.x, y=frame.ball.y),
+                           ball_r)
         robot_r = int(0.025*self.scale)
-        for blue in blues:
+        for blue in frame.robots_blue.values():
             pygame.draw.circle(self.screen, (26, 43, 218),
-                               self.pos_transform(*blue),
+                               self.pos_transform(x=blue.x, y=blue.y),
                                robot_r, robot_r-3)
-        for yellow in yellows:
+        for yellow in frame.robots_yellow.values():
             pygame.draw.circle(self.screen, (249, 255, 55),
-                               self.pos_transform(*yellow),
+                               self.pos_transform(x=yellow.x, y=yellow.y),
                                robot_r, robot_r-3)
         pygame.display.update()
 

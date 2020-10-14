@@ -9,7 +9,7 @@ import gym
 import robosim
 import numpy as np
 from rc_gym.Entities import Frame
-from rc_gym.rsim_vss.render import RCRender
+from rc_gym.Utils.Render import RCRender
 
 
 class rSimVSSEnv(gym.Env):
@@ -87,16 +87,7 @@ class rSimVSSEnv(gym.Env):
             self.view = RCRender(
                 self.n_robots_blue, self.n_robots_yellow, self.field_params)
 
-        state = self.simulator.get_state()
-        ball = (state[0], state[1])
-        blues = list()
-        for i in range(5, self.n_robots_blue*4+6, 4):
-            blues.append((state[i], state[i+1]))
-        yellows = list()
-        for i in range(self.n_robots_blue*4+5, len(state), 4):
-            yellows.append((state[i], state[i+1]))
-
-        self.view.view(ball, blues, yellows)
+        self.view.render_frame(self.frame)
 
     def commands_to_sim_commands(self, commands):
         sim_commands = np.zeros(
