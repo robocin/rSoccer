@@ -135,9 +135,9 @@ class rSimVSS3v3Env(rSimVSSEnv):
         pos_frame.ball.y = 0.0
         
         for i in range(self.n_robots_blue):
-            pos_frame.robots_blue[i] = Robot(x=-1, y=(0.5 - (0.5 * i)))
+            pos_frame.robots_blue[i] = Robot(x=-1, y=(0.5 - (0.5 * i)), theta=0)
             
         for i in range(self.n_robots_yellow):
-            pos_frame.robots_yellow[i] = Robot(x=1, y=(0.5 - (0.5 * i)))
+            pos_frame.robots_yellow[i] = Robot(x=1, y=(0.5 - (0.5 * i)), theta=0)
 
         return pos_frame

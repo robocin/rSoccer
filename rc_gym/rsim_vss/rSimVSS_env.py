@@ -119,14 +119,14 @@ class rSimVSSEnv(gym.Env):
 
         blue_pos: List[List[float]] = []
         for robot in replacement_frame.robots_blue.values():
-            robot_pos: List[float] = [robot.x, robot.y]
+            robot_pos: List[float] = [robot.x, robot.y, robot.theta]
             blue_pos.append(robot_pos)
 
         replacement_pos['blue_pos'] = np.array(blue_pos)
 
         yellow_pos: List[List[float]] = []
         for robot in replacement_frame.robots_yellow.values():
-            robot_pos: List[float] = [robot.x, robot.y]
+            robot_pos: List[float] = [robot.x, robot.y, robot.theta]
             yellow_pos.append(robot_pos)
 
         replacement_pos['yellow_pos'] = np.array(yellow_pos)
