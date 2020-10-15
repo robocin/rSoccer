@@ -156,8 +156,8 @@ class RCRender:
             Pixel position of object
 
         '''
-        pos = np.array([x+self.field_params['field_length']/2,
-                        y+self.field_params['field_width']/2])
+        pos = np.array([x + (self.field_params['field_length']/2),
+                        (self.field_params['field_width']/2) - y])
         pos *= self.scale
         pos = np.array(pos, dtype=np.int) + 25
         return pos
