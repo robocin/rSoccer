@@ -112,6 +112,18 @@ class rSimVSS3v3Env(rSimVSSEnv):
         self.energy_penalty = abs(actions[0][0] * 100) + abs(actions([0][0]) * 100)
         commands.append(Robot(yellow=False, id=0, v_wheel1=actions[0][0],
                               v_wheel2=actions[0][1]))
+        
+        # Send random commands to the other robots
+        commands.append(Robot(yellow=False, id=1, v_wheel1=random.uniform(-1,1),
+                              v_wheel2=random.uniform(-1,1)))
+        commands.append(Robot(yellow=False, id=2, v_wheel1=random.uniform(-1,1),
+                              v_wheel2=random.uniform(-1,1)))
+        commands.append(Robot(yellow=True, id=0, v_wheel1=random.uniform(-1,1),
+                              v_wheel2=random.uniform(-1,1)))
+        commands.append(Robot(yellow=True, id=1, v_wheel1=random.uniform(-1,1),
+                              v_wheel2=random.uniform(-1,1)))
+        commands.append(Robot(yellow=True, id=2, v_wheel1=random.uniform(-1,1),
+                              v_wheel2=random.uniform(-1,1)))
 
         return commands
 
