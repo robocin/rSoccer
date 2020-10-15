@@ -80,6 +80,7 @@ class rSimVSS3v3Env(rSimVSSEnv):
             low=-obs_bounds, high=obs_bounds, dtype=np.float32)
 
         self.last_frame = None
+        self.energy_penalty = 0
         print('Environment initialized')
 
     def _frame_to_observations(self):
@@ -108,24 +109,84 @@ class rSimVSS3v3Env(rSimVSSEnv):
     def _get_commands(self, actions):
         commands = []
 
+        self.energy_penalty = abs(actions[0][0] * 100) + abs(actions([0][0]) * 100)
         commands.append(Robot(yellow=False, id=0, v_wheel1=actions[0][0],
                               v_wheel2=actions[0][1]))
 
         return commands
 
     def _calculate_reward_and_done(self):
-        reward = 0
+        goal_score = 0
         done = False
+        
+        w_move * move_reward + \
+        w_ball_pot * ball_potential + \
+        w_ball_grad * ball_grad + \
+        w_energy * self.energy_penalty
 
+        # Check if a goal has ocurred
         if self.last_frame is not None:
+            self.previous_ball_potential = None
             if self.last_frame.goals_yellow > self.frame.goals_yellow:
-                reward += 1
+                goal_score = 1
             if self.last_frame.goals_blue > self.frame.goals_blue:
-                reward -= 1
+                goal_score = -1
+
+            # If goal scored reward = 1 favoured, and -1 if against
+            if goal_score != 0:
+                reward = goal_score
+            else:
+                # Move Reward : Reward the robot for moving in ball direction
+                prev_dist_robot_ball = distance(
+                    (self.last_frame.ball.x, self.last_frame.ball.y),
+                    (self.last_frame.robots_blue[0].x, self.last_frame.robots_blue[0].y)
+                )
+                dist_robot_ball = distance(
+                    (self.frame.ball.x, self.frame.ball.y),
+                    (self.frame.robots_blue[0].x, self.frame.robots_blue[0].y)
+                )
+                move_reward = prev_dist_robot_ball - dist_robot_ball
+                
+                # Ball Potential Reward : Reward the ball for moving in the opponent goal direction and away from team goal
+                half_field_length = ((self.field_params['field_length'] / 2) + self.field_params['goal_depth'])
+                prev_dist_ball_enemy_goal_center = distance(
+                    (self.last_frame.ball.x, self.last_frame.ball.y),
+                    (half_field_length, 0)
+                )
+                
+                dist_ball_enemy_goal_center = distance(
+                    (self.frame.ball.x, self.frame.ball.y),
+                    (half_field_length, 0)
+                )
+                
+                prev_dist_ball_own_goal_center = distance(
+                    (self.last_frame.ball.x, self.last_frame.ball.y),
+                    (-half_field_length, 0)
+                )
+                
+                dist_ball_own_goal_center = distance(
+                    (self.frame.ball.x, self.frame.ball.y),
+                    (-half_field_length, 0)
+                )
+                ball_potential = dist_ball_own_goal_center - dist_ball_enemy_goal_center
+                
+                ball_grad = (dist_ball_own_goal_center - prev_dist_ball_own_goal_center) + \
+                    (prev_dist_ball_enemy_goal_center - dist_ball_enemy_goal_center)
+                
+                # Energy Reward : Calculated at _get_commands() since it needs the action sent to robot
+                
+                # Colisions Reward : Penalty when too close to teammates TODO
+                
+                reward = w_move * move_reward + \
+                    w_ball_pot * ball_potential + \
+                    w_ball_grad * ball_grad + \
+                    w_energy * self.energy_penalty
+                    # + w_collision * collisions
+
 
         self.last_frame = self.frame
 
-        done = self.frame.time >= 300000
+        done = self.frame.time >= 300000 or goal_score != 0
 
         return reward, done
     
