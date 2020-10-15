@@ -1,6 +1,7 @@
 import gym
 import math
 import numpy as np
+import math
 
 from rc_gym.Utils import distance
 from rc_gym.Entities import Robot, Frame
@@ -10,7 +11,7 @@ from rc_gym.rsim_vss.rSimVSS_env import rSimVSSEnv
 class rSimVSS3v3Env(rSimVSSEnv):
     """
     Description:
-        This environment controls a robot soccer in VSS League 3v3 match
+        This environment controls a single robot soccer in VSS League 3v3 match
     Observation:
         Type: Box(29)
         Num     Observation units in meters
@@ -134,10 +135,12 @@ class rSimVSS3v3Env(rSimVSSEnv):
         pos_frame.ball.x = 0.0
         pos_frame.ball.y = 0.0
         
-        for i in range(self.n_robots_blue):
-            pos_frame.robots_blue[i] = Robot(x=-0.5, y=(0.5 - (0.5 * i)), theta=0)
-            
-        for i in range(self.n_robots_yellow):
-            pos_frame.robots_yellow[i] = Robot(x=0.5, y=(0.5 - (0.5 * i)), theta=0)
-
+        pos_frame.robots_blue[0] = Robot(x=-0.5, y=0.0, theta=0)
+        pos_frame.robots_blue[1] = Robot(x=-0.5, y=0.5, theta=0)
+        pos_frame.robots_blue[2] = Robot(x=-0.5, y=-0.5, theta=0)
+        
+        pos_frame.robots_yellow[0] = Robot(x=0.5, y=0.0, theta=math.pi)
+        pos_frame.robots_yellow[1] = Robot(x=0.5, y=0.5, theta=math.pi)
+        pos_frame.robots_yellow[2] = Robot(x=0.5, y=-0.5, theta=math.pi)
+        
         return pos_frame
