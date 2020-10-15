@@ -2,6 +2,7 @@ import gym
 import math
 import numpy as np
 import math
+import random
 
 from rc_gym.Utils import distance
 from rc_gym.Entities import Robot, Frame
@@ -108,10 +109,11 @@ class rSimVSS3v3Env(rSimVSSEnv):
 
     def _get_commands(self, actions):
         commands = []
-
-        self.energy_penalty = abs(actions[0][0] * 100) + abs(actions([0][0]) * 100)
-        commands.append(Robot(yellow=False, id=0, v_wheel1=actions[0][0],
-                              v_wheel2=actions[0][1]))
+        v_wheel1 = actions[0][0]
+        v_wheel2 = actions[0][1]
+        self.energy_penalty = -(abs(v_wheel1 * 100) + abs(v_wheel2 * 100))
+        commands.append(Robot(yellow=False, id=0, v_wheel1=v_wheel1,
+                              v_wheel2=v_wheel2))
         
         # Send random commands to the other robots
         commands.append(Robot(yellow=False, id=1, v_wheel1=random.uniform(-1,1),
@@ -130,11 +132,12 @@ class rSimVSS3v3Env(rSimVSSEnv):
     def _calculate_reward_and_done(self):
         goal_score = 0
         done = False
+        reward = 0
         
-        w_move * move_reward + \
-        w_ball_pot * ball_potential + \
-        w_ball_grad * ball_grad + \
-        w_energy * self.energy_penalty
+        w_move = 0.0001
+        w_ball_pot = 0.0001
+        w_ball_grad = 0.0001
+        w_energy = 0.0001
 
         # Check if a goal has ocurred
         if self.last_frame is not None:
@@ -165,7 +168,6 @@ class rSimVSS3v3Env(rSimVSSEnv):
                     (self.last_frame.ball.x, self.last_frame.ball.y),
                     (half_field_length, 0)
                 )
-                
                 dist_ball_enemy_goal_center = distance(
                     (self.frame.ball.x, self.frame.ball.y),
                     (half_field_length, 0)
