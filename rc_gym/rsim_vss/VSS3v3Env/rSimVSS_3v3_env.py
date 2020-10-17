@@ -142,9 +142,9 @@ class rSimVSS3v3Env(rSimVSSEnv):
         # Check if a goal has ocurred
         if self.last_frame is not None:
             self.previous_ball_potential = None
-            if self.last_frame.goals_yellow > self.frame.goals_yellow:
+            if self.frame.ball.x > (self.field_params['field_length'] / 2):
                 goal_score = 1
-            if self.last_frame.goals_blue > self.frame.goals_blue:
+            if self.frame.ball.x < -(self.field_params['field_length'] / 2):
                 goal_score = -1
 
             # If goal scored reward = 1 favoured, and -1 if against
