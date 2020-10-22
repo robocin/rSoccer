@@ -62,7 +62,7 @@ class rSimVSS3v3Env(rSimVSSEnv):
     def __init__(self):
         super().__init__(field_type=0, n_robots_blue=3, n_robots_yellow=3)
         self.action_space = gym.spaces.Box(
-            low=-1, high=1, shape=(1, 2), dtype=np.float32)
+            low=-1, high=1, shape=(2, ), dtype=np.float32)
 
         # Define observation space bound
         bound_x = (self.field_params['field_length'] /
@@ -109,8 +109,8 @@ class rSimVSS3v3Env(rSimVSSEnv):
 
     def _get_commands(self, actions):
         commands = []
-        v_wheel1 = actions[0][0]
-        v_wheel2 = actions[0][1]
+        v_wheel1 = actions[0]
+        v_wheel2 = actions[1]
         self.energy_penalty = -(abs(v_wheel1 * 100) + abs(v_wheel2 * 100))
         commands.append(Robot(yellow=False, id=0, v_wheel1=v_wheel1,
                               v_wheel2=v_wheel2))
