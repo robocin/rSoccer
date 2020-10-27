@@ -29,7 +29,7 @@ ball_init: 0: stopped at the center,
 
 class FiraParser(object):
 
-    def __init__(self, ip=None, port=10020, is_team_yellow=False,
+    def __init__(self, ip=None, port=10002, is_team_yellow=False,
                  team_name='Unknown', manage_process=True,
                  fast_mode=True, render=False):
         # -- Connection

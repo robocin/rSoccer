@@ -61,8 +61,8 @@ FIRA_PARAMS = {
     # simulator config:
     'simulator_path': bin_path + 'fira_sim/bin/FIRASim',
     'simulator_type': 'FiraParser',
-    'ip': '127.0.0.1',  # real: '224.5.23.2'
-    'port': 10020,  # real: 10006
+    'ip': '224.0.0.1',  # real: '224.5.23.2'
+    'port': 10002,  # real: 10006
     'init_agents': 0,  # 0: default positions, 1: random positions, 2: random base positions, 3: one agent, 4: goal_keeper, 5: penalty left, 6: penalty right
     'init_ball': 2,  # 0: stopped at the center, 1: random slow, 2: towards left goal, 3: towards right goal, 4: towards a random goal
     'ia': False,
