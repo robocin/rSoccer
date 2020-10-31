@@ -1,12 +1,11 @@
-import gym
-import math
-import numpy as np
 import math
 import random
 
-from rc_gym.Utils import distance
-from rc_gym.Entities import Robot, Frame
+import gym
+import numpy as np
+from rc_gym.Entities import Frame, Robot
 from rc_gym.rsim_vss.rSimVSS_env import rSimVSSEnv
+from rc_gym.Utils import distance, normVt, normVx, normX, normY
 
 
 class rSimVSS3v3Env(rSimVSSEnv):
@@ -14,7 +13,7 @@ class rSimVSS3v3Env(rSimVSSEnv):
     Description:
         This environment controls a single robot soccer in VSS League 3v3 match
     Observation:
-        Type: Box(29)
+        Type: Box(41)
         Num     Observation units in meters
         0       Ball X
         1       Ball Y
@@ -23,30 +22,43 @@ class rSimVSS3v3Env(rSimVSSEnv):
         4       Ball Vy
         5       id 0 Blue Robot X
         6       id 0 Blue Robot Y
-        7       id 0 Blue Robot Vx
-        8       id 0 Blue Robot Vy
-        9       id 1 Blue Robot X
-        10      id 1 Blue Robot Y
-        11      id 1 Blue Robot Vx
-        12      id 1 Blue Robot Vy
-        13      id 2 Blue Robot X
-        14      id 2 Blue Robot Y
-        15      id 2 Blue Robot Vx
-        16      id 2 Blue Robot Vy
-        17      id 0 Yellow Robot X
-        18      id 0 Yellow Robot Y
-        19      id 0 Yellow Robot Vx
-        20      id 0 Yellow Robot Vy
-        21      id 1 Yellow Robot X
-        22      id 1 Yellow Robot Y
-        23      id 1 Yellow Robot Vx
-        24      id 1 Yellow Robot Vy
-        25      id 2 Yellow Robot X
-        26      id 2 Yellow Robot Y
-        27      id 2 Yellow Robot Vx
-        28      id 2 Yellow Robot Vy
+        7       id 0 Blue Robot Dir
+        8       id 0 Blue Robot Vx
+        9       id 0 Blue Robot Vy
+        10      id 0 Blue Robot VDir
+        11      id 1 Blue Robot X
+        12      id 1 Blue Robot Y
+        13      id 1 Blue Robot Dir
+        14      id 1 Blue Robot Vx
+        15      id 1 Blue Robot Vy
+        16      id 1 Blue Robot VDir
+        17      id 2 Blue Robot X
+        18      id 2 Blue Robot Y
+        19      id 2 Blue Robot Dir
+        20      id 2 Blue Robot Vx
+        21      id 2 Blue Robot Vy
+        22      id 2 Blue Robot VDir
+        23      id 0 Yellow Robot X
+        24      id 0 Yellow Robot Y
+        25      id 0 Yellow Robot Dir
+        26      id 0 Yellow Robot Vx
+        27      id 0 Yellow Robot Vy
+        28      id 0 Yellow Robot VDir
+        29      id 1 Yellow Robot X
+        30      id 1 Yellow Robot Y
+        31      id 1 Yellow Robot Dir
+        32      id 1 Yellow Robot Vx
+        33      id 1 Yellow Robot Vy
+        34      id 1 Yellow Robot VDir
+        35      id 2 Yellow Robot X
+        36      id 2 Yellow Robot Y
+        37      id 2 Yellow Robot Dir
+        38      id 2 Yellow Robot Vx
+        39      id 2 Yellow Robot Vy
+        40      id 2 Yellow Robot VDir
+        41      Episode time
     Actions:
-        Type: Box(1, 2)
+        Type: Box(2, )
         Num     Action
         0       id 0 Blue Robot Wheel 1 Speed (%)
         1       id 0 Blue Robot Wheel 2 Speed (%)
@@ -87,23 +99,30 @@ class rSimVSS3v3Env(rSimVSSEnv):
     def _frame_to_observations(self):
         observation = []
 
-        observation.append(self.frame.ball.x)
-        observation.append(self.frame.ball.y)
-        observation.append(self.frame.ball.z)
-        observation.append(self.frame.ball.v_x)
-        observation.append(self.frame.ball.v_y)
+        observation.append(normX(self.frame.ball.x))
+        observation.append(normY(self.frame.ball.y))
+        observation.append(normVx(self.frame.ball.v_x))
+        observation.append(normVx(self.frame.ball.v_y))
 
         for i in range(self.n_robots_blue):
-            observation.append(self.frame.robots_blue[i].x)
-            observation.append(self.frame.robots_blue[i].y)
-            observation.append(self.frame.robots_blue[i].v_x)
-            observation.append(self.frame.robots_blue[i].v_y)
+            observation.append(normX(self.frame.robots_blue[i].x))
+            observation.append(normY(self.frame.robots_blue[i].y))
+            observation.append(np.sin(self.frame.robots_blue[i].theta))
+            observation.append(np.cos(self.frame.robots_blue[i].theta))
+            observation.append(normVx(self.frame.robots_blue[i].v_x))
+            observation.append(normVx(self.frame.robots_blue[i].v_y))
+            observation.append(normVt(self.frame.robots_blue[i].v_theta))
 
         for i in range(self.n_robots_yellow):
-            observation.append(self.frame.robots_yellow[i].x)
-            observation.append(self.frame.robots_yellow[i].y)
-            observation.append(self.frame.robots_yellow[i].v_x)
-            observation.append(self.frame.robots_yellow[i].v_y)
+            observation.append(normX(self.frame.robots_yellow[i].x))
+            observation.append(normY(self.frame.robots_yellow[i].y))
+            observation.append(np.sin(self.frame.robots_yellow[i].theta))
+            observation.append(np.cos(self.frame.robots_yellow[i].theta))
+            observation.append(normVx(self.frame.robots_yellow[i].v_x))
+            observation.append(normVx(self.frame.robots_yellow[i].v_y))
+            observation.append(normVt(self.frame.robots_yellow[i].v_theta))
+
+        observation.append(self.frame.time/(5*60*1000))
 
         return np.array(observation)
 

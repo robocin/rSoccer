@@ -16,6 +16,7 @@ def distance(pointA, pointB):
 
     return distance
 
+
 def mod(x, y):
     return (math.sqrt(x*x + y*y))
 
@@ -38,6 +39,7 @@ def smallestAngleDiff(target, source):
 
     return a
 
+
 def toPiRange(angle):
     angle = math.fmod(angle, 2 * math.pi)
     if angle < -math.pi:
@@ -53,15 +55,19 @@ def clip(val, vmin, vmax):
 
 
 def normX(x):
-    return clip(x / 170.0, -0.2, 1.2)
+    return clip(x / 1.5, -0.75, 0.75)
+
+
+def normY(x):
+    return clip(x / 1.3, -0.65, .65)
 
 
 def normVx(v_x):
-    return clip(v_x / 80.0, -1.25, 1.25)
+    return clip(v_x / 0.8, -1.25, 1.25)
 
 
 def normVt(vt):
-    return clip(vt / 10, -1.2, 1.2)
+    return clip(vt / 0.1, -1.2, 1.2)
 
 
 def roundTo5(x, base=5):
