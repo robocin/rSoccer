@@ -8,7 +8,7 @@ import torch
 from rc_gym.Entities import Frame, Robot
 from rc_gym.rsim_vss.rSimVSS_env import rSimVSSEnv
 from rc_gym.rsim_vss.vss_gk.attacker.models import DDPGActor, GaussianPolicy
-from rc_gym.Utils import distance, normVt, normVx, normX
+from rc_gym.Utils import distance, normVt, normVx, normX, normY
 
 
 class rSimVSSGK(rSimVSSEnv):
@@ -16,39 +16,57 @@ class rSimVSSGK(rSimVSSEnv):
     Description:
         This environment controls a single robot soccer in VSS League 3v3 match
     Observation:
-        Type: Box(29)
+        Type: Box(47)
         Num     Observation units in meters
         0       Ball X
         1       Ball Y
-        2       Ball Z
-        3       Ball Vx
-        4       Ball Vy
-        5       id 0 Blue Robot X
-        6       id 0 Blue Robot Y
+        2       Ball Vx
+        3       Ball Vy
+        4       id 0 Blue Robot X
+        5       id 0 Blue Robot Y
+        6       id 0 Blue Robot Dir
         7       id 0 Blue Robot Vx
         8       id 0 Blue Robot Vy
-        9       id 1 Blue Robot X
-        10      id 1 Blue Robot Y
-        11      id 1 Blue Robot Vx
-        12      id 1 Blue Robot Vy
-        13      id 2 Blue Robot X
-        14      id 2 Blue Robot Y
-        15      id 2 Blue Robot Vx
-        16      id 2 Blue Robot Vy
-        17      id 0 Yellow Robot X
-        18      id 0 Yellow Robot Y
-        19      id 0 Yellow Robot Vx
-        20      id 0 Yellow Robot Vy
-        21      id 1 Yellow Robot X
-        22      id 1 Yellow Robot Y
-        23      id 1 Yellow Robot Vx
-        24      id 1 Yellow Robot Vy
-        25      id 2 Yellow Robot X
-        26      id 2 Yellow Robot Y
-        27      id 2 Yellow Robot Vx
-        28      id 2 Yellow Robot Vy
+        9       id 0 Blue Robot VDir_sin
+        10      id 0 Blue Robot VDir_cos
+        11      id 1 Blue Robot X
+        12      id 1 Blue Robot Y
+        13      id 1 Blue Robot Dir
+        14      id 1 Blue Robot Vx
+        15      id 1 Blue Robot Vy
+        16      id 1 Blue Robot VDir_sin
+        17      id 1 Blue Robot VDir_cos
+        18      id 2 Blue Robot X
+        19      id 2 Blue Robot Y
+        20      id 2 Blue Robot Dir
+        21      id 2 Blue Robot Vx
+        22      id 2 Blue Robot Vy
+        23      id 2 Blue Robot VDir_sin
+        24      id 2 Blue Robot VDir_cos
+        25      id 0 Yellow Robot X
+        26      id 0 Yellow Robot Y
+        27      id 0 Yellow Robot Dir
+        28      id 0 Yellow Robot Vx
+        29      id 0 Yellow Robot Vy
+        30      id 0 Yellow Robot VDir_sin
+        31      id 0 Yellow Robot VDir_cos
+        32      id 1 Yellow Robot X
+        33      id 1 Yellow Robot Y
+        34      id 1 Yellow Robot Dir
+        35      id 1 Yellow Robot Vx
+        36      id 1 Yellow Robot Vy
+        37      id 1 Yellow Robot VDir_sin
+        38      id 1 Yellow Robot VDir_cos
+        39      id 2 Yellow Robot X
+        40      id 2 Yellow Robot Y
+        41      id 2 Yellow Robot Dir
+        42      id 2 Yellow Robot Vx
+        43      id 2 Yellow Robot Vy
+        44      id 2 Yellow Robot VDir_sin
+        45      id 2 Yellow Robot VDir_cos
+        46      Episode time
     Actions:
-        Type: Box(1, 2)
+        Type: Box(2, )
         Num     Action
         0       id 0 Blue Robot Wheel 1 Speed (%)
         1       id 0 Blue Robot Wheel 2 Speed (%)
@@ -67,20 +85,12 @@ class rSimVSSGK(rSimVSSEnv):
             low=-1, high=1, shape=(2, ), dtype=np.float32)
 
         # Define observation space bound
-        bound_x = (self.field_params['field_length'] /
-                   2) + self.field_params['goal_depth']
-        bound_y = self.field_params['field_width'] / 2
-        bound_v = 2
-        # ball bounds
-        obs_bounds = [bound_x, bound_y] + [0.2] + [bound_v, bound_v]
-        # concatenate robot bounds
-        obs_bounds = obs_bounds + self.n_robots_blue * \
-            [bound_x, bound_y, bound_v, bound_v]\
-            + self.n_robots_yellow * [bound_x, bound_y, bound_v, bound_v]
-        obs_bounds = np.array(obs_bounds, dtype=np.float32)
-
-        self.observation_space = gym.spaces.Box(
-            low=-obs_bounds, high=obs_bounds, dtype=np.float32)
+        bounds_high = np.array([1]*47)
+        bounds_low = np.array([-1]*46 + [0])
+        self.observation_space = gym.spaces.Box(low=bounds_low,
+                                                high=bounds_high,
+                                                shape=(47,),
+                                                dtype=np.float32)
 
         self.last_frame = None
         self.energy_penalty = 0
@@ -121,23 +131,30 @@ class rSimVSSGK(rSimVSSEnv):
     def _frame_to_observations(self):
         observation = []
 
-        observation.append(self.frame.ball.x)
-        observation.append(self.frame.ball.y)
-        observation.append(self.frame.ball.z)
-        observation.append(self.frame.ball.v_x)
-        observation.append(self.frame.ball.v_y)
+        observation.append(normX(self.frame.ball.x))
+        observation.append(normY(self.frame.ball.y))
+        observation.append(normVx(self.frame.ball.v_x))
+        observation.append(normVx(self.frame.ball.v_y))
 
         for i in range(self.n_robots_blue):
-            observation.append(self.frame.robots_blue[i].x)
-            observation.append(self.frame.robots_blue[i].y)
-            observation.append(self.frame.robots_blue[i].v_x)
-            observation.append(self.frame.robots_blue[i].v_y)
+            observation.append(normX(self.frame.robots_blue[i].x))
+            observation.append(normY(self.frame.robots_blue[i].y))
+            observation.append(np.sin(self.frame.robots_blue[i].theta))
+            observation.append(np.cos(self.frame.robots_blue[i].theta))
+            observation.append(normVx(self.frame.robots_blue[i].v_x))
+            observation.append(normVx(self.frame.robots_blue[i].v_y))
+            observation.append(normVt(self.frame.robots_blue[i].v_theta))
 
         for i in range(self.n_robots_yellow):
-            observation.append(self.frame.robots_yellow[i].x)
-            observation.append(self.frame.robots_yellow[i].y)
-            observation.append(self.frame.robots_yellow[i].v_x)
-            observation.append(self.frame.robots_yellow[i].v_y)
+            observation.append(normX(self.frame.robots_yellow[i].x))
+            observation.append(normY(self.frame.robots_yellow[i].y))
+            observation.append(np.sin(self.frame.robots_yellow[i].theta))
+            observation.append(np.cos(self.frame.robots_yellow[i].theta))
+            observation.append(normVx(self.frame.robots_yellow[i].v_x))
+            observation.append(normVx(self.frame.robots_yellow[i].v_y))
+            observation.append(normVt(self.frame.robots_yellow[i].v_theta))
+
+        observation.append(self.frame.time/(5*60*1000))
 
         return np.array(observation)
 
@@ -160,7 +177,6 @@ class rSimVSSGK(rSimVSSEnv):
                               v_wheel2=random.uniform(-1, 1)))
         commands.append(Robot(yellow=True, id=2, v_wheel1=random.uniform(-1, 1),
                               v_wheel2=random.uniform(-1, 1)))
-
         return commands
 
     def _calculate_future_point(self, pos, vel):

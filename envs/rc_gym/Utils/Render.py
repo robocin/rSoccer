@@ -21,7 +21,7 @@ class RCRender:
         ----------
         n_robots_blue : int
             Number of blue robots
-        
+
         n_robots_yellow : int
             Number of yellow robots
 
@@ -102,7 +102,7 @@ class RCRender:
                          pygame.Rect(goal_x, goal_y,
                                      goal_length, goal_width), 1)
 
-    def render_frame(self, frame:Frame) -> None:
+    def render_frame(self, frame: Frame) -> None:
         '''
         Draws the field, ball and players.
 
@@ -126,15 +126,26 @@ class RCRender:
         pygame.draw.circle(self.screen, (254, 139, 0),
                            self.pos_transform(x=frame.ball.x, y=frame.ball.y),
                            ball_r)
-        robot_r = int(0.025*self.scale)
+        robot_r = int(0.04*self.scale)
         for blue in frame.robots_blue.values():
+            center = self.pos_transform(x=blue.x, y=blue.y)
             pygame.draw.circle(self.screen, (26, 43, 218),
-                               self.pos_transform(x=blue.x, y=blue.y),
+                               center,
                                robot_r, robot_r-3)
+
+            pygame.draw.line(self.screen, (0, 0, 0),
+                             center,
+                             (center[0] + robot_r * np.cos(blue.theta),
+                              center[1] + robot_r * np.sin(blue.theta)), 2)
         for yellow in frame.robots_yellow.values():
+            center = self.pos_transform(x=yellow.x, y=yellow.y)
             pygame.draw.circle(self.screen, (249, 255, 55),
-                               self.pos_transform(x=yellow.x, y=yellow.y),
+                               center,
                                robot_r, robot_r-3)
+            pygame.draw.line(self.screen, (0, 0, 0),
+                             center,
+                             (center[0] + robot_r * np.cos(yellow.theta),
+                              center[1] + robot_r * np.sin(yellow.theta)), 2)
         pygame.display.update()
 
     def pos_transform(self, x: float, y: float) -> np.ndarray:
