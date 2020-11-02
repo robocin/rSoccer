@@ -5,12 +5,14 @@
 '''
 
 
+import time
+from typing import Dict, List
+
 import gym
-import robosim
 import numpy as np
+import robosim
 from rc_gym.Entities import Frame
 from rc_gym.Utils.Render import RCRender
-from typing import List, Dict
 
 
 class rSimVSSEnv(gym.Env):
@@ -74,7 +76,7 @@ class rSimVSSEnv(gym.Env):
 
         return self._frame_to_observations()
 
-    def render(self) -> None:
+    def render(self, mode='human') -> None:
         '''
         Renders the game depending on 
         ball's and players' positions.
@@ -93,6 +95,8 @@ class rSimVSSEnv(gym.Env):
                 self.n_robots_blue, self.n_robots_yellow, self.field_params)
 
         self.view.render_frame(self.frame)
+        if mode == 'human':
+            time.sleep(0.01)
 
     def frame_to_replacement(self, replacement_frame: Frame) -> Dict[str, np.ndarray]:
         '''

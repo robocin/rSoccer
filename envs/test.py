@@ -8,6 +8,7 @@
 
 import gym
 import rc_gym
+import numpy as np
 
 # Using penalty env
 env = gym.make('rSimVSS3v3-v0')
@@ -20,7 +21,7 @@ for i in range(1000):
     done = False
     env.reset()
     while not done:
-        action = env.action_space.sample()
+        action = np.array([0.99, 0.99])
         next_state, reward, done, _ = env.step(action)
         env.render()
 

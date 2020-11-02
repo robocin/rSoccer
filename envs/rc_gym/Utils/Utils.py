@@ -40,7 +40,7 @@ def smallestAngleDiff(target, source):
     return a
 
 
-def toPiRange(angle):
+def to_pi_range(angle):
     angle = math.fmod(angle, 2 * math.pi)
     if angle < -math.pi:
         angle = angle + 2 * math.pi
