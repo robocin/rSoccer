@@ -8,7 +8,7 @@ import torch
 from rc_gym.Entities import Frame, Robot
 from rc_gym.rsim_vss.rSimVSS_env import rSimVSSEnv
 from rc_gym.rsim_vss.vss_gk.attacker.models import DDPGActor, GaussianPolicy
-from rc_gym.Utils import distance, normVt, normVx, normX, normY
+from rc_gym.Utils import distance, normVt, normVx, normX, normY, to_pi_range
 
 
 class rSimVSSGK(rSimVSSEnv):
@@ -79,54 +79,81 @@ class rSimVSSGK(rSimVSSEnv):
         Match time
     """
 
+    atk_target_rho = 0
+    atk_target_theta = 0
+    atk_target_x = 0
+    atk_target_y = 0
+
     def __init__(self):
         super().__init__(field_type=0, n_robots_blue=3, n_robots_yellow=3)
         self.action_space = gym.spaces.Box(
             low=-1, high=1, shape=(2, ), dtype=np.float32)
 
         # Define observation space bound
-        bounds_high = np.array([1]*47)
-        bounds_low = np.array([-1]*46 + [0])
+        bounds_high = np.array([1]*35)
+        bounds_low = np.array([-1]*34 + [0])
         self.observation_space = gym.spaces.Box(low=bounds_low,
                                                 high=bounds_high,
-                                                shape=(47,),
+                                                shape=(35,),
                                                 dtype=np.float32)
 
         self.last_frame = None
         self.energy_penalty = 0
         self.attacker = None
+        self.load_atk()
         print('Environment initialized')
 
-    # def load_atk(self):
-    #     device = torch.device('cpu')
-    #     atk_path = os.path.dirname(os.path.realpath(
-    #         __file__)) + '/attacker/attacker_model.pth'
-    #     self.attacker = GaussianPolicy(53, 2)
-    #     atk_checkpoint = torch.load(atk_path, map_location=device)
-    #     self.attacker.load_state_dict(atk_checkpoint['state_dict_act'])
+    def load_atk(self):
+        device = torch.device('cpu')
+        atk_path = os.path.dirname(os.path.realpath(
+            __file__)) + '/attacker/atk_model.pth'
+        self.attacker = DDPGActor(53, 2)
+        atk_checkpoint = torch.load(atk_path, map_location=device)
+        self.attacker.load_state_dict(atk_checkpoint['state_dict_act'])
+        self.attacker.eval()
+    
+    def update_atk_targets(self, atk_action):
 
-    # def _atk_obs(self):
-    #     observation = []
+        angular_speed_desired = atk_action[0] * 7
+        linear_speed_desired = atk_action[1] * 90
+        self.atk_target_rho = linear_speed_desired / 1.5
+        self.atk_target_theta = to_pi_range(self.atk_target_theta + angular_speed_desired / -7.5)
+        self.atk_target_x = self.frame.robots_yellow[0].x + self.atk_target_rho * math.cos(self.atk_target_theta)
+        self.atk_target_y = self.frame.robots_yellow[0].y + self.atk_target_rho * math.sin(self.atk_target_theta)
 
-    #     observation.append(self.frame.ball.x)
-    #     observation.append(self.frame.ball.y)
-    #     observation.append(self.frame.ball.z)
-    #     observation.append(self.frame.ball.v_x)
-    #     observation.append(self.frame.ball.v_y)
+    def _atk_obs(self):
+        observation = []
+        observation.append((1 - self.frame.time/(5*60*1000)))
 
-    #     for i in range(self.n_robots_blue):
-    #         observation.append(self.frame.robots_blue[i].x)
-    #         observation.append(self.frame.robots_blue[i].y)
-    #         observation.append(self.frame.robots_blue[i].v_x)
-    #         observation.append(self.frame.robots_blue[i].v_y)
+        observation.append(normX(self.frame.ball.x))
+        observation.append(normX(self.frame.ball.y))
+        observation.append(normVx(self.frame.ball.v_x))
+        observation.append(normVx(self.frame.ball.v_y))
 
-    #     for i in range(self.n_robots_yellow):
-    #         observation.append(self.frame.robots_yellow[i].x)
-    #         observation.append(self.frame.robots_yellow[i].y)
-    #         observation.append(self.frame.robots_yellow[i].v_x)
-    #         observation.append(self.frame.robots_yellow[i].v_y)
+        for i in range(self.n_robots_yellow):
+            if i == 0:
+                observation.append(normX(self.atk_target_x))
+                observation.append(normX(self.atk_target_y))
+            else:
+                observation.append(normX(self.frame.robots_yellow[i].x))
+                observation.append(normX(self.frame.robots_yellow[i].y))
+            observation.append(normX(self.frame.robots_yellow[i].x))
+            observation.append(normX(self.frame.robots_yellow[i].y))
+            observation.append(np.sin(self.frame.robots_yellow[i].theta))
+            observation.append(np.cos(self.frame.robots_yellow[i].theta))
+            observation.append(normVx(self.frame.robots_yellow[i].v_x))
+            observation.append(normVx(self.frame.robots_yellow[i].v_y))
+            observation.append(normVt(self.frame.robots_yellow[i].v_theta))
 
-    #     return np.array(observation)
+        for i in range(self.n_robots_blue):
+            observation.append(normX(self.frame.robots_blue[i].x))
+            observation.append(normX(self.frame.robots_blue[i].y))
+            observation.append(np.sin(self.frame.robots_blue[i].theta))
+            observation.append(np.cos(self.frame.robots_blue[i].theta))
+            observation.append(normVx(self.frame.robots_blue[i].v_x))
+            observation.append(normVx(self.frame.robots_blue[i].v_y))
+            observation.append(normVt(self.frame.robots_blue[i].v_theta))
+        return np.array(observation)
 
     def _frame_to_observations(self):
         observation = []
@@ -139,8 +166,6 @@ class rSimVSSGK(rSimVSSEnv):
         for i in range(self.n_robots_blue):
             observation.append(normX(self.frame.robots_blue[i].x))
             observation.append(normY(self.frame.robots_blue[i].y))
-            observation.append(np.sin(self.frame.robots_blue[i].theta))
-            observation.append(np.cos(self.frame.robots_blue[i].theta))
             observation.append(normVx(self.frame.robots_blue[i].v_x))
             observation.append(normVx(self.frame.robots_blue[i].v_y))
             observation.append(normVt(self.frame.robots_blue[i].v_theta))
@@ -148,8 +173,6 @@ class rSimVSSGK(rSimVSSEnv):
         for i in range(self.n_robots_yellow):
             observation.append(normX(self.frame.robots_yellow[i].x))
             observation.append(normY(self.frame.robots_yellow[i].y))
-            observation.append(np.sin(self.frame.robots_yellow[i].theta))
-            observation.append(np.cos(self.frame.robots_yellow[i].theta))
             observation.append(normVx(self.frame.robots_yellow[i].v_x))
             observation.append(normVx(self.frame.robots_yellow[i].v_y))
             observation.append(normVt(self.frame.robots_yellow[i].v_theta))
@@ -171,8 +194,11 @@ class rSimVSSGK(rSimVSSEnv):
                               v_wheel2=random.uniform(-1, 1)))
         commands.append(Robot(yellow=False, id=2, v_wheel1=random.uniform(-1, 1),
                               v_wheel2=random.uniform(-1, 1)))
-        commands.append(Robot(yellow=True, id=0, v_wheel1=random.uniform(-1, 1),
-                              v_wheel2=random.uniform(-1, 1)))
+
+        atk_action = self.attacker.get_action(self._atk_obs())
+        self.update_atk_targets(atk_action)
+        commands.append(Robot(yellow=True, id=0, v_wheel1=atk_action[0],
+                              v_wheel2=atk_action[1]))
         commands.append(Robot(yellow=True, id=1, v_wheel1=random.uniform(-1, 1),
                               v_wheel2=random.uniform(-1, 1)))
         commands.append(Robot(yellow=True, id=2, v_wheel1=random.uniform(-1, 1),

@@ -29,6 +29,12 @@ class DDPGActor(nn.Module):
     def forward(self, x):
         return self.net(x)
 
+    def get_action(self, state):
+        x = torch.FloatTensor(state)
+        action = self.forward(x)
+        action = action.cpu().detach().numpy()
+        return action
+
 
 class GaussianPolicy(nn.Module):
     def __init__(self, num_inputs, num_actions, hidden_dim=256, action_space=None):

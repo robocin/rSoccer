@@ -107,8 +107,6 @@ class rSimVSS3v3Env(rSimVSSEnv):
         for i in range(self.n_robots_blue):
             observation.append(normX(self.frame.robots_blue[i].x))
             observation.append(normY(self.frame.robots_blue[i].y))
-            observation.append(np.sin(self.frame.robots_blue[i].theta))
-            observation.append(np.cos(self.frame.robots_blue[i].theta))
             observation.append(normVx(self.frame.robots_blue[i].v_x))
             observation.append(normVx(self.frame.robots_blue[i].v_y))
             observation.append(normVt(self.frame.robots_blue[i].v_theta))
@@ -116,8 +114,6 @@ class rSimVSS3v3Env(rSimVSSEnv):
         for i in range(self.n_robots_yellow):
             observation.append(normX(self.frame.robots_yellow[i].x))
             observation.append(normY(self.frame.robots_yellow[i].y))
-            observation.append(np.sin(self.frame.robots_yellow[i].theta))
-            observation.append(np.cos(self.frame.robots_yellow[i].theta))
             observation.append(normVx(self.frame.robots_yellow[i].v_x))
             observation.append(normVx(self.frame.robots_yellow[i].v_y))
             observation.append(normVt(self.frame.robots_yellow[i].v_theta))
@@ -135,16 +131,16 @@ class rSimVSS3v3Env(rSimVSSEnv):
                               v_wheel2=v_wheel2))
         
         # Send random commands to the other robots
-        commands.append(Robot(yellow=False, id=1, v_wheel1=random.uniform(-1,1),
-                              v_wheel2=random.uniform(-1,1)))
-        commands.append(Robot(yellow=False, id=2, v_wheel1=random.uniform(-1,1),
-                              v_wheel2=random.uniform(-1,1)))
-        commands.append(Robot(yellow=True, id=0, v_wheel1=random.uniform(-1,1),
-                              v_wheel2=random.uniform(-1,1)))
-        commands.append(Robot(yellow=True, id=1, v_wheel1=random.uniform(-1,1),
-                              v_wheel2=random.uniform(-1,1)))
-        commands.append(Robot(yellow=True, id=2, v_wheel1=random.uniform(-1,1),
-                              v_wheel2=random.uniform(-1,1)))
+        commands.append(Robot(yellow=False, id=1, v_wheel1=0,
+                              v_wheel2=0))
+        commands.append(Robot(yellow=False, id=2, v_wheel1=0,
+                              v_wheel2=0))
+        commands.append(Robot(yellow=True, id=0, v_wheel1=0,
+                              v_wheel2=0))
+        commands.append(Robot(yellow=True, id=1, v_wheel1=0,
+                              v_wheel2=0))
+        commands.append(Robot(yellow=True, id=2, v_wheel1=0,
+                              v_wheel2=0))
 
         return commands
 
@@ -224,17 +220,25 @@ class rSimVSS3v3Env(rSimVSSEnv):
         return reward, done
     
     def _get_initial_positions_frame(self):
+        field_half_length = self.field_params['field_length'] / 2
+        field_half_width = self.field_params['field_width'] / 2
+        def x(): return random.uniform(-field_half_length + 0.1,
+                                       field_half_length - 0.1)
+        def y(): return random.uniform(-field_half_width + 0.1,
+                                       field_half_width - 0.1)
         pos_frame: Frame = Frame()
-        
-        pos_frame.ball.x = 0.0
-        pos_frame.ball.y = 0.0
-        
-        pos_frame.robots_blue[0] = Robot(x=-0.5, y=0.0, theta=0)
-        pos_frame.robots_blue[1] = Robot(x=-0.5, y=0.5, theta=0)
-        pos_frame.robots_blue[2] = Robot(x=-0.5, y=-0.5, theta=0)
-        
-        pos_frame.robots_yellow[0] = Robot(x=0.5, y=0.0, theta=math.pi)
-        pos_frame.robots_yellow[1] = Robot(x=0.5, y=0.5, theta=math.pi)
-        pos_frame.robots_yellow[2] = Robot(x=0.5, y=-0.5, theta=math.pi)
+
+        pos_frame.ball.x = x()
+        pos_frame.ball.y = y()
+
+        pos_frame.robots_blue[0] = Robot(x=x(),
+                                         y=y(),
+                                         theta=0)
+        pos_frame.robots_blue[1] = Robot(x=x(), y=y(), theta=0)
+        pos_frame.robots_blue[2] = Robot(x=x(), y=y(), theta=0)
+
+        pos_frame.robots_yellow[0] = Robot(x=x(), y=y(), theta=math.pi)
+        pos_frame.robots_yellow[1] = Robot(x=x(), y=y(), theta=math.pi)
+        pos_frame.robots_yellow[2] = Robot(x=x(), y=y(), theta=math.pi)
         
         return pos_frame
