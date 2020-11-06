@@ -4,11 +4,11 @@ import random
 import gym
 import numpy as np
 from rc_gym.Entities import Frame, Robot
-from rc_gym.rsim_vss.rSimVSS_env import rSimVSSEnv
+from rc_gym.vss.vss_gym_base import VSSBaseEnv
 from rc_gym.Utils import distance, normVt, normVx, normX, normY
 
 
-class rSimVSS3v3Env(rSimVSSEnv):
+class VSS3v3Env(VSSBaseEnv):
     """
     Description:
         This environment controls a single robot soccer in VSS League 3v3 match
