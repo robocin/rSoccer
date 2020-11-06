@@ -15,7 +15,7 @@ from rc_gym.Entities import Frame
 from rc_gym.Utils.Render import RCRender
 
 
-class rSimVSSEnv(gym.Env):
+class VSSBaseEnv(gym.Env):
     def __init__(self, field_type: int,
                  n_robots_blue: int, n_robots_yellow: int):
         self.simulator = robosim.SimulatorVSS(field_type=field_type,

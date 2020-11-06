@@ -6,12 +6,12 @@ import gym
 import numpy as np
 import torch
 from rc_gym.Entities import Frame, Robot
-from rc_gym.rsim_vss.rSimVSS_env import rSimVSSEnv
-from rc_gym.rsim_vss.vss_gk.attacker.models import DDPGActor, GaussianPolicy
+from rc_gym.vss.vss_gym_base import VSSBaseEnv
+from rc_gym.vss.env_gk.attacker.models import DDPGActor, GaussianPolicy
 from rc_gym.Utils import distance, normVt, normVx, normX, normY, to_pi_range
 
 
-class rSimVSSGK(rSimVSSEnv):
+class VSSGKEnv(VSSBaseEnv):
     """
     Description:
         This environment controls a single robot soccer in VSS League 3v3 match

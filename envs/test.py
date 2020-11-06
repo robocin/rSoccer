@@ -11,7 +11,7 @@ import rc_gym
 import numpy as np
 
 # Using penalty env
-env = gym.make('rSimVSS3v3-v0')
+env = gym.make('VSSGK-v0')
 # env = gym.make('grSimSSLPenalty-v0')
 
 
