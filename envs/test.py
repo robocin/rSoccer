@@ -11,17 +11,20 @@ import rc_gym
 import numpy as np
 
 # Using penalty env
-env = gym.make('VSSGK-v0')
+env = gym.make('VSS3v3-v0')
 # env = gym.make('grSimSSLPenalty-v0')
 
 
 env.reset()
+
 # Run for 10 episode and print reward at the end
-for i in range(1000):
+for i in range(1):
     done = False
     env.reset()
     while not done:
         action = np.array([0.99, 0.99])
         next_state, reward, done, _ = env.step(action)
-        env.render()
+        # print(done)
+        # env.render()
+env.close()
 

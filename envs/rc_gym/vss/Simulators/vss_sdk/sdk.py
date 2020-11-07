@@ -28,13 +28,20 @@ class SimulatorVSS:
     def __init__(self, field_type: int,
                  n_robots_blue: int, n_robots_yellow: int):
         self.port = 5555
-        self._connect()
-        self._start_simulation()
+        self.poller = None
+        self.simulator = None
 
     def reset(self):
+        self.stop()
+        self.start()
+
+    def stop(self):
         self._disconnect()
-        self.simulator.terminate()
-        self.simulator.wait()
+        if self.simulator is not None:
+            self.simulator.terminate()
+            self.simulator.wait()
+
+    def start(self):
         self._start_simulation()
         self._connect()
 
@@ -50,7 +57,7 @@ class SimulatorVSS:
         for cmd in commands:
             if not cmd.yellow:
                 robot = command_pb.robot_commands.add()
-                robot.id = cmd.i
+                robot.id = cmd.id
                 robot.left_vel = cmd.v_wheel1 * 100
                 robot.right_vel = cmd.v_wheel2 * 100
 
@@ -88,9 +95,9 @@ class SimulatorVSS:
 
         frame = FrameSDK()
         frame.parse(state)
-        
+
         return frame
-    
+
     def get_field_params(self):
         return {'field_width': 1.3, 'field_length': 1.5, 'penalty_width': 0.7, 'penalty_length': 0.15, 'goal_width': 0.4, 'goal_depth': 0.1}
 
@@ -132,6 +139,7 @@ class SimulatorVSS:
         #     self.socket_com.connect("tcp://127.0.0.1:%d" % (self.port + 1))
         # else:
         self.socket_com.connect("tcp://127.0.0.1:%d" % (self.port + 2))
+        self.socket_com.setsockopt(zmq.LINGER, 0)
 
         # debugs socket
         self.socket_debug = self.context.socket(
@@ -140,6 +148,7 @@ class SimulatorVSS:
         #     self.socket_debug.connect("tcp://127.0.0.1:%d" % (self.port + 3))
         # else:
         self.socket_debug.connect("tcp://127.0.0.1:%d" % (self.port + 4))
+        self.socket_debug.setsockopt(zmq.LINGER, 0)
 
         # Initialize poll set
         self.poller = zmq.Poller()

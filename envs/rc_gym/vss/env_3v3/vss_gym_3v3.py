@@ -215,7 +215,7 @@ class VSS3v3Env(VSSBaseEnv):
 
         self.last_frame = self.frame
 
-        done = self.frame.time >= 300000 or goal_score != 0
+        done = self.frame.time >= 300000
 
         return reward, done
     
