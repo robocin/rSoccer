@@ -1,9 +1,7 @@
 .DS_Store
 *.pyc
 rc_gym.egg-info/
-pb/*
 .vscode/*
-*_pb2.py
 __pycache__
 .idea/
 *.0

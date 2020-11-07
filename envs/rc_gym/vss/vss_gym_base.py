@@ -39,7 +39,7 @@ class VSSBaseEnv(gym.Env):
         # Join agent action with environment actions
         commands: List[Robot] = self._get_commands(action)
         # Send command to simulator
-        self.simulator.send_command(commands)
+        self.simulator.send_commands(commands)
 
         # Get Frame from simulator
         self.frame = self.simulator.get_frame()
@@ -100,3 +100,6 @@ class VSSBaseEnv(gym.Env):
     def _get_initial_positions_frame(self) -> Frame:
         '''returns frame with robots initial positions'''
         raise NotImplementedError
+
+    def close(self):
+        self.simulator.stop()

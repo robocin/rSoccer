@@ -16,7 +16,10 @@ class SimulatorVSS:
     def reset(self):
         self.simulator.reset()
 
-    def send_command(self, commands):
+    def stop(self):
+        del(self.simulator)
+
+    def send_commands(self, commands):
         sim_commands = np.zeros(
             (self.n_robots_blue + self.n_robots_yellow, 2), dtype=np.float64)
 
