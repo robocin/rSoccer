@@ -11,7 +11,8 @@ from typing import Dict, List
 import gym
 import numpy as np
 
-from rc_gym.vss.Simulators.rsim import SimulatorVSS
+# from rc_gym.vss.Simulators.robosim.rsim import SimulatorVSS
+from rc_gym.vss.Simulators.vss_sdk.sdk import SimulatorVSS
 from rc_gym.Entities import Frame
 from rc_gym.Utils import RCRender
 

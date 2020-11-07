@@ -46,6 +46,39 @@ class Frame:
             self.robots_yellow[robot.id] = robot
 
 
+class FrameSDK(Frame):
+    def parse(self, packet):
+        self.time = packet.time
+        self.goals_blue = packet.goals_blue
+        self.goals_yellow = packet.goals_yellow
+        
+        self.ball.x = packet.balls[0].pose.x
+        self.ball.y = packet.balls[0].pose.y
+        self.ball.v_x = packet.balls[0].v_pose.x
+        self.ball.v_y = packet.balls[0].v_pose.y
+        
+        for i, _robot in enumerate(packet.robots_blue):
+            robot = Robot()
+            robot.id = i
+            robot.x = _robot.pose.x
+            robot.y = _robot.pose.y
+            robot.theta = _robot.pose.yaw
+            robot.v_x = _robot.v_pose.x
+            robot.v_y = _robot.v_pose.y
+            robot.v_theta = _robot.v_pose.yaw
+            self.robots_blue[robot.id] = robot
+            
+        for i, _robot in enumerate(packet.robots_yellow):
+            robot = Robot()
+            robot.id = i
+            robot.x = _robot.pose.x
+            robot.y = _robot.pose.y
+            robot.theta = _robot.pose.yaw
+            robot.v_x = _robot.v_pose.x
+            robot.v_y = _robot.v_pose.y
+            robot.v_theta = _robot.v_pose.yaw
+            self.robots_yellow[robot.id] = robot
+
 class FramePB(Frame):
     def parse(self, packet):
         '''It parses the state received from grSim in a common state for environment'''
