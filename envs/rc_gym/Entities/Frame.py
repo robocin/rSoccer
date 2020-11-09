@@ -32,7 +32,7 @@ class Frame:
             robot.theta = state[5 + (6 * i) + 2]
             robot.v_x = state[5 + (6 * i) + 3]
             robot.v_y = state[5 + (6 * i) + 4]
-            robot.v_theta = state[5 + (6 * i) + 5]
+            robot.v_theta = np.rad2deg(state[5 + (6 * i) + 5])
             self.robots_blue[robot.id] = robot
 
         for i in range(n_robots_yellow):
@@ -43,7 +43,7 @@ class Frame:
             robot.theta = state[5 + n_robots_blue*6 + (6 * i) + 2]
             robot.v_x = state[5 + n_robots_blue*6 + (6 * i) + 3]
             robot.v_y = state[5 + n_robots_blue*6 + (6 * i) + 4]
-            robot.v_theta = state[5 + n_robots_blue*6 + (6 * i) + 5]
+            robot.v_theta = np.rad2deg(state[5 + n_robots_blue*6 + (6 * i) + 5])
             self.robots_yellow[robot.id] = robot
 
 
@@ -66,7 +66,7 @@ class FrameSDK(Frame):
             robot.theta = -np.rad2deg(_robot.pose.yaw)
             robot.v_x = _robot.v_pose.x/100
             robot.v_y = -_robot.v_pose.y/100
-            robot.v_theta = -np.rad2deg(_robot.v_pose.yaw)
+            robot.v_theta = np.rad2deg(_robot.v_pose.yaw) / 2 # TODO ta dobrado no pacote do sdk nao sabemos pq ainda
             self.robots_blue[robot.id] = robot
 
         for i, _robot in enumerate(packet.robots_yellow):
@@ -77,7 +77,7 @@ class FrameSDK(Frame):
             robot.theta = -np.rad2deg(_robot.pose.yaw)
             robot.v_x = _robot.v_pose.x/100
             robot.v_y = -_robot.v_pose.y/100
-            robot.v_theta = -np.rad2deg(_robot.v_pose.yaw)
+            robot.v_theta = np.rad2deg(_robot.v_pose.yaw) / 2 # TODO ta dobrado no pacote do sdk nao sabemos pq ainda
             self.robots_yellow[robot.id] = robot
 
 
