@@ -157,10 +157,14 @@ class VSS3v3Env(VSSBaseEnv):
         # Check if a goal has ocurred
         if self.last_frame is not None:
             self.previous_ball_potential = None
-            if self.frame.ball.x > (self.field_params['field_length'] / 2):
+            if self.frame.goals_blue > self.last_frame.goals_blue:
                 goal_score = 1
-            if self.frame.ball.x < -(self.field_params['field_length'] / 2):
+            if self.frame.goals_yellow > self.last_frame.goals_yellow:
                 goal_score = -1
+            # if self.frame.ball.x > (self.field_params['field_length'] / 2):
+            #     goal_score = 1
+            # if self.frame.ball.x < -(self.field_params['field_length'] / 2):
+            #     goal_score = -1
 
             # If goal scored reward = 1 favoured, and -1 if against
             if goal_score != 0:
