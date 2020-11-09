@@ -94,7 +94,7 @@ class SimulatorVSS:
         state.ParseFromString(data)
 
         frame = FrameSDK()
-        frame.parse(state)
+        frame.parse(state, self.get_field_params()['goal_depth'])     
 
         return frame
 
@@ -105,7 +105,7 @@ class SimulatorVSS:
         path = os.path.join(os.path.split(os.path.abspath(__file__))[0],
                             'bin', 'VSS-SimulatorSync')
         ia = '0'
-        command_rate = '1'
+        command_rate = '0'
         agent_init = '1'
         self.simulator = subprocess.Popen(
             [path, '-d', '-i', ia, '-r', command_rate, '-p', str(self.port),

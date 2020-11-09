@@ -135,8 +135,8 @@ class RCRender:
 
             pygame.draw.line(self.screen, (0, 0, 0),
                              center,
-                             (center[0] + robot_r * np.cos(blue.v_theta),
-                              center[1] + robot_r * np.sin(blue.v_theta)), 2)
+                             (center[0] + robot_r * np.cos(blue.theta),
+                              center[1] + robot_r * np.sin(blue.theta)), 2)
         for yellow in frame.robots_yellow.values():
             center = self.pos_transform(x=yellow.x, y=yellow.y)
             pygame.draw.circle(self.screen, (249, 255, 55),
@@ -144,8 +144,8 @@ class RCRender:
                                robot_r, robot_r-3)
             pygame.draw.line(self.screen, (0, 0, 0),
                              center,
-                             (center[0] + robot_r * np.cos(yellow.v_theta),
-                              center[1] + robot_r * np.sin(yellow.v_theta)), 2)
+                             (center[0] + robot_r * np.cos(yellow.theta),
+                              center[1] + robot_r * np.sin(yellow.theta)), 2)
         pygame.display.update()
 
     def pos_transform(self, x: float, y: float) -> np.ndarray:
