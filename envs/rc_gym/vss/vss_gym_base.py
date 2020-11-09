@@ -10,11 +10,10 @@ from typing import Dict, List
 
 import gym
 import numpy as np
-
+from rc_gym.Entities import Frame, Robot
+from rc_gym.Utils import RCRender
 # from rc_gym.vss.Simulators.robosim.rsim import SimulatorVSS
 from rc_gym.vss.Simulators.vss_sdk.sdk import SimulatorVSS
-from rc_gym.Entities import Frame
-from rc_gym.Utils import RCRender
 
 
 class VSSBaseEnv(gym.Env):
@@ -43,13 +42,12 @@ class VSSBaseEnv(gym.Env):
 
         # Get Frame from simulator
         self.frame = self.simulator.get_frame()
-
         # Calculate environment observation, reward and done condition
         observation = self._frame_to_observations()
         reward, done = self._calculate_reward_and_done()
 
         return observation, reward, done, {}
-
+    
     def reset(self):
         self.steps = 0
         self.simulator.reset()

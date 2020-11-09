@@ -1,3 +1,4 @@
+import numpy as np
 from rc_gym.Entities.Ball import Ball
 from rc_gym.Entities.Robot import Robot
 
@@ -47,37 +48,38 @@ class Frame:
 
 
 class FrameSDK(Frame):
-    def parse(self, packet):
+    def parse(self, packet, goal_depth=0.1):
         self.time = packet.time
         self.goals_blue = packet.goals_blue
         self.goals_yellow = packet.goals_yellow
-        
-        self.ball.x = packet.balls[0].pose.x
-        self.ball.y = packet.balls[0].pose.y
-        self.ball.v_x = packet.balls[0].v_pose.x
-        self.ball.v_y = packet.balls[0].v_pose.y
-        
+
+        self.ball.x = packet.balls[0].pose.x/100 - 0.75 - goal_depth
+        self.ball.y = 0.65 - packet.balls[0].pose.y/100
+        self.ball.v_x = packet.balls[0].v_pose.x/100
+        self.ball.v_y = -packet.balls[0].v_pose.y/100
+
         for i, _robot in enumerate(packet.robots_blue):
             robot = Robot()
             robot.id = i
-            robot.x = _robot.pose.x
-            robot.y = _robot.pose.y
-            robot.theta = _robot.pose.yaw
-            robot.v_x = _robot.v_pose.x
-            robot.v_y = _robot.v_pose.y
-            robot.v_theta = _robot.v_pose.yaw
+            robot.x = _robot.pose.x/100 - 0.75 - goal_depth
+            robot.y = 0.65 - _robot.pose.y/100
+            robot.theta = ((_robot.pose.yaw)/np.pi)*180
+            robot.v_x = _robot.v_pose.x/100
+            robot.v_y = -_robot.v_pose.y/100
+            robot.v_theta = ((_robot.v_pose.yaw)/np.pi)*180
             self.robots_blue[robot.id] = robot
-            
+
         for i, _robot in enumerate(packet.robots_yellow):
             robot = Robot()
             robot.id = i
-            robot.x = _robot.pose.x
-            robot.y = _robot.pose.y
-            robot.theta = _robot.pose.yaw
-            robot.v_x = _robot.v_pose.x
-            robot.v_y = _robot.v_pose.y
-            robot.v_theta = _robot.v_pose.yaw
+            robot.x = _robot.pose.x/100 - 0.75 - goal_depth
+            robot.y = 0.65 - _robot.pose.y/100
+            robot.theta = ((_robot.pose.yaw)/np.pi)*180 
+            robot.v_x = _robot.v_pose.x/100
+            robot.v_y = -_robot.v_pose.y/100
+            robot.v_theta = ((_robot.v_pose.yaw)/np.pi)*180
             self.robots_yellow[robot.id] = robot
+
 
 class FramePB(Frame):
     def parse(self, packet):
