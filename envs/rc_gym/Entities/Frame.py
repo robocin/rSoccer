@@ -55,8 +55,8 @@ class FrameSDK(Frame):
 
         self.ball.x = packet.balls[0].pose.x/100 - 0.75 - goal_depth
         self.ball.y = 0.65 - packet.balls[0].pose.y/100
-        self.ball.v_x = packet.balls[0].v_pose.x/100
-        self.ball.v_y = -packet.balls[0].v_pose.y/100
+        self.ball.v_x = packet.balls[0].v_pose.x/100 / 2 # TODO GAMBIARRA POIS VELOCIDADE NO SDK TA DOBRADA
+        self.ball.v_y = -packet.balls[0].v_pose.y/100 / 2 # TODO GAMBIARRA POIS VELOCIDADE NO SDK TA DOBRADA
 
         for i, _robot in enumerate(packet.robots_blue):
             robot = Robot()
@@ -64,8 +64,8 @@ class FrameSDK(Frame):
             robot.x = _robot.pose.x/100 - 0.75 - goal_depth
             robot.y = 0.65 - _robot.pose.y/100
             robot.theta = -np.rad2deg(_robot.pose.yaw)
-            robot.v_x = _robot.v_pose.x/100
-            robot.v_y = -_robot.v_pose.y/100
+            robot.v_x = _robot.v_pose.x/100 / 2 # TODO GAMBIARRA POIS VELOCIDADE NO SDK TA DOBRADA
+            robot.v_y = -_robot.v_pose.y/100 / 2 # TODO GAMBIARRA POIS VELOCIDADE NO SDK TA DOBRADA
             robot.v_theta = np.rad2deg(_robot.v_pose.yaw) / 2 # TODO ta dobrado no pacote do sdk nao sabemos pq ainda
             self.robots_blue[robot.id] = robot
 
@@ -75,8 +75,8 @@ class FrameSDK(Frame):
             robot.x = _robot.pose.x/100 - 0.75 - goal_depth
             robot.y = 0.65 - _robot.pose.y/100
             robot.theta = -np.rad2deg(_robot.pose.yaw)
-            robot.v_x = _robot.v_pose.x/100
-            robot.v_y = -_robot.v_pose.y/100
+            robot.v_x = _robot.v_pose.x/100 / 2 # TODO GAMBIARRA POIS VELOCIDADE NO SDK TA DOBRADA
+            robot.v_y = -_robot.v_pose.y/100 / 2 # TODO GAMBIARRA POIS VELOCIDADE NO SDK TA DOBRADA
             robot.v_theta = np.rad2deg(_robot.v_pose.yaw) / 2 # TODO ta dobrado no pacote do sdk nao sabemos pq ainda
             self.robots_yellow[robot.id] = robot
 

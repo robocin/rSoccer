@@ -58,8 +58,8 @@ class SimulatorVSS:
             if not cmd.yellow:
                 robot = command_pb.robot_commands.add()
                 robot.id = cmd.id
-                robot.left_vel = cmd.v_wheel1 * 100
-                robot.right_vel = cmd.v_wheel2 * 100
+                robot.left_vel = (cmd.v_wheel1 * 100) * 4 # TODO * 4 para igualar ao fira
+                robot.right_vel = (cmd.v_wheel2 * 100) * 4 # TODO * 4 para igualar ao fira
 
         # send commands
         data = command_pb.SerializeToString()
