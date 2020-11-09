@@ -63,10 +63,10 @@ class FrameSDK(Frame):
             robot.id = i
             robot.x = _robot.pose.x/100 - 0.75 - goal_depth
             robot.y = 0.65 - _robot.pose.y/100
-            robot.theta = ((_robot.pose.yaw)/np.pi)*180
+            robot.theta = -np.rad2deg(_robot.pose.yaw)
             robot.v_x = _robot.v_pose.x/100
             robot.v_y = -_robot.v_pose.y/100
-            robot.v_theta = ((_robot.v_pose.yaw)/np.pi)*180
+            robot.v_theta = -np.rad2deg(_robot.v_pose.yaw)
             self.robots_blue[robot.id] = robot
 
         for i, _robot in enumerate(packet.robots_yellow):
@@ -74,10 +74,10 @@ class FrameSDK(Frame):
             robot.id = i
             robot.x = _robot.pose.x/100 - 0.75 - goal_depth
             robot.y = 0.65 - _robot.pose.y/100
-            robot.theta = ((_robot.pose.yaw)/np.pi)*180 
+            robot.theta = -np.rad2deg(_robot.pose.yaw)
             robot.v_x = _robot.v_pose.x/100
             robot.v_y = -_robot.v_pose.y/100
-            robot.v_theta = ((_robot.v_pose.yaw)/np.pi)*180
+            robot.v_theta = -np.rad2deg(_robot.v_pose.yaw)
             self.robots_yellow[robot.id] = robot
 
 
