@@ -92,7 +92,6 @@ class VSS3v3Env(VSSBaseEnv):
         self.observation_space = gym.spaces.Box(
             low=-obs_bounds, high=obs_bounds, dtype=np.float32)
 
-        self.last_frame = None
         self.energy_penalty = 0
         print('Environment initialized')
 
@@ -149,10 +148,10 @@ class VSS3v3Env(VSSBaseEnv):
         done = False
         reward = 0
         
-        w_move = 0.0001
-        w_ball_pot = 0.0001
-        w_ball_grad = 0.0001
-        w_energy = 0.0001
+        w_move = 10e-3
+        w_ball_pot = 10e-5
+        w_ball_grad = 10e-3
+        w_energy = 10e-6
 
         # Check if a goal has ocurred
         if self.last_frame is not None:
@@ -168,7 +167,7 @@ class VSS3v3Env(VSSBaseEnv):
 
             # If goal scored reward = 1 favoured, and -1 if against
             if goal_score != 0:
-                reward = goal_score
+                reward = 1
             else:
                 # Move Reward : Reward the robot for moving in ball direction
                 prev_dist_robot_ball = distance(
@@ -182,24 +181,24 @@ class VSS3v3Env(VSSBaseEnv):
                 move_reward = prev_dist_robot_ball - dist_robot_ball
                 
                 # Ball Potential Reward : Reward the ball for moving in the opponent goal direction and away from team goal
-                half_field_length = ((self.field_params['field_length'] / 2) + self.field_params['goal_depth'])
+                half_field_length = (self.field_params['field_length'] / 2)
                 prev_dist_ball_enemy_goal_center = distance(
                     (self.last_frame.ball.x, self.last_frame.ball.y),
-                    (half_field_length, 0)
+                    (-half_field_length, 0)
                 )
                 dist_ball_enemy_goal_center = distance(
                     (self.frame.ball.x, self.frame.ball.y),
-                    (half_field_length, 0)
+                    (-half_field_length, 0)
                 )
                 
                 prev_dist_ball_own_goal_center = distance(
                     (self.last_frame.ball.x, self.last_frame.ball.y),
-                    (-half_field_length, 0)
+                    (half_field_length, 0)
                 )
                 
                 dist_ball_own_goal_center = distance(
                     (self.frame.ball.x, self.frame.ball.y),
-                    (-half_field_length, 0)
+                    (half_field_length, 0)
                 )
                 ball_potential = dist_ball_own_goal_center - dist_ball_enemy_goal_center
                 
@@ -218,7 +217,7 @@ class VSS3v3Env(VSSBaseEnv):
 
 
         self.last_frame = self.frame
-        done = self.frame.time >= 300000 or goal_score != 0
+        done = self.frame.time >= 300000 # or goal_score != 0
 
         return reward, done
     
