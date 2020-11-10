@@ -28,6 +28,7 @@ class VSSBaseEnv(gym.Env):
         self.field_params: Dict[str,
                                 np.float64] = self.simulator.get_field_params()
         self.frame: Frame = None
+        self.last_frame: Frame = None
         self.view = None
         self.steps = 0
 
@@ -50,6 +51,7 @@ class VSSBaseEnv(gym.Env):
     
     def reset(self):
         self.steps = 0
+        self.last_frame = None
         self.simulator.reset()
 
         # Sets robots positions
