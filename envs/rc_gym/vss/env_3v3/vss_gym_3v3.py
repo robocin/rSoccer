@@ -151,7 +151,7 @@ class VSS3v3Env(VSSBaseEnv):
         w_move = 10e-3
         w_ball_pot = 10e-5
         w_ball_grad = 10e-3
-        w_energy = 10e-6
+        w_energy = 10e-7
 
         # Check if a goal has ocurred
         if self.last_frame is not None:
