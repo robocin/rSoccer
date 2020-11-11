@@ -52,6 +52,7 @@ class VSSBaseEnv(gym.Env):
     def reset(self):
         self.steps = 0
         self.last_frame = None
+        self.view = None
         self.simulator.reset()
 
         # Sets robots positions

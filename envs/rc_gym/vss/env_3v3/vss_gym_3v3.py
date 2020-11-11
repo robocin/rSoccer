@@ -108,14 +108,12 @@ class VSS3v3Env(VSSBaseEnv):
             observation.append(normY(self.frame.robots_blue[i].y))
             observation.append(normVx(self.frame.robots_blue[i].v_x))
             observation.append(normVx(self.frame.robots_blue[i].v_y))
-            observation.append(normVt(self.frame.robots_blue[i].v_theta))
 
         for i in range(self.n_robots_yellow):
             observation.append(normX(self.frame.robots_yellow[i].x))
             observation.append(normY(self.frame.robots_yellow[i].y))
             observation.append(normVx(self.frame.robots_yellow[i].v_x))
             observation.append(normVx(self.frame.robots_yellow[i].v_y))
-            observation.append(normVt(self.frame.robots_yellow[i].v_theta))
 
         observation.append(self.frame.time/(5*60*1000))
 
