@@ -96,7 +96,7 @@ class VSS3v3Env(VSSBaseEnv):
             [bound_x, bound_y, bound_sin_cos_theta, bound_sin_cos_theta,
              bound_v, bound_v, bound_v_theta]\
             + self.n_robots_yellow * [bound_x, bound_y, bound_sin_cos_theta,
-            bound_sin_cos_theta, bound_v, bound_v, bound_v_theta] + [1]
+                                      bound_sin_cos_theta, bound_v, bound_v, bound_v_theta] + [1]
         obs_bounds = np.array(obs_bounds, dtype=np.float32)
 
         self.observation_space = gym.spaces.Box(
@@ -148,16 +148,21 @@ class VSS3v3Env(VSSBaseEnv):
                               v_wheel2=v_wheel2))
 
         # Send random commands to the other robots
-        commands.append(Robot(yellow=False, id=1, v_wheel1=0,
-                              v_wheel2=0))
-        commands.append(Robot(yellow=False, id=2, v_wheel1=0,
-                              v_wheel2=0))
-        commands.append(Robot(yellow=True, id=0, v_wheel1=0,
-                              v_wheel2=0))
-        commands.append(Robot(yellow=True, id=1, v_wheel1=0,
-                              v_wheel2=0))
-        commands.append(Robot(yellow=True, id=2, v_wheel1=0,
-                              v_wheel2=0))
+        random_action = self.action_space.sample() * 0.1
+        commands.append(Robot(yellow=False, id=1, v_wheel1=random_action[0],
+                              v_wheel2=random_action[1]))
+        random_action = self.action_space.sample() * 0.1
+        commands.append(Robot(yellow=False, id=2, v_wheel1=random_action[0],
+                              v_wheel2=random_action[1]))
+        random_action = self.action_space.sample() * 0.1
+        commands.append(Robot(yellow=True, id=0, v_wheel1=random_action[0],
+                              v_wheel2=random_action[1]))
+        random_action = self.action_space.sample() * 0.1
+        commands.append(Robot(yellow=True, id=1, v_wheel1=random_action[0],
+                              v_wheel2=random_action[1]))
+        random_action = self.action_space.sample() * 0.1
+        commands.append(Robot(yellow=True, id=2, v_wheel1=random_action[0],
+                              v_wheel2=random_action[1]))
 
         return commands
 
@@ -248,19 +253,22 @@ class VSS3v3Env(VSSBaseEnv):
 
         def y(): return random.uniform(-field_half_width + 0.1,
                                        field_half_width - 0.1)
+
+        def theta(): return random.uniform(-180, 180)
+
         pos_frame: Frame = Frame()
 
         pos_frame.ball.x = x()
         pos_frame.ball.y = y()
+        pos_frame.ball.v_x = random.uniform(-0.05, 0.05)
+        pos_frame.ball.v_y = random.uniform(-0.05, 0.05)
 
-        pos_frame.robots_blue[0] = Robot(x=x(),
-                                         y=y(),
-                                         theta=0)
-        pos_frame.robots_blue[1] = Robot(x=x(), y=y(), theta=0)
-        pos_frame.robots_blue[2] = Robot(x=x(), y=y(), theta=0)
+        pos_frame.robots_blue[0] = Robot(x=x(), y=y(), theta=theta())
+        pos_frame.robots_blue[1] = Robot(x=x(), y=y(), theta=theta())
+        pos_frame.robots_blue[2] = Robot(x=x(), y=y(), theta=theta())
 
-        pos_frame.robots_yellow[0] = Robot(x=x(), y=y(), theta=math.pi)
-        pos_frame.robots_yellow[1] = Robot(x=x(), y=y(), theta=math.pi)
-        pos_frame.robots_yellow[2] = Robot(x=x(), y=y(), theta=math.pi)
+        pos_frame.robots_yellow[0] = Robot(x=x(), y=y(), theta=theta())
+        pos_frame.robots_yellow[1] = Robot(x=x(), y=y(), theta=theta())
+        pos_frame.robots_yellow[2] = Robot(x=x(), y=y(), theta=theta())
 
         return pos_frame

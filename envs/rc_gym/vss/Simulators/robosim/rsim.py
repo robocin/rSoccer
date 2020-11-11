@@ -36,8 +36,9 @@ class SimulatorVSS:
     def replace_from_frame(self, frame: Frame):
         replacement_pos: Dict[str, np.ndarray] = {}
 
-        ball_pos: List[float] = [frame.ball.x, frame.ball.y]
-        replacement_pos['ball_pos'] = np.array(ball_pos)
+        ball_pos: List[float] = [frame.ball.x,
+                                 frame.ball.y, frame.ball.v_x, frame.ball.v_y]
+        replacement_pos['ball'] = np.array(ball_pos)
 
         blue_pos: List[List[float]] = []
         for robot in frame.robots_blue.values():
@@ -51,7 +52,7 @@ class SimulatorVSS:
             yellow_pos.append(robot_pos)
         replacement_pos['yellow_pos'] = np.array(yellow_pos)
 
-        self.simulator.replace(**replacement_pos)
+        self.simulator.replace_with_vel(**replacement_pos)
 
     def get_frame(self) -> Frame:
         state = self.simulator.get_state()
