@@ -12,6 +12,9 @@ class SimulatorVSS:
                                               n_robots_yellow=n_robots_yellow)
         self.n_robots_blue = n_robots_blue
         self.n_robots_yellow = n_robots_yellow
+        self.linear_speed_range = 1.5               #m/s
+        self.angular_speed_range = np.deg2rad(360)  #rad/s
+        self.robot_dist_center_to_wheel = 0.0425    #center to wheel + wheel thickness
 
     def reset(self):
         self.simulator.reset()
@@ -28,8 +31,8 @@ class SimulatorVSS:
                 rbt_id = self.n_robots_blue + cmd.id
             else:
                 rbt_id = cmd.id
-            sim_commands[rbt_id][0] = cmd.v_wheel1 * 100
-            sim_commands[rbt_id][1] = cmd.v_wheel2 * 100
+            sim_commands[rbt_id][0] = cmd.v_wheel1 * 100 / 2 # convert from m/s to cm/s and split by wheels
+            sim_commands[rbt_id][1] = cmd.v_wheel2 * 100 / 2 # convert from m/s to cm/s and split by wheels
 
         self.simulator.step(sim_commands)
 
