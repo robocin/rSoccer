@@ -15,54 +15,28 @@ class VSS3v3Env(VSSBaseEnv):
     Observation:
         Type: Box(41)
         Num     Observation units in meters
-        0       Ball X
-        1       Ball Y
-        2       Ball Z
-        3       Ball Vx
-        4       Ball Vy
-        5       id 0 Blue Robot X
-        6       id 0 Blue Robot Y
-        7       id 0 Blue Robot sin(theta)
-        8       id 0 Blue Robot cos(theta)
-        9       id 0 Blue Robot Vx
-        10       id 0 Blue Robot Vy
-        11      id 0 Blue Robot v_theta
-        12      id 1 Blue Robot X
-        13      id 1 Blue Robot Y
-        14      id 1 Blue Robot sin(theta)
-        15      id 1 Blue Robot cos(theta)
-        16      id 1 Blue Robot Vx
-        17      id 1 Blue Robot Vy
-        18      id 1 Blue Robot v_theta
-        19      id 2 Blue Robot X
-        20      id 2 Blue Robot Y
-        21      id 2 Blue Robot sin(theta)
-        22      id 2 Blue Robot cos(theta)
-        23      id 2 Blue Robot Vx
-        24      id 2 Blue Robot Vy
-        25      id 2 Blue Robot v_theta
-        26      id 0 Yellow Robot X
-        27      id 0 Yellow Robot Y
-        28      id 0 Yellow Robot sin(theta)
-        29      id 0 Yellow Robot cos(theta)
-        30      id 0 Yellow Robot Vx
-        31      id 0 Yellow Robot Vy
-        32      id 0 Yellow Robot v_theta
-        33      id 1 Yellow Robot X
-        34      id 1 Yellow Robot Y
-        35      id 1 Yellow Robot sin(theta)
-        36      id 1 Yellow Robot cos(theta)
-        37      id 1 Yellow Robot Vx
-        38      id 1 Yellow Robot Vy
-        39      id 1 Yellow Robot v_theta
-        40      id 2 Yellow Robot X
-        41      id 2 Yellow Robot Y
-        42      id 2 Yellow Robot sin(theta)
-        43      id 2 Yellow Robot cos(theta)
-        44      id 2 Yellow Robot Vx
-        45      id 2 Yellow Robot Vy
-        46      id 2 Yellow Robot v_theta
-        47      Episode time
+        0        Ball X
+        1        Ball Y
+        2        Ball Z
+        3        Ball Vx
+        4        Ball Vy
+        x        id i Blue Robot X
+        x        id i Blue Robot Y
+        x        id i Blue Robot sin(theta)
+        x        id i Blue Robot cos(theta)
+        x        id i Blue Robot Vx
+        x        id i Blue Robot Vy
+        x        id i Blue Robot v_theta
+        x        id i Blue Robot last_command[0]
+        x        id i Blue Robot last_command[1]
+        x        id i Yellow Robot X
+        x        id i Yellow Robot Y
+        x        id i Yellow Robot sin(theta)
+        x        id i Yellow Robot cos(theta)
+        x        id i Yellow Robot Vx
+        x        id i Yellow Robot Vy
+        x        id i Yellow Robot v_theta
+        53       Episode time
     Actions:
         Type: Box(2, )
         Num     Action
@@ -88,13 +62,14 @@ class VSS3v3Env(VSSBaseEnv):
         bound_y = self.field_params['field_width'] / 2
         bound_sin_cos_theta = 1
         bound_v = 2
-        bound_v_theta = 3000
+        bound_v_theta = 720
+        bound_v_wheel = 1.8 #m/s
         # ball bounds
         obs_bounds = [bound_x, bound_y] + [bound_v, bound_v]
         # concatenate robot bounds
         obs_bounds = obs_bounds + self.n_robots_blue * \
             [bound_x, bound_y, bound_sin_cos_theta, bound_sin_cos_theta,
-             bound_v, bound_v, bound_v_theta]\
+             bound_v, bound_v, bound_v_theta, bound_v_wheel, bound_v_wheel]\
             + self.n_robots_yellow * [bound_x, bound_y, bound_sin_cos_theta,
                                       bound_sin_cos_theta, bound_v, bound_v, bound_v_theta] + [1]
         obs_bounds = np.array(obs_bounds, dtype=np.float32)
@@ -106,6 +81,17 @@ class VSS3v3Env(VSSBaseEnv):
         print('Environment initialized')
 
     def _frame_to_observations(self):
+        last_commands = np.zeros(
+            (self.n_robots_blue + self.n_robots_yellow, 2), dtype=np.float64)
+        if self.sent_commands is not None:
+            for cmd in self.sent_commands:
+                if cmd.yellow:
+                    global_id = self.n_robots_blue + cmd.id
+                else:
+                    global_id = cmd.id
+                last_commands[global_id][0] = cmd.v_wheel1
+                last_commands[global_id][1] = cmd.v_wheel2
+
         observation = []
 
         observation.append(self.frame.ball.x)
@@ -123,6 +109,8 @@ class VSS3v3Env(VSSBaseEnv):
             observation.append(self.frame.robots_blue[i].v_x)
             observation.append(self.frame.robots_blue[i].v_y)
             observation.append(self.frame.robots_blue[i].v_theta)
+            observation.append(last_commands[i][0])
+            observation.append(last_commands[i][0])
 
         for i in range(self.n_robots_yellow):
             observation.append(self.frame.robots_yellow[i].x)
@@ -141,28 +129,27 @@ class VSS3v3Env(VSSBaseEnv):
 
     def _get_commands(self, actions):
         commands = []
-        v_wheel1 = actions[0]
-        v_wheel2 = actions[1]
-        self.energy_penalty = -(abs(v_wheel1 * 100) + abs(v_wheel2 * 100))
+        
+        v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions)
         commands.append(Robot(yellow=False, id=0, v_wheel1=v_wheel1,
                               v_wheel2=v_wheel2))
 
         # Send random commands to the other robots
-        random_action = self.action_space.sample() * 0.1
-        commands.append(Robot(yellow=False, id=1, v_wheel1=random_action[0],
-                              v_wheel2=random_action[1]))
-        random_action = self.action_space.sample() * 0.1
-        commands.append(Robot(yellow=False, id=2, v_wheel1=random_action[0],
-                              v_wheel2=random_action[1]))
-        random_action = self.action_space.sample() * 0.1
-        commands.append(Robot(yellow=True, id=0, v_wheel1=random_action[0],
-                              v_wheel2=random_action[1]))
-        random_action = self.action_space.sample() * 0.1
-        commands.append(Robot(yellow=True, id=1, v_wheel1=random_action[0],
-                              v_wheel2=random_action[1]))
-        random_action = self.action_space.sample() * 0.1
-        commands.append(Robot(yellow=True, id=2, v_wheel1=random_action[0],
-                              v_wheel2=random_action[1]))
+        v_wheel1, v_wheel2 = self._actions_to_v_wheels(self.action_space.sample())
+        commands.append(Robot(yellow=False, id=1, v_wheel1=v_wheel1,
+                              v_wheel2=v_wheel2))
+        v_wheel1, v_wheel2 = self._actions_to_v_wheels(self.action_space.sample())
+        commands.append(Robot(yellow=False, id=2, v_wheel1=v_wheel1,
+                              v_wheel2=v_wheel2))
+        v_wheel1, v_wheel2 = self._actions_to_v_wheels(self.action_space.sample())
+        commands.append(Robot(yellow=True, id=0, v_wheel1=v_wheel1,
+                              v_wheel2=v_wheel2))
+        v_wheel1, v_wheel2 = self._actions_to_v_wheels(self.action_space.sample())
+        commands.append(Robot(yellow=True, id=1, v_wheel1=v_wheel1,
+                              v_wheel2=v_wheel2))
+        v_wheel1, v_wheel2 = self._actions_to_v_wheels(self.action_space.sample())
+        commands.append(Robot(yellow=True, id=2, v_wheel1=v_wheel1,
+                              v_wheel2=v_wheel2))
 
         return commands
 
@@ -179,14 +166,14 @@ class VSS3v3Env(VSSBaseEnv):
         # Check if a goal has ocurred
         if self.last_frame is not None:
             self.previous_ball_potential = None
-            if self.frame.goals_blue > self.last_frame.goals_blue:
-                goal_score = 1
-            if self.frame.goals_yellow > self.last_frame.goals_yellow:
-                goal_score = -1
-            # if self.frame.ball.x > (self.field_params['field_length'] / 2):
+            # if self.frame.goals_blue > self.last_frame.goals_blue:
             #     goal_score = 1
-            # if self.frame.ball.x < -(self.field_params['field_length'] / 2):
+            # if self.frame.goals_yellow > self.last_frame.goals_yellow:
             #     goal_score = -1
+            if self.frame.ball.x > (self.field_params['field_length'] / 2):
+                goal_score = 1
+            if self.frame.ball.x < -(self.field_params['field_length'] / 2):
+                goal_score = -1
 
             # If goal scored reward = 1 favoured, and -1 if against
             if goal_score != 0:
@@ -240,7 +227,7 @@ class VSS3v3Env(VSSBaseEnv):
                 # + w_collision * collisions
 
         self.last_frame = self.frame
-        done = self.frame.time >= 300000  # or goal_score != 0
+        done = self.frame.time >= 300000 or goal_score != 0
 
         return reward, done
 
@@ -272,3 +259,13 @@ class VSS3v3Env(VSSBaseEnv):
         pos_frame.robots_yellow[2] = Robot(x=x(), y=y(), theta=theta())
 
         return pos_frame
+
+    def _actions_to_v_wheels(self, actions):
+        linear_speed_desired = actions[0] * self.simulator.linear_speed_range
+        angular_speed_desired = actions[1] * self.simulator.angular_speed_range
+        
+        # calculate wheels' linear speeds:
+        left_wheel_speed = (linear_speed_desired - self.simulator.robot_dist_center_to_wheel * angular_speed_desired)
+        right_wheel_speed = (linear_speed_desired + self.simulator.robot_dist_center_to_wheel * angular_speed_desired)
+        
+        return left_wheel_speed, right_wheel_speed

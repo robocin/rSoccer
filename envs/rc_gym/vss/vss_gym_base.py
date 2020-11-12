@@ -31,6 +31,7 @@ class VSSBaseEnv(gym.Env):
         self.last_frame: Frame = None
         self.view = None
         self.steps = 0
+        self.sent_commands = None
 
     def step(self, action):
         self.steps += 1
@@ -40,6 +41,7 @@ class VSSBaseEnv(gym.Env):
         commands: List[Robot] = self._get_commands(action)
         # Send command to simulator
         self.simulator.send_commands(commands)
+        self.sent_commands = commands
 
         # Get Frame from simulator
         self.frame = self.simulator.get_frame()
@@ -52,6 +54,8 @@ class VSSBaseEnv(gym.Env):
     def reset(self):
         self.steps = 0
         self.last_frame = None
+        self.sent_commands = None
+        del(self.view)
         self.view = None
         self.simulator.reset()
 
