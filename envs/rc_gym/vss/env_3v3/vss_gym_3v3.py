@@ -36,19 +36,18 @@ class VSS3v3Env(VSSBaseEnv):
         x        id i Yellow Robot Vx
         x        id i Yellow Robot Vy
         x        id i Yellow Robot v_theta
-        53       Episode time
     Actions:
         Type: Box(2, )
         Num     Action
-        0       id 0 Blue Robot Wheel 1 Speed (%)
-        1       id 0 Blue Robot Wheel 2 Speed (%)
+        0       id 0 Blue Linear Speed (%)
+        1       id 0 Blue Angular 2 Speed (%)
     Reward:
         1 if Blue Team Goal
         -1 if Yellow Team Goal
     Starting State:
         TODO
     Episode Termination:
-        Match time
+        Match time or goal
     """
 
     def __init__(self):
@@ -63,7 +62,7 @@ class VSS3v3Env(VSSBaseEnv):
         bound_sin_cos_theta = 1
         bound_v = 2
         bound_v_theta = 720
-        bound_v_wheel = 1.8 #m/s
+        bound_v_wheel = 1.8  # m/s
         # ball bounds
         obs_bounds = [bound_x, bound_y] + [bound_v, bound_v]
         # concatenate robot bounds
@@ -71,13 +70,12 @@ class VSS3v3Env(VSSBaseEnv):
             [bound_x, bound_y, bound_sin_cos_theta, bound_sin_cos_theta,
              bound_v, bound_v, bound_v_theta, bound_v_wheel, bound_v_wheel]\
             + self.n_robots_yellow * [bound_x, bound_y, bound_sin_cos_theta,
-                                      bound_sin_cos_theta, bound_v, bound_v, bound_v_theta] + [1]
+                                      bound_sin_cos_theta, bound_v, bound_v, bound_v_theta]
         obs_bounds = np.array(obs_bounds, dtype=np.float32)
 
         self.observation_space = gym.spaces.Box(
             low=-obs_bounds, high=obs_bounds, dtype=np.float32)
 
-        self.energy_penalty = 0
         print('Environment initialized')
 
     def _frame_to_observations(self):
@@ -123,31 +121,34 @@ class VSS3v3Env(VSSBaseEnv):
             observation.append(self.frame.robots_yellow[i].v_y)
             observation.append(self.frame.robots_yellow[i].v_theta)
 
-        observation.append(self.frame.time/(5*60*1000))
-
         return np.array(observation)
 
     def _get_commands(self, actions):
         commands = []
-        
+
         v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions)
         commands.append(Robot(yellow=False, id=0, v_wheel1=v_wheel1,
                               v_wheel2=v_wheel2))
 
         # Send random commands to the other robots
-        v_wheel1, v_wheel2 = self._actions_to_v_wheels(self.action_space.sample())
+        v_wheel1, v_wheel2 = self._actions_to_v_wheels(
+            self.action_space.sample())
         commands.append(Robot(yellow=False, id=1, v_wheel1=v_wheel1,
                               v_wheel2=v_wheel2))
-        v_wheel1, v_wheel2 = self._actions_to_v_wheels(self.action_space.sample())
+        v_wheel1, v_wheel2 = self._actions_to_v_wheels(
+            self.action_space.sample())
         commands.append(Robot(yellow=False, id=2, v_wheel1=v_wheel1,
                               v_wheel2=v_wheel2))
-        v_wheel1, v_wheel2 = self._actions_to_v_wheels(self.action_space.sample())
+        v_wheel1, v_wheel2 = self._actions_to_v_wheels(
+            self.action_space.sample())
         commands.append(Robot(yellow=True, id=0, v_wheel1=v_wheel1,
                               v_wheel2=v_wheel2))
-        v_wheel1, v_wheel2 = self._actions_to_v_wheels(self.action_space.sample())
+        v_wheel1, v_wheel2 = self._actions_to_v_wheels(
+            self.action_space.sample())
         commands.append(Robot(yellow=True, id=1, v_wheel1=v_wheel1,
                               v_wheel2=v_wheel2))
-        v_wheel1, v_wheel2 = self._actions_to_v_wheels(self.action_space.sample())
+        v_wheel1, v_wheel2 = self._actions_to_v_wheels(
+            self.action_space.sample())
         commands.append(Robot(yellow=True, id=2, v_wheel1=v_wheel1,
                               v_wheel2=v_wheel2))
 
@@ -158,10 +159,10 @@ class VSS3v3Env(VSSBaseEnv):
         done = False
         reward = 0
 
-        w_move = 10e-3
+        w_move = 10e-1
         w_ball_pot = 10e-5
         w_ball_grad = 10e-3
-        w_energy = 10e-7
+        w_energy = 10e-6
 
         # Check if a goal has ocurred
         if self.last_frame is not None:
@@ -177,7 +178,7 @@ class VSS3v3Env(VSSBaseEnv):
 
             # If goal scored reward = 1 favoured, and -1 if against
             if goal_score != 0:
-                reward = 1
+                reward = goal_score
             else:
                 # Move Reward : Reward the robot for moving in ball direction
                 prev_dist_robot_ball = distance(
@@ -195,39 +196,41 @@ class VSS3v3Env(VSSBaseEnv):
                 half_field_length = (self.field_params['field_length'] / 2)
                 prev_dist_ball_enemy_goal_center = distance(
                     (self.last_frame.ball.x, self.last_frame.ball.y),
-                    (-half_field_length, 0)
+                    (half_field_length, 0)
                 )
                 dist_ball_enemy_goal_center = distance(
                     (self.frame.ball.x, self.frame.ball.y),
-                    (-half_field_length, 0)
+                    (half_field_length, 0)
                 )
 
                 prev_dist_ball_own_goal_center = distance(
                     (self.last_frame.ball.x, self.last_frame.ball.y),
-                    (half_field_length, 0)
+                    (-half_field_length, 0)
                 )
 
                 dist_ball_own_goal_center = distance(
                     (self.frame.ball.x, self.frame.ball.y),
-                    (half_field_length, 0)
+                    (-half_field_length, 0)
                 )
                 ball_potential = dist_ball_own_goal_center - dist_ball_enemy_goal_center
 
                 ball_grad = (dist_ball_own_goal_center - prev_dist_ball_own_goal_center) + \
                     (prev_dist_ball_enemy_goal_center - dist_ball_enemy_goal_center)
 
-                # Energy Reward : Calculated at _get_commands() since it needs the action sent to robot
+                energy_penalty = - \
+                    (abs(self.sent_commands[0].v_wheel1) +
+                     abs(self.sent_commands[0].v_wheel2))
 
                 # Colisions Reward : Penalty when too close to teammates TODO
 
                 reward = w_move * move_reward + \
                     w_ball_pot * ball_potential + \
                     w_ball_grad * ball_grad + \
-                    w_energy * self.energy_penalty
+                    w_energy * energy_penalty
                 # + w_collision * collisions
 
         self.last_frame = self.frame
-        done = self.frame.time >= 300000 or goal_score != 0
+        done = self.frame.time >= 30000 or goal_score != 0
 
         return reward, done
 
@@ -247,8 +250,8 @@ class VSS3v3Env(VSSBaseEnv):
 
         pos_frame.ball.x = x()
         pos_frame.ball.y = y()
-        pos_frame.ball.v_x = random.uniform(-0.05, 0.05)
-        pos_frame.ball.v_y = random.uniform(-0.05, 0.05)
+        pos_frame.ball.v_x = random.uniform(-0.01, 0.01)
+        pos_frame.ball.v_y = random.uniform(-0.01, 0.01)
 
         pos_frame.robots_blue[0] = Robot(x=x(), y=y(), theta=theta())
         pos_frame.robots_blue[1] = Robot(x=x(), y=y(), theta=theta())
@@ -263,9 +266,11 @@ class VSS3v3Env(VSSBaseEnv):
     def _actions_to_v_wheels(self, actions):
         linear_speed_desired = actions[0] * self.simulator.linear_speed_range
         angular_speed_desired = actions[1] * self.simulator.angular_speed_range
-        
+
         # calculate wheels' linear speeds:
-        left_wheel_speed = (linear_speed_desired - self.simulator.robot_dist_center_to_wheel * angular_speed_desired)
-        right_wheel_speed = (linear_speed_desired + self.simulator.robot_dist_center_to_wheel * angular_speed_desired)
-        
+        left_wheel_speed = (
+            linear_speed_desired - self.simulator.robot_dist_center_to_wheel * angular_speed_desired)
+        right_wheel_speed = (
+            linear_speed_desired + self.simulator.robot_dist_center_to_wheel * angular_speed_desired)
+
         return left_wheel_speed, right_wheel_speed

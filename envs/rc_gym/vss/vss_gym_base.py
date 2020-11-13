@@ -50,7 +50,7 @@ class VSSBaseEnv(gym.Env):
         reward, done = self._calculate_reward_and_done()
 
         return observation, reward, done, {}
-    
+
     def reset(self):
         self.steps = 0
         self.last_frame = None
@@ -87,8 +87,8 @@ class VSSBaseEnv(gym.Env):
                 self.n_robots_blue, self.n_robots_yellow, self.field_params)
 
         self.view.render_frame(self.frame)
-        if mode == 'human':
-            time.sleep(0.01)
+        # if mode == 'human':
+        #     time.sleep(0.01)
 
     def _get_commands(self, action):
         '''returns a list of commands of type List[Robot] from type action_space action'''
