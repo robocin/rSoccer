@@ -7,6 +7,7 @@ import rc_gym
 import gym
 import numpy as np
 from tensorboardX import SummaryWriter
+import time
 env_name = 'VSS3v3-v0'
 n_procs = 5
 TRAIN_STEPS = 200000
@@ -68,7 +69,7 @@ class NormalizedWrapper(gym.Wrapper):
 writer = SummaryWriter(log_dir="log/ppo", comment="-agent")
 
 eval_env = gym.make(env_name)
-train_env = make_vec_env(rc_gym.vss.env_3v3.vss_gym_3v3.VSS3v3Env, n_envs=n_procs, monitor_dir="log/ppo", wrapper_class=NormalizedWrapper)
+train_env = make_vec_env(rc_gym.vss.env_3v3.vss_gym_3v3.VSS3v3Env, n_envs=n_procs, wrapper_class=NormalizedWrapper, vec_env_cls=SubprocVecEnv, vec_env_kwargs={'start_method': 'fork'})
 model = PPO('MlpPolicy', train_env, verbose=0)
 try:
     steps = 0
@@ -77,7 +78,9 @@ try:
         mean_reward, _  = evaluate_policy(model, eval_env, n_eval_episodes=10)
         print("steps {}, evaluation mean_rewards: {:.6f}".format(steps, mean_reward))
         writer.add_scalar("eval/mean_rewards", mean_reward, steps)
+        seconds_start = time.perf_counter()
         model.learn(total_timesteps=TRAIN_STEPS, )
+        writer.add_scalar("learn/steps_s", TRAIN_STEPS / (time.perf_counter() - seconds_start), steps)
         model.save("model/ppo")
         steps += TRAIN_STEPS
 except KeyboardInterrupt:
