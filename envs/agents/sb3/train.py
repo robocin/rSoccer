@@ -1,6 +1,7 @@
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
-from stable_baselines3 import PPO
+from stable_baselines3 import DDPG
+from stable_baselines3.common.noise import OrnsteinUhlenbeckActionNoise
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.env_util import make_vec_env
 import rc_gym
@@ -9,7 +10,7 @@ import numpy as np
 from tensorboardX import SummaryWriter
 import time
 env_name = 'VSS3v3-v0'
-n_procs = 5
+n_procs = 1
 TRAIN_STEPS = 200000
 
 class NormalizedWrapper(gym.Wrapper):
@@ -63,14 +64,17 @@ class NormalizedWrapper(gym.Wrapper):
         # Rescale action from [-1, 1] to original [low, high] interval
         rescaled_action = self.rescale_action(action)
         obs, reward, done, info = self.env.step(rescaled_action)
-        
-        return self.scale_observation(obs), reward, done, info
-    
-writer = SummaryWriter(log_dir="log/ppo", comment="-agent")
 
+        return self.scale_observation(obs), reward, done, info
+
+writer = SummaryWriter(log_dir="log/ddpg", comment="-agent")
 eval_env = gym.make(env_name)
+
+n_actions = eval_env.action_space.shape[-1]
+action_noise = OrnsteinUhlenbeckActionNoise(mean=np.zeros(n_actions), sigma=float(0.5) * np.ones(n_actions))
+
 train_env = make_vec_env(rc_gym.vss.env_3v3.vss_gym_3v3.VSS3v3Env, n_envs=n_procs, wrapper_class=NormalizedWrapper, vec_env_cls=SubprocVecEnv, vec_env_kwargs={'start_method': 'fork'})
-model = PPO('MlpPolicy', train_env, verbose=0)
+model = DDPG('MlpPolicy', train_env, verbose=1, action_noise=action_noise)
 try:
     steps = 0
     while True:
@@ -80,9 +84,9 @@ try:
         writer.add_scalar("eval/mean_rewards", mean_reward, steps)
         seconds_start = time.perf_counter()
         model.learn(total_timesteps=TRAIN_STEPS, )
-        writer.add_scalar("learn/steps_s", TRAIN_STEPS / (time.perf_counter() - seconds_start), steps)
-        model.save("model/ppo")
         steps += TRAIN_STEPS
+        writer.add_scalar("learn/steps_s", TRAIN_STEPS / (time.perf_counter() - seconds_start), steps)
+        model.save("model/ddpg")
 except KeyboardInterrupt:
     train_env.close()
     eval_env.close()
