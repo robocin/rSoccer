@@ -15,7 +15,7 @@ class Frame:
 
     def parse(self, state, status, n_robots_blue=3, n_robots_yellow=3):
         '''It parses the state received from grSim in a common state for environment'''
-        self.time = status['time']
+        self.time = status['time_ms'] / 1000
         self.goals_yellow = status['goals_yellow']
         self.goals_blue = status['goals_blue']
         self.ball.x = state[0]

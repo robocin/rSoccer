@@ -17,9 +17,8 @@ class VSS3v3Env(VSSBaseEnv):
         Num     Observation units in meters
         0        Ball X
         1        Ball Y
-        2        Ball Z
-        3        Ball Vx
-        4        Ball Vy
+        2        Ball Vx
+        3        Ball Vy
         x        id i Blue Robot X
         x        id i Blue Robot Y
         x        id i Blue Robot sin(theta)
@@ -230,7 +229,7 @@ class VSS3v3Env(VSSBaseEnv):
                 # + w_collision * collisions
 
         self.last_frame = self.frame
-        done = self.frame.time >= 30000 or goal_score != 0
+        done = self.frame.time >= 30 or goal_score != 0
 
         return reward, done
 
