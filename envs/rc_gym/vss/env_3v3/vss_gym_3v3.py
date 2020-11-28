@@ -251,18 +251,18 @@ class VSS3v3Env(VSSBaseEnv):
 
         pos_frame: Frame = Frame()
 
-        pos_frame.ball.x = 0.
-        pos_frame.ball.y = 0.
-        pos_frame.ball.v_x = 0.
-        pos_frame.ball.v_y = 0.
+        pos_frame.ball.x = x()
+        pos_frame.ball.y = y()
+        pos_frame.ball.v_x = random.uniform(-0.01, 0.01)
+        pos_frame.ball.v_y = random.uniform(-0.01, 0.01)
 
-        pos_frame.robots_blue[0] = Robot(x=-0.2, y=0.0, theta=0.0)
-        pos_frame.robots_blue[1] = Robot(x=-0.2, y=0.3, theta=theta())
-        pos_frame.robots_blue[2] = Robot(x=-0.2, y=-0.3, theta=theta())
+        pos_frame.robots_blue[0] = Robot(x=x(), y=y(), theta=theta())
+        pos_frame.robots_blue[1] = Robot(x=x(), y=y(), theta=theta())
+        pos_frame.robots_blue[2] = Robot(x=x(), y=y(), theta=theta())
 
-        pos_frame.robots_yellow[0] = Robot(x=0.3, y=0.3, theta=theta())
-        pos_frame.robots_yellow[1] = Robot(x=0.2, y=0.3, theta=theta())
-        pos_frame.robots_yellow[2] = Robot(x=0.2, y=-0.3, theta=theta())
+        pos_frame.robots_yellow[0] = Robot(x=x(), y=y(), theta=theta())
+        pos_frame.robots_yellow[1] = Robot(x=x(), y=y(), theta=theta())
+        pos_frame.robots_yellow[2] = Robot(x=x(), y=y(), theta=theta())
 
         return pos_frame
 
