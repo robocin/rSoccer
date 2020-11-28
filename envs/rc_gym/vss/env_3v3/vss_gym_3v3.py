@@ -69,7 +69,8 @@ class VSS3v3Env(VSSBaseEnv):
             [bound_x, bound_y, bound_sin_cos_theta, bound_sin_cos_theta,
              bound_v, bound_v, bound_v_theta, bound_v_wheel, bound_v_wheel]\
             + self.n_robots_yellow * [bound_x, bound_y, bound_sin_cos_theta,
-                                      bound_sin_cos_theta, bound_v, bound_v, bound_v_theta]
+                                      bound_sin_cos_theta, bound_v, bound_v,
+                                      bound_v_theta]
         obs_bounds = np.array(obs_bounds, dtype=np.float32)
 
         self.observation_space = gym.spaces.Box(
@@ -191,7 +192,8 @@ class VSS3v3Env(VSSBaseEnv):
                 )
                 move_reward = prev_dist_robot_ball - dist_robot_ball
 
-                # Ball Potential Reward : Reward the ball for moving in the opponent goal direction and away from team goal
+                # Ball Potential Reward : Reward the ball for moving in
+                # the opponent goal direction and away from team goal
                 half_field_length = (self.field_params['field_length'] / 2)
                 prev_dist_ball_enemy_goal_center = distance(
                     (self.last_frame.ball.x, self.last_frame.ball.y),
@@ -211,10 +213,13 @@ class VSS3v3Env(VSSBaseEnv):
                     (self.frame.ball.x, self.frame.ball.y),
                     (-half_field_length, 0)
                 )
-                ball_potential = dist_ball_own_goal_center - dist_ball_enemy_goal_center
+                ball_potential = dist_ball_own_goal_center \
+                    - dist_ball_enemy_goal_center
 
-                ball_grad = (dist_ball_own_goal_center - prev_dist_ball_own_goal_center) + \
-                    (prev_dist_ball_enemy_goal_center - dist_ball_enemy_goal_center)
+                ball_grad = (dist_ball_own_goal_center
+                             - prev_dist_ball_own_goal_center) \
+                    + (prev_dist_ball_enemy_goal_center -
+                       dist_ball_enemy_goal_center)
 
                 energy_penalty = - \
                     (abs(self.sent_commands[0].v_wheel1) +
@@ -247,18 +252,18 @@ class VSS3v3Env(VSSBaseEnv):
 
         pos_frame: Frame = Frame()
 
-        pos_frame.ball.x = x()
-        pos_frame.ball.y = y()
-        pos_frame.ball.v_x = random.uniform(-0.01, 0.01)
-        pos_frame.ball.v_y = random.uniform(-0.01, 0.01)
+        pos_frame.ball.x = 0.
+        pos_frame.ball.y = 0.
+        pos_frame.ball.v_x = 0.
+        pos_frame.ball.v_y = 0.
 
-        pos_frame.robots_blue[0] = Robot(x=x(), y=y(), theta=theta())
-        pos_frame.robots_blue[1] = Robot(x=x(), y=y(), theta=theta())
-        pos_frame.robots_blue[2] = Robot(x=x(), y=y(), theta=theta())
+        pos_frame.robots_blue[0] = Robot(x=-0.2, y=0.0, theta=0.0)
+        pos_frame.robots_blue[1] = Robot(x=-0.2, y=0.3, theta=theta())
+        pos_frame.robots_blue[2] = Robot(x=-0.2, y=-0.3, theta=theta())
 
-        pos_frame.robots_yellow[0] = Robot(x=x(), y=y(), theta=theta())
-        pos_frame.robots_yellow[1] = Robot(x=x(), y=y(), theta=theta())
-        pos_frame.robots_yellow[2] = Robot(x=x(), y=y(), theta=theta())
+        pos_frame.robots_yellow[0] = Robot(x=0.3, y=0.3, theta=theta())
+        pos_frame.robots_yellow[1] = Robot(x=0.2, y=0.3, theta=theta())
+        pos_frame.robots_yellow[2] = Robot(x=0.2, y=-0.3, theta=theta())
 
         return pos_frame
 
