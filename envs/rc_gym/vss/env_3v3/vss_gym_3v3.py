@@ -159,7 +159,7 @@ class VSS3v3Env(VSSBaseEnv):
         done = False
         reward = 0
 
-        w_move = 10e-1
+        w_move = 10e-5
         w_ball_pot = 10e-5
         w_ball_grad = 10e-3
         w_energy = 10e-6
@@ -181,17 +181,17 @@ class VSS3v3Env(VSSBaseEnv):
                 reward = goal_score
             else:
                 # Move Reward : Reward the robot for moving in ball direction
-                prev_dist_robot_ball = distance(
-                    (self.last_frame.ball.x, self.last_frame.ball.y),
-                    (self.last_frame.robots_blue[0].x,
-                     self.last_frame.robots_blue[0].y)
-                )
-                dist_robot_ball = distance(
-                    (self.frame.ball.x, self.frame.ball.y),
-                    (self.frame.robots_blue[0].x, self.frame.robots_blue[0].y)
-                )
-                move_reward = prev_dist_robot_ball - dist_robot_ball
+                ball = np.array([self.frame.ball.x, self.frame.ball.y])
+                robot = np.array([self.frame.robots_blue[0].x,
+                                  self.frame.robots_blue[0].y])
+                robot_ball = ball - robot
+                robot_ball = robot_ball/np.linalg.norm(robot_ball)
 
+                robot_vel = np.array([self.frame.robots_blue[0].v_x,
+                                      self.frame.robots_blue[0].v_y])
+                robot_vel = robot_vel/np.linalg.norm(robot_vel)
+                # move reward = cosine between those two unit vectors above
+                move_reward = np.dot(robot_ball, robot_vel)
                 # Ball Potential Reward : Reward the ball for moving in
                 # the opponent goal direction and away from team goal
                 half_field_length = (self.field_params['field_length'] / 2)
@@ -226,7 +226,6 @@ class VSS3v3Env(VSSBaseEnv):
                      abs(self.sent_commands[0].v_wheel2))
 
                 # Colisions Reward : Penalty when too close to teammates TODO
-
                 reward = w_move * move_reward + \
                     w_ball_pot * ball_potential + \
                     w_ball_grad * ball_grad + \
