@@ -9,9 +9,11 @@ class SimulatorVSS:
                  n_robots_yellow: int):
         # Positions needed just to initialize the simulator
         ball_pos = [0, 0, 0, 0]
-        blue_robots_pos = [[-0.2 * i, 0, 0] for i in range(1, n_robots_blue + 1)]
-        yellow_robots_pos = [[0.2 * i, 0, 0] for i in range(1, n_robots_yellow + 1)]
-        
+        blue_robots_pos = [[-0.2 * i, 0, 0]
+                           for i in range(1, n_robots_blue + 1)]
+        yellow_robots_pos = [[0.2 * i, 0, 0]
+                             for i in range(1, n_robots_yellow + 1)]
+
         self.simulator = robosim.SimulatorVSS(field_type=field_type,
                                               n_robots_blue=n_robots_blue,
                                               n_robots_yellow=n_robots_yellow,
@@ -21,9 +23,10 @@ class SimulatorVSS:
                                               )
         self.n_robots_blue = n_robots_blue
         self.n_robots_yellow = n_robots_yellow
-        self.linear_speed_range = 1.5               #m/s
-        self.angular_speed_range = np.deg2rad(360)  #rad/s
-        self.robot_dist_center_to_wheel = 0.0425    #center to wheel + wheel thickness
+        self.linear_speed_range = 1.5  # m/s
+        self.angular_speed_range = np.deg2rad(360)  # rad/s
+        # center to wheel + wheel thickness
+        self.robot_dist_center_to_wheel = 0.0425
 
     def reset(self, frame: Frame):
         placement_pos = self._placement_dict_from_frame(frame)
@@ -41,16 +44,18 @@ class SimulatorVSS:
                 rbt_id = self.n_robots_blue + cmd.id
             else:
                 rbt_id = cmd.id
-            sim_commands[rbt_id][0] = cmd.v_wheel1 * 100 / 2 # convert from m/s to cm/s and split by wheels
-            sim_commands[rbt_id][1] = cmd.v_wheel2 * 100 / 2 # convert from m/s to cm/s and split by wheels
+            # convert from m/s to cm/s and split by wheels
+            sim_commands[rbt_id][0] = cmd.v_wheel1 * 100 / 2
+            # convert from m/s to cm/s and split by wheels
+            sim_commands[rbt_id][1] = cmd.v_wheel2 * 100 / 2
 
         self.simulator.step(sim_commands)
 
     def _placement_dict_from_frame(self, frame: Frame):
         replacement_pos: Dict[str, np.ndarray] = {}
 
-        ball_pos: List[float] = [frame.ball.x,
-                                 frame.ball.y, frame.ball.v_x, frame.ball.v_y]
+        ball_pos: List[float] = [frame.ball.x, frame.ball.y,
+                                 frame.ball.v_x, frame.ball.v_y]
         replacement_pos['ball_pos'] = np.array(ball_pos)
 
         blue_pos: List[List[float]] = []
