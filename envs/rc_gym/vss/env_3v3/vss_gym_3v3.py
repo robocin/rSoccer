@@ -133,24 +133,24 @@ class VSS3v3Env(VSSBaseEnv):
         # Send random commands to the other robots
         v_wheel1, v_wheel2 = self._actions_to_v_wheels(
             self.action_space.sample())
-        commands.append(Robot(yellow=False, id=1, v_wheel1=v_wheel1,
-                              v_wheel2=v_wheel2))
+        commands.append(Robot(yellow=False, id=1, v_wheel1=0.,
+                              v_wheel2=0.))
         v_wheel1, v_wheel2 = self._actions_to_v_wheels(
             self.action_space.sample())
-        commands.append(Robot(yellow=False, id=2, v_wheel1=v_wheel1,
-                              v_wheel2=v_wheel2))
+        commands.append(Robot(yellow=False, id=2, v_wheel1=0.,
+                              v_wheel2=0.))
         v_wheel1, v_wheel2 = self._actions_to_v_wheels(
             self.action_space.sample())
-        commands.append(Robot(yellow=True, id=0, v_wheel1=v_wheel1,
-                              v_wheel2=v_wheel2))
+        commands.append(Robot(yellow=True, id=0, v_wheel1=0.,
+                              v_wheel2=0.))
         v_wheel1, v_wheel2 = self._actions_to_v_wheels(
             self.action_space.sample())
-        commands.append(Robot(yellow=True, id=1, v_wheel1=v_wheel1,
-                              v_wheel2=v_wheel2))
+        commands.append(Robot(yellow=True, id=1, v_wheel1=0.,
+                              v_wheel2=0.))
         v_wheel1, v_wheel2 = self._actions_to_v_wheels(
             self.action_space.sample())
-        commands.append(Robot(yellow=True, id=2, v_wheel1=v_wheel1,
-                              v_wheel2=v_wheel2))
+        commands.append(Robot(yellow=True, id=2, v_wheel1=0.,
+                              v_wheel2=0.))
 
         return commands
 
@@ -257,12 +257,12 @@ class VSS3v3Env(VSSBaseEnv):
         pos_frame.ball.v_y = random.uniform(-0.01, 0.01)
 
         pos_frame.robots_blue[0] = Robot(x=x(), y=y(), theta=theta())
-        pos_frame.robots_blue[1] = Robot(x=x(), y=y(), theta=theta())
-        pos_frame.robots_blue[2] = Robot(x=x(), y=y(), theta=theta())
+        pos_frame.robots_blue[1] = Robot(x=-0.4, y=0., theta=theta())
+        pos_frame.robots_blue[2] = Robot(x=-0.3, y=0., theta=theta())
 
-        pos_frame.robots_yellow[0] = Robot(x=x(), y=y(), theta=theta())
-        pos_frame.robots_yellow[1] = Robot(x=x(), y=y(), theta=theta())
-        pos_frame.robots_yellow[2] = Robot(x=x(), y=y(), theta=theta())
+        pos_frame.robots_yellow[0] = Robot(x=0.2, y=0., theta=theta())
+        pos_frame.robots_yellow[1] = Robot(x=0.3, y=0., theta=theta())
+        pos_frame.robots_yellow[2] = Robot(x=0.4, y=0., theta=theta())
 
         return pos_frame
 
