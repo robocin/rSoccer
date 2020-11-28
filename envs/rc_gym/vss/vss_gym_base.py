@@ -57,11 +57,8 @@ class VSSBaseEnv(gym.Env):
         self.sent_commands = None
         del(self.view)
         self.view = None
-        self.simulator.reset()
-
-        # Sets robots positions
         initial_pos_frame: Frame = self._get_initial_positions_frame()
-        self.simulator.replace_from_frame(initial_pos_frame)
+        self.simulator.reset(initial_pos_frame)
 
         # Get frame from simulator
         self.frame = self.simulator.get_frame()
