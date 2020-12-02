@@ -160,9 +160,9 @@ class VSS3v3Env(VSSBaseEnv):
         reward = 0
 
         w_move = 10e-5
-        w_ball_pot = 10e-5
         w_ball_grad = 10e-3
         w_energy = 10e-6
+        # w_ball_pot = 10e-5
 
         # Check if a goal has ocurred
         if self.last_frame is not None:
@@ -229,14 +229,14 @@ class VSS3v3Env(VSSBaseEnv):
 
                 # Colisions Reward : Penalty when too close to teammates TODO
                 reward = w_move * move_reward + \
-                    w_ball_pot * ball_potential + \
                     w_ball_grad * ball_grad + \
                     w_energy * energy_penalty
+                # w_ball_pot * ball_potential + \
                 # + w_collision * collisions
 
         self.last_frame = self.frame
         done = self.frame.time >= 300 or goal_score != 0
-
+        reward = reward*100
         return reward, done
 
     def _get_initial_positions_frame(self):
