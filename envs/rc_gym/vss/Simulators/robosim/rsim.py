@@ -45,9 +45,9 @@ class SimulatorVSS:
             else:
                 rbt_id = cmd.id
             # convert from m/s to cm/s and split by wheels
-            sim_commands[rbt_id][0] = cmd.v_wheel1 * 100 / 2
+            sim_commands[rbt_id][0] = cmd.v_wheel1 / 0.026
             # convert from m/s to cm/s and split by wheels
-            sim_commands[rbt_id][1] = cmd.v_wheel2 * 100 / 2
+            sim_commands[rbt_id][1] = cmd.v_wheel2 / 0.026
 
         self.simulator.step(sim_commands)
 
