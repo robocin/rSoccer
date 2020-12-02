@@ -60,8 +60,8 @@ class VSS3v3Env(VSSBaseEnv):
         bound_y = self.field_params['field_width'] / 2
         bound_sin_cos_theta = 1
         bound_v = 2
-        bound_v_theta = 720
-        bound_v_wheel = 1.8  # m/s
+        bound_v_theta = 360
+        bound_v_wheel = 1.5  # m/s
         # ball bounds
         obs_bounds = [bound_x, bound_y] + [bound_v, bound_v]
         # concatenate robot bounds
@@ -274,24 +274,31 @@ class VSS3v3Env(VSSBaseEnv):
 
         # calculate wheels' linear speeds:
         if linear_speed_desired + angular_speed_desired > self.simulator.linear_speed_range:
-            right_wheel_overshoot = linear_speed_desired + angular_speed_desired - self.simulator.linear_speed_range
-            left_wheel_speed = linear_speed_desired - angular_speed_desired - right_wheel_overshoot
+            right_wheel_overshoot = linear_speed_desired + \
+                angular_speed_desired - self.simulator.linear_speed_range
+            left_wheel_speed = linear_speed_desired - \
+                angular_speed_desired - right_wheel_overshoot
             right_wheel_speed = self.simulator.linear_speed_range
         elif linear_speed_desired + angular_speed_desired < -self.simulator.linear_speed_range:
-            right_wheel_overshoot = linear_speed_desired + angular_speed_desired + self.simulator.linear_speed_range
-            left_wheel_speed = linear_speed_desired - angular_speed_desired - right_wheel_overshoot
+            right_wheel_overshoot = linear_speed_desired + \
+                angular_speed_desired + self.simulator.linear_speed_range
+            left_wheel_speed = linear_speed_desired - \
+                angular_speed_desired - right_wheel_overshoot
             right_wheel_speed = -self.simulator.linear_speed_range
         elif linear_speed_desired - angular_speed_desired > self.simulator.linear_speed_range:
-            left_wheel_overshoot = linear_speed_desired - angular_speed_desired - self.simulator.linear_speed_range
+            left_wheel_overshoot = linear_speed_desired - \
+                angular_speed_desired - self.simulator.linear_speed_range
             left_wheel_speed = self.simulator.linear_speed_range
-            right_wheel_speed = linear_speed_desired + angular_speed_desired - left_wheel_overshoot
+            right_wheel_speed = linear_speed_desired + \
+                angular_speed_desired - left_wheel_overshoot
         elif linear_speed_desired - angular_speed_desired < -self.simulator.linear_speed_range:
-            left_wheel_overshoot = linear_speed_desired - angular_speed_desired + self.simulator.linear_speed_range
+            left_wheel_overshoot = linear_speed_desired - \
+                angular_speed_desired + self.simulator.linear_speed_range
             left_wheel_speed = -self.simulator.linear_speed_range
-            right_wheel_speed = linear_speed_desired + angular_speed_desired - left_wheel_overshoot
+            right_wheel_speed = linear_speed_desired + \
+                angular_speed_desired - left_wheel_overshoot
         else:
             left_wheel_speed = linear_speed_desired - angular_speed_desired
             right_wheel_speed = linear_speed_desired + angular_speed_desired
-        
 
         return left_wheel_speed, right_wheel_speed
