@@ -24,7 +24,7 @@ class SimulatorVSS:
         self.n_robots_blue = n_robots_blue
         self.n_robots_yellow = n_robots_yellow
         self.linear_speed_range = 1.5  # m/s
-        self.angular_speed_range = 0.5  # rad/s
+        self.angular_speed_range = 0.25  # rad/s
         # center to wheel + wheel thickness
         self.robot_dist_center_to_wheel = 0.0425
 
