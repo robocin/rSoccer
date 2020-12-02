@@ -235,7 +235,7 @@ class VSS3v3Env(VSSBaseEnv):
                 # + w_collision * collisions
 
         self.last_frame = self.frame
-        done = self.frame.time >= 30 or goal_score != 0
+        done = self.frame.time >= 300 or goal_score != 0
 
         return reward, done
 
