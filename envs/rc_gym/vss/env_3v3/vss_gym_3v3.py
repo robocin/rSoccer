@@ -273,9 +273,25 @@ class VSS3v3Env(VSSBaseEnv):
         angular_speed_desired = actions[1] * self.simulator.angular_speed_range
 
         # calculate wheels' linear speeds:
-        left_wheel_speed = (
-            linear_speed_desired - self.simulator.robot_dist_center_to_wheel * angular_speed_desired)
-        right_wheel_speed = (
-            linear_speed_desired + self.simulator.robot_dist_center_to_wheel * angular_speed_desired)
+        if linear_speed_desired + angular_speed_desired > self.simulator.linear_speed_range:
+            right_wheel_overshoot = linear_speed_desired + angular_speed_desired - self.simulator.linear_speed_range
+            left_wheel_speed = linear_speed_desired - angular_speed_desired - right_wheel_overshoot
+            right_wheel_speed = self.simulator.linear_speed_range
+        elif linear_speed_desired + angular_speed_desired < -self.simulator.linear_speed_range:
+            right_wheel_overshoot = linear_speed_desired + angular_speed_desired + self.simulator.linear_speed_range
+            left_wheel_speed = linear_speed_desired - angular_speed_desired - right_wheel_overshoot
+            right_wheel_speed = -self.simulator.linear_speed_range
+        elif linear_speed_desired - angular_speed_desired > self.simulator.linear_speed_range:
+            left_wheel_overshoot = linear_speed_desired - angular_speed_desired - self.simulator.linear_speed_range
+            left_wheel_speed = self.simulator.linear_speed_range
+            right_wheel_speed = linear_speed_desired + angular_speed_desired - left_wheel_overshoot
+        elif linear_speed_desired - angular_speed_desired < -self.simulator.linear_speed_range:
+            left_wheel_overshoot = linear_speed_desired - angular_speed_desired + self.simulator.linear_speed_range
+            left_wheel_speed = -self.simulator.linear_speed_range
+            right_wheel_speed = linear_speed_desired + angular_speed_desired - left_wheel_overshoot
+        else:
+            left_wheel_speed = linear_speed_desired - angular_speed_desired
+            right_wheel_speed = linear_speed_desired + angular_speed_desired
+        
 
-        return np.clip([left_wheel_speed, right_wheel_speed], -linear_speed_desired, linear_speed_desired)
+        return left_wheel_speed, right_wheel_speed
