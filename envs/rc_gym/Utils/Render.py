@@ -46,6 +46,9 @@ class RCRender:
             self.field_params['field_length']*self.scale)+50
         self.screen = None
 
+    def __del__(self):
+        pygame.display.quit()
+
     def draw_field(self) -> None:
         '''
         Auxiliary function to draw the background.
