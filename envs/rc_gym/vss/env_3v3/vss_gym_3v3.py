@@ -60,7 +60,7 @@ class VSS3v3Env(VSSBaseEnv):
         bound_y = self.field_params['field_width'] / 2
         bound_sin_cos_theta = 1
         bound_v = 2
-        bound_v_theta = 360
+        bound_v_theta = 400
         bound_v_wheel = 1.5  # m/s
         # ball bounds
         obs_bounds = [bound_x, bound_y] + [bound_v, bound_v]
