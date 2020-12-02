@@ -6,7 +6,7 @@ from rc_gym.Entities import Frame
 
 class SimulatorVSS:
     def __init__(self, field_type: int, n_robots_blue: int,
-                 n_robots_yellow: int):
+                 n_robots_yellow: int, time_step_ms: int):
         # Positions needed just to initialize the simulator
         ball_pos = [0, 0, 0, 0]
         blue_robots_pos = [[-0.2 * i, 0, 0]
@@ -19,8 +19,8 @@ class SimulatorVSS:
                                               n_robots_yellow=n_robots_yellow,
                                               ball_pos=ball_pos,
                                               blue_robots_pos=blue_robots_pos,
-                                              yellow_robots_pos=yellow_robots_pos
-                                              )
+                                              yellow_robots_pos=yellow_robots_pos,
+                                              time_step_ms=time_step_ms)
         self.n_robots_blue = n_robots_blue
         self.n_robots_yellow = n_robots_yellow
         self.linear_speed_range = 1.5  # m/s
