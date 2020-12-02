@@ -133,24 +133,24 @@ class VSS3v3Env(VSSBaseEnv):
         # Send random commands to the other robots
         v_wheel1, v_wheel2 = self._actions_to_v_wheels(
             self.action_space.sample())
-        commands.append(Robot(yellow=False, id=1, v_wheel1=0.,
-                              v_wheel2=0.))
+        commands.append(Robot(yellow=False, id=1, v_wheel1=v_wheel1,
+                              v_wheel2=v_wheel2))
         v_wheel1, v_wheel2 = self._actions_to_v_wheels(
             self.action_space.sample())
-        commands.append(Robot(yellow=False, id=2, v_wheel1=0.,
-                              v_wheel2=0.))
+        commands.append(Robot(yellow=False, id=2, v_wheel1=v_wheel1,
+                              v_wheel2=v_wheel2))
         v_wheel1, v_wheel2 = self._actions_to_v_wheels(
             self.action_space.sample())
-        commands.append(Robot(yellow=True, id=0, v_wheel1=0.,
-                              v_wheel2=0.))
+        commands.append(Robot(yellow=True, id=0, v_wheel1=v_wheel1,
+                              v_wheel2=v_wheel2))
         v_wheel1, v_wheel2 = self._actions_to_v_wheels(
             self.action_space.sample())
-        commands.append(Robot(yellow=True, id=1, v_wheel1=0.,
-                              v_wheel2=0.))
+        commands.append(Robot(yellow=True, id=1, v_wheel1=v_wheel1,
+                              v_wheel2=v_wheel2))
         v_wheel1, v_wheel2 = self._actions_to_v_wheels(
             self.action_space.sample())
-        commands.append(Robot(yellow=True, id=2, v_wheel1=0.,
-                              v_wheel2=0.))
+        commands.append(Robot(yellow=True, id=2, v_wheel1=v_wheel1,
+                              v_wheel2=v_wheel2))
 
         return commands
 
@@ -185,11 +185,13 @@ class VSS3v3Env(VSSBaseEnv):
                 robot = np.array([self.frame.robots_blue[0].x,
                                   self.frame.robots_blue[0].y])
                 robot_ball = ball - robot
-                robot_ball = robot_ball/np.linalg.norm(robot_ball)
+                if np.linalg.norm(robot_ball) != 0:
+                    robot_ball = robot_ball/np.linalg.norm(robot_ball)
 
                 robot_vel = np.array([self.frame.robots_blue[0].v_x,
                                       self.frame.robots_blue[0].v_y])
-                robot_vel = robot_vel/np.linalg.norm(robot_vel)
+                if np.linalg.norm(robot_vel) != 0:
+                    robot_vel = robot_vel/np.linalg.norm(robot_vel)
                 # move reward = cosine between those two unit vectors above
                 move_reward = np.dot(robot_ball, robot_vel)
                 # Ball Potential Reward : Reward the ball for moving in
@@ -251,8 +253,8 @@ class VSS3v3Env(VSSBaseEnv):
 
         pos_frame: Frame = Frame()
 
-        pos_frame.ball.x = 0.
-        pos_frame.ball.y = 0.
+        pos_frame.ball.x = x()
+        pos_frame.ball.y = y()
         pos_frame.ball.v_x = 0.
         pos_frame.ball.v_y = 0.
 
@@ -276,4 +278,4 @@ class VSS3v3Env(VSSBaseEnv):
         right_wheel_speed = (
             linear_speed_desired + self.simulator.robot_dist_center_to_wheel * angular_speed_desired)
 
-        return left_wheel_speed, right_wheel_speed
+        return np.clip([left_wheel_speed, right_wheel_speed], -linear_speed_desired, linear_speed_desired)
