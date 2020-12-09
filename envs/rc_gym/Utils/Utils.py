@@ -55,11 +55,7 @@ def clip(val, vmin, vmax):
 
 
 def normX(x):
-    return clip(x / 1.5, -0.75, 0.75)
-
-
-def normY(y):
-    return clip(y / 1.3, -0.65, .65)
+    return clip(x / 1.7, -0.2, 1.2)
 
 
 def normVx(v_x):
@@ -67,7 +63,7 @@ def normVx(v_x):
 
 
 def normVt(vt):
-    return clip(vt / 0.1, -1.2, 1.2)
+    return clip(vt / 573, -1.2, 1.2)
 
 
 def roundTo5(x, base=5):

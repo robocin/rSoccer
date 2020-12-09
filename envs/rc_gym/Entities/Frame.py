@@ -4,6 +4,7 @@ from rc_gym.Entities.Robot import Robot
 
 
 class Frame:
+    """Units: seconds, m, m/s, degrees, degrees/s. Reference is field center."""
     def __init__(self):
         """Init Frame object."""
         self.ball = Ball()
@@ -14,7 +15,7 @@ class Frame:
         self.goals_blue = None
 
     def parse(self, state, status, n_robots_blue=3, n_robots_yellow=3):
-        '''It parses the state received from grSim in a common state for environment'''
+        """It parses the state received from grSim in a common state for environment"""
         self.time = status['time_ms'] / 1000
         self.goals_yellow = status['goals_yellow']
         self.goals_blue = status['goals_blue']
@@ -23,6 +24,7 @@ class Frame:
         self.ball.z = state[2]
         self.ball.v_x = state[3]
         self.ball.v_y = state[4]
+        self.ball.x
 
         for i in range(n_robots_blue):
             robot = Robot()

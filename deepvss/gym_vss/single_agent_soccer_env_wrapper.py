@@ -68,12 +68,12 @@ FIRA_PARAMS = {
     'ia': False,
     'random_init': True,
     'random_cmd': False,
-    'is_team_yellow': True,  # True here requires ia = False
+    'is_team_yellow': False,  # True here requires ia = False
     'frame_step_size': (1000 / 250.0),
     'frame_skip': 0.08,
     # 5min in ms, to disable time limit set time_limit_ms < 0
     'time_limit_ms':  (5 * 60 * 1000),
-    'render': False,
+    'render': True,
     'fast_mode': True,
 
     # Robot configuration
