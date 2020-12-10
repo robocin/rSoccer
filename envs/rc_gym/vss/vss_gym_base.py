@@ -18,8 +18,8 @@ from rc_gym.vss.Simulators.robosim.rsim import SimulatorVSS
 
 class VSSBaseEnv(gym.Env):
     def __init__(self, field_type: int,
-                 n_robots_blue: int, n_robots_yellow: int):
-        self.time_step = 0.016
+                 n_robots_blue: int, n_robots_yellow: int, time_step: float):
+        self.time_step = time_step
         self.simulator = SimulatorVSS(field_type=field_type,
                                       n_robots_blue=n_robots_blue,
                                       n_robots_yellow=n_robots_yellow,
@@ -35,6 +35,7 @@ class VSSBaseEnv(gym.Env):
         self.steps = 0
         self.sent_commands = None
         self.actions: Dict = None
+        self.previous_ball_potential = None
 
     def step(self, action):
         self.steps += 1

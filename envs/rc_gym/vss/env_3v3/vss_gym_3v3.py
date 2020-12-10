@@ -48,11 +48,14 @@ class VSS3v3Env(VSSBaseEnv):
     """
 
     def __init__(self):
-        super().__init__(field_type=0, n_robots_blue=3, n_robots_yellow=3)
+        super().__init__(field_type=0, n_robots_blue=3, n_robots_yellow=3,
+                         time_step=0.032)
+
         self.action_space = gym.spaces.Box(
             low=-1, high=1, shape=(2, ), dtype=np.float32)
         self.observation_space = gym.spaces.Box(
             low=-0, high=1, shape=(53, ), dtype=np.float32)
+        self.previous_ball_potential = None
         print('Environment initialized')
 
     def _frame_to_observations(self):
@@ -137,75 +140,72 @@ class VSS3v3Env(VSSBaseEnv):
         done = False
         reward = 0
 
-        w_move = 10e-5
-        w_ball_grad = 10e-3
-        w_energy = 10e-6
-        # w_ball_pot = 10e-5
+        w_move = 0.2
+        w_ball_grad = 0.8
+        w_energy = 1e-4
 
-        # Check if a goal has ocurred
-        if self.last_frame is not None:
-            
-            if self.frame.ball.x > (self.field_params['field_length'] / 2):
-                goal_score = 1
-            if self.frame.ball.x < -(self.field_params['field_length'] / 2):
-                goal_score = -1
+        # Check if goal ocurred
+        if self.frame.ball.x > (self.field_params['field_length'] / 2):
+            goal_score = 1
+        if self.frame.ball.x < -(self.field_params['field_length'] / 2):
+            goal_score = -1
 
-            # If goal scored reward = 1 favoured, and -1 if against
-            if goal_score != 0:
-                reward = goal_score
-            else:
+        # If goal scored reward = 1 favoured, and -1 if against
+        if goal_score != 0:
+            # print('GOAL', 'LEFT' if goal_score > 0 else 'RIGHT')
+            reward = goal_score*10
+        # Calculate reward shaping
+        else:
+            # Calculate ball potential
+            width = 1.3/2.0
+            lenght = (1.5/2.0) + 0.1
+            dx_d = 0 - (lenght + self.frame.ball.x) * \
+                100  # distance to defence
+            dx_a = 170.0 - (lenght + self.frame.ball.x) * \
+                100  # distance to attack
+            dy = 65.0 - (width - self.frame.ball.y) * 100
+            ball_potential = ((-math.sqrt(dx_a ** 2 + 2 * dy ** 2)
+                               + math.sqrt(dx_d ** 2 + 2 * dy ** 2)) / 170 - 1) / 2
+
+            if self.last_frame is not None:
+                if self.previous_ball_potential is not None:
+                    grad_ball_potential = np.clip((ball_potential
+                                                   - self.previous_ball_potential)
+                                                  * 4000 /
+                                                  (self.time_step/1000),
+                                                  -1.0, 1.0)
+                else:
+                    grad_ball_potential = 0
+
+                self.previous_ball_potential = grad_ball_potential
+
                 # Move Reward : Reward the robot for moving in ball direction
-                ball = np.array([self.frame.ball.x, self.frame.ball.y])
-                robot = np.array([self.frame.robots_blue[0].x,
-                                  self.frame.robots_blue[0].y])
-                robot_ball = ball - robot
-                
-                if np.linalg.norm(robot_ball) != 0:
-                    robot_ball = robot_ball/np.linalg.norm(robot_ball)
-
-                robot_vel = np.array([self.frame.robots_blue[0].v_x,
-                                      self.frame.robots_blue[0].v_y])
-                if np.linalg.norm(robot_vel) != 0:
-                    robot_vel = robot_vel/np.linalg.norm(robot_vel)
-                # move reward = cosine between those two unit vectors above
-                move_reward = np.dot(robot_ball, robot_vel)
-                
-                half_field_length = (self.field_params['field_length'] / 2)
-                prev_dist_ball_enemy_goal_center = distance(
+                prev_dist_robot_ball = distance(
                     (self.last_frame.ball.x, self.last_frame.ball.y),
-                    (half_field_length, 0)
-                )
-                dist_ball_enemy_goal_center = distance(
+                    (self.last_frame.robots_blue[0].x,
+                     self.last_frame.robots_blue[0].y)
+                ) * 100
+                dist_robot_ball = distance(
                     (self.frame.ball.x, self.frame.ball.y),
-                    (half_field_length, 0)
-                )
+                    (self.frame.robots_blue[0].x, self.frame.robots_blue[0].y)
+                ) * 100
 
-                prev_dist_ball_own_goal_center = distance(
-                    (self.last_frame.ball.x, self.last_frame.ball.y),
-                    (-half_field_length, 0)
-                )
-
-                dist_ball_own_goal_center = distance(
-                    (self.frame.ball.x, self.frame.ball.y),
-                    (-half_field_length, 0)
-                )
-
-                ball_grad = (dist_ball_own_goal_center
-                             - prev_dist_ball_own_goal_center) \
-                    + (prev_dist_ball_enemy_goal_center -
-                       dist_ball_enemy_goal_center)
+                move_reward = prev_dist_robot_ball - dist_robot_ball
+                move_reward = np.clip(move_reward * 50 / (self.time_step/1000),
+                                      -1.0, 1.0)
 
                 energy_penalty = - \
-                    (abs(self.sent_commands[0].v_wheel1) +
-                     abs(self.sent_commands[0].v_wheel2))
+                    (abs(self.sent_commands[0].v_wheel1 / 0.026) +
+                     abs(self.sent_commands[0].v_wheel2 / 0.026))
 
                 reward = w_move * move_reward + \
-                    w_ball_grad * ball_grad + \
+                    w_ball_grad * grad_ball_potential + \
                     w_energy * energy_penalty
 
-        self.last_frame = self.frame
-        done = self.frame.time >= 300 or goal_score != 0
-        reward = reward*100
+            self.last_frame = self.frame
+
+        done = self.frame.time >= 300 # or goal_score != 0
+
         return reward, done
 
     def _get_initial_positions_frame(self):
