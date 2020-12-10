@@ -23,8 +23,8 @@ class SimulatorVSS:
                                               time_step_ms=time_step_ms)
         self.n_robots_blue = n_robots_blue
         self.n_robots_yellow = n_robots_yellow
-        self.linear_speed_range = 1.5  # m/s
-        self.angular_speed_range = 0.25  # rad/s
+        self.linear_speed_range = 1.15  # m/s
+        self.angular_speed_range = 11  # rad/s
         # center to wheel + wheel thickness
         self.robot_dist_center_to_wheel = 0.0425
 
@@ -44,11 +44,9 @@ class SimulatorVSS:
                 rbt_id = self.n_robots_blue + cmd.id
             else:
                 rbt_id = cmd.id
-            # convert from m/s to cm/s and split by wheels
+            # convert from linear speed to angular speed
             sim_commands[rbt_id][0] = cmd.v_wheel1 / 0.026
-            # convert from m/s to cm/s and split by wheels
             sim_commands[rbt_id][1] = cmd.v_wheel2 / 0.026
-
         self.simulator.step(sim_commands)
 
     def _placement_dict_from_frame(self, frame: Frame):

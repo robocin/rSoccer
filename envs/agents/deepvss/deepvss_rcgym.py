@@ -133,7 +133,7 @@ if __name__ == "__main__":
 
         sys.stdout.flush()
 
-        env = NormalizedWrapper(gym.make('VSS3v3-v0'))
+        env = gym.make('VSS3v3-v0')
         state_shape, action_shape = env.observation_space, env.action_space
         model_params['state_shape'] = state_shape
         model_params['action_shape'] = action_shape
