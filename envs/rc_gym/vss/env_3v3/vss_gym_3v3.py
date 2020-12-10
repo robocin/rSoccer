@@ -143,17 +143,20 @@ class VSS3v3Env(VSSBaseEnv):
         w_energy = 1e-4
         if self.reward_shaping_total == None:
             self.reward_shaping_total = {'goal_score': 0, 'move': 0,
-                                         'ball_grad': 0, 'energy': 0}
+                                         'ball_grad': 0, 'energy': 0,
+                                         'goals_blue': 0, 'goals_yellow': 0}
 
         # Check if goal ocurred
         if self.frame.ball.x > (self.field_params['field_length'] / 2):
-            print('GOAL BLUE')
-            self.reward_shaping_total['goal_score'] += 1
+            # print('GOAL BLUE')
+            self.reward_shaping_total['goal_score'] += 10
+            self.reward_shaping_total['goals_blue'] += 1
             reward = 10
             goal = True
         elif self.frame.ball.x < -(self.field_params['field_length'] / 2):
-            print('GOAL YELLOW')
-            self.reward_shaping_total['goal_score'] -= 1
+            # print('GOAL YELLOW')
+            self.reward_shaping_total['goal_score'] -= 10
+            self.reward_shaping_total['goals_yellow'] += 1
             reward = -10
             goal = True
         else:
@@ -224,6 +227,8 @@ class VSS3v3Env(VSSBaseEnv):
             self.summary_writer.add_scalar("rw/move", self.reward_shaping_total['move'], self.matches_played)
             self.summary_writer.add_scalar("rw/ball_grad", self.reward_shaping_total['ball_grad'], self.matches_played)
             self.summary_writer.add_scalar("rw/energy", self.reward_shaping_total['energy'], self.matches_played)
+            self.summary_writer.add_scalar("rw/goals_blue", self.reward_shaping_total['goals_blue'], self.matches_played)
+            self.summary_writer.add_scalar("rw/goals_yellow", self.reward_shaping_total['goals_yellow'], self.matches_played)
 
         return reward, done
 
