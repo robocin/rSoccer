@@ -144,11 +144,7 @@ class VSS3v3Env(VSSBaseEnv):
 
         # Check if a goal has ocurred
         if self.last_frame is not None:
-            self.previous_ball_potential = None
-            # if self.frame.goals_blue > self.last_frame.goals_blue:
-            #     goal_score = 1
-            # if self.frame.goals_yellow > self.last_frame.goals_yellow:
-            #     goal_score = -1
+            
             if self.frame.ball.x > (self.field_params['field_length'] / 2):
                 goal_score = 1
             if self.frame.ball.x < -(self.field_params['field_length'] / 2):
@@ -163,6 +159,7 @@ class VSS3v3Env(VSSBaseEnv):
                 robot = np.array([self.frame.robots_blue[0].x,
                                   self.frame.robots_blue[0].y])
                 robot_ball = ball - robot
+                
                 if np.linalg.norm(robot_ball) != 0:
                     robot_ball = robot_ball/np.linalg.norm(robot_ball)
 
@@ -172,8 +169,7 @@ class VSS3v3Env(VSSBaseEnv):
                     robot_vel = robot_vel/np.linalg.norm(robot_vel)
                 # move reward = cosine between those two unit vectors above
                 move_reward = np.dot(robot_ball, robot_vel)
-                # Ball Potential Reward : Reward the ball for moving in
-                # the opponent goal direction and away from team goal
+                
                 half_field_length = (self.field_params['field_length'] / 2)
                 prev_dist_ball_enemy_goal_center = distance(
                     (self.last_frame.ball.x, self.last_frame.ball.y),
@@ -193,8 +189,6 @@ class VSS3v3Env(VSSBaseEnv):
                     (self.frame.ball.x, self.frame.ball.y),
                     (-half_field_length, 0)
                 )
-                ball_potential = dist_ball_own_goal_center \
-                    - dist_ball_enemy_goal_center
 
                 ball_grad = (dist_ball_own_goal_center
                              - prev_dist_ball_own_goal_center) \
@@ -205,12 +199,9 @@ class VSS3v3Env(VSSBaseEnv):
                     (abs(self.sent_commands[0].v_wheel1) +
                      abs(self.sent_commands[0].v_wheel2))
 
-                # Colisions Reward : Penalty when too close to teammates TODO
                 reward = w_move * move_reward + \
                     w_ball_grad * ball_grad + \
                     w_energy * energy_penalty
-                # w_ball_pot * ball_potential + \
-                # + w_collision * collisions
 
         self.last_frame = self.frame
         done = self.frame.time >= 300 or goal_score != 0
