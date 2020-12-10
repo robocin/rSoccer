@@ -51,8 +51,8 @@ class VSSBaseEnv(gym.Env):
         # Get Frame from simulator
         self.frame = self.simulator.get_frame()
         # Calculate environment observation, reward and done condition
-        reward, done = self._calculate_reward_and_done()
         observation = self._frame_to_observations()
+        reward, done = self._calculate_reward_and_done()
 
         return observation, reward, done, {}
 
