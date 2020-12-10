@@ -74,19 +74,23 @@ def print_with_description(state):
 # env.reset()
 # Run for 10 episode and print reward at the end
 for i in range(1):
+    init = time.perf_counter()
     done = False
     next_state = env.reset()
     # print_with_description(next_state)
     epi_rew = 0.
     while not done:
-        action = np.array([0.9, 0.])
+        # action = np.array([0.9, 0.])
+        action = env.action_space.sample()
         next_state, reward, done, _ = env.step(action)
         epi_rew += reward
-        env.render()
+        # env.render()
         # print_with_description(next_state)
         # print(np.sqrt((env.frame.robots_blue[0].v_x * env.frame.robots_blue[0].v_x) + (env.frame.robots_blue[0].v_y * env.frame.robots_blue[0].v_y)))
         # print(env.frame.robots_blue[0].v_theta)
-    print(epi_rew)
-while True:
-    i = 1
+
+end = time.perf_counter()
+
+print(300 / (end - init))
+
 env.close()
