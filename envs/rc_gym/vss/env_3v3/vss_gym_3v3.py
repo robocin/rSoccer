@@ -55,7 +55,7 @@ class VSS3v3Env(VSSBaseEnv):
             low=-1, high=1, shape=(2, ), dtype=np.float32)
         self.observation_space = gym.spaces.Box(
             low=-0, high=1, shape=(53, ), dtype=np.float32)
-        self.previous_ball_potential = None
+        self.matches_played = 0
         print('Environment initialized')
 
     def _frame_to_observations(self):
@@ -136,25 +136,26 @@ class VSS3v3Env(VSSBaseEnv):
         return commands
 
     def _calculate_reward_and_done(self):
-        goal_score = 0
-        done = False
         reward = 0
-
+        goal = False
         w_move = 0.2
         w_ball_grad = 0.8
         w_energy = 1e-4
+        if self.reward_shaping_total == None:
+            self.reward_shaping_total = {'goal_score': 0, 'move': 0,
+                                         'ball_grad': 0, 'energy': 0}
 
         # Check if goal ocurred
         if self.frame.ball.x > (self.field_params['field_length'] / 2):
-            goal_score = 1
-        if self.frame.ball.x < -(self.field_params['field_length'] / 2):
-            goal_score = -1
-
-        # If goal scored reward = 1 favoured, and -1 if against
-        if goal_score != 0:
-            # print('GOAL', 'LEFT' if goal_score > 0 else 'RIGHT')
-            reward = goal_score*10
-        # Calculate reward shaping
+            print('GOAL BLUE')
+            self.reward_shaping_total['goal_score'] += 1
+            reward = 10
+            goal = True
+        elif self.frame.ball.x < -(self.field_params['field_length'] / 2):
+            print('GOAL YELLOW')
+            self.reward_shaping_total['goal_score'] -= 1
+            reward = -10
+            goal = True
         else:
             # Calculate ball potential
             width = 1.3/2.0
@@ -201,10 +202,28 @@ class VSS3v3Env(VSSBaseEnv):
                 reward = w_move * move_reward + \
                     w_ball_grad * grad_ball_potential + \
                     w_energy * energy_penalty
+                
+                self.reward_shaping_total['move'] += w_move * move_reward
+                self.reward_shaping_total['ball_grad'] +=\
+                    w_ball_grad * grad_ball_potential
+                self.reward_shaping_total['energy'] += w_energy * energy_penalty
+                
 
             self.last_frame = self.frame
 
-        done = self.frame.time >= 300 # or goal_score != 0
+        if goal:
+            initial_pos_frame: Frame = self._get_initial_positions_frame()
+            self.simulator.reset(initial_pos_frame)
+            self.frame = self.simulator.get_frame()
+            self.last_frame = None
+
+        done = self.steps * self.time_step >= 300
+
+        if done and self.summary_writer != None:
+            self.summary_writer.add_scalar("rw/goal_score", self.reward_shaping_total['goal_score'], self.matches_played)
+            self.summary_writer.add_scalar("rw/move", self.reward_shaping_total['move'], self.matches_played)
+            self.summary_writer.add_scalar("rw/ball_grad", self.reward_shaping_total['ball_grad'], self.matches_played)
+            self.summary_writer.add_scalar("rw/energy", self.reward_shaping_total['energy'], self.matches_played)
 
         return reward, done
 
@@ -258,3 +277,9 @@ class VSS3v3Env(VSSBaseEnv):
             (left_wheel_speed, right_wheel_speed), -2.6, 2.6)
 
         return left_wheel_speed, right_wheel_speed
+
+    def set_writer(self, writer):
+        self.summary_writer = writer
+        
+    def set_matches_played(self, matches):
+        self.matches_played = matches

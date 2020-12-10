@@ -84,7 +84,7 @@ for i in range(1):
         action = env.action_space.sample()
         next_state, reward, done, _ = env.step(action)
         epi_rew += reward
-        # env.render()
+        env.render()
         # print_with_description(next_state)
         # print(np.sqrt((env.frame.robots_blue[0].v_x * env.frame.robots_blue[0].v_x) + (env.frame.robots_blue[0].v_y * env.frame.robots_blue[0].v_y)))
         # print(env.frame.robots_blue[0].v_theta)

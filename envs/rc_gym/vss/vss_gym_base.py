@@ -36,6 +36,8 @@ class VSSBaseEnv(gym.Env):
         self.sent_commands = None
         self.actions: Dict = None
         self.previous_ball_potential = None
+        self.reward_shaping_total = None
+        self.summary_writer = None
 
     def step(self, action):
         self.steps += 1
@@ -49,8 +51,8 @@ class VSSBaseEnv(gym.Env):
         # Get Frame from simulator
         self.frame = self.simulator.get_frame()
         # Calculate environment observation, reward and done condition
-        observation = self._frame_to_observations()
         reward, done = self._calculate_reward_and_done()
+        observation = self._frame_to_observations()
 
         return observation, reward, done, {}
 
@@ -59,6 +61,7 @@ class VSSBaseEnv(gym.Env):
         self.last_frame = None
         self.sent_commands = None
         self.actions = None
+        self.reward_shaping_total = None
         del(self.view)
         self.view = None
         initial_pos_frame: Frame = self._get_initial_positions_frame()

@@ -145,8 +145,8 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
                 if not test and not (evaluation):
                     exp_queue.put(exp)
                 
-                # if evaluation or test:
-                #     agent_env.render()
+                if evaluation or test:
+                    agent_env.render()
                 # else:
                 #     if agent_env.view is not None:
                 #         del(agent_env.view)
@@ -154,9 +154,10 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
 
                 new_rewards = exp_source.pop_total_rewards()
                 if new_rewards:  # got a done (match ended)
-                    matches_played += 1
                     writer.add_scalar("rw/total", new_rewards[0], matches_played)
                     writer.add_scalar("rw/steps_ep", steps, matches_played)
+                    matches_played += 1
+                    agent_env.set_matches_played(matches_played)
                     steps = 0
 
                     print('Episode {} rewards: {}'.format(matches_played, new_rewards[0]))
