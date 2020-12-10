@@ -140,7 +140,7 @@ class VSS3v3Env(VSSBaseEnv):
         goal = False
         w_move = 0.2
         w_ball_grad = 0.8
-        w_energy = 1e-4
+        w_energy = 2e-4
         if self.reward_shaping_total == None:
             self.reward_shaping_total = {'goal_score': 0, 'move': 0,
                                          'ball_grad': 0, 'energy': 0,
@@ -176,12 +176,12 @@ class VSS3v3Env(VSSBaseEnv):
                     grad_ball_potential = np.clip((ball_potential
                                                    - self.previous_ball_potential)
                                                   * 4000 /
-                                                  (self.time_step/1000),
+                                                  (self.time_step),
                                                   -1.0, 1.0)
                 else:
                     grad_ball_potential = 0
 
-                self.previous_ball_potential = grad_ball_potential
+                self.previous_ball_potential = ball_potential
 
                 # Move Reward : Reward the robot for moving in ball direction
                 prev_dist_robot_ball = distance(
@@ -195,7 +195,7 @@ class VSS3v3Env(VSSBaseEnv):
                 ) * 100
 
                 move_reward = prev_dist_robot_ball - dist_robot_ball
-                move_reward = np.clip(move_reward * 50 / (self.time_step/1000),
+                move_reward = np.clip(move_reward * 5 / (self.time_step),
                                       -1.0, 1.0)
 
                 energy_penalty = - \
