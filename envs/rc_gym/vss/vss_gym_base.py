@@ -34,10 +34,10 @@ class VSSBaseEnv(gym.Env):
         self.view = None
         self.steps = 0
         self.sent_commands = None
+        self.actions: Dict = None
 
     def step(self, action):
         self.steps += 1
-
         # TODO talvez substituir o get commands por wrappers
         # Join agent action with environment actions
         commands: List[Robot] = self._get_commands(action)
@@ -57,6 +57,7 @@ class VSSBaseEnv(gym.Env):
         self.steps = 0
         self.last_frame = None
         self.sent_commands = None
+        self.actions = None
         del(self.view)
         self.view = None
         initial_pos_frame: Frame = self._get_initial_positions_frame()

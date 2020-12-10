@@ -5,7 +5,7 @@ import gym
 import numpy as np
 from rc_gym.Entities import Frame, Robot
 from rc_gym.vss.vss_gym_base import VSSBaseEnv
-from rc_gym.Utils import distance, normVt, normVx, normX, normY
+from rc_gym.Utils import distance, normVt, normVx, normX
 
 
 class VSS3v3Env(VSSBaseEnv):
@@ -13,12 +13,14 @@ class VSS3v3Env(VSSBaseEnv):
     Description:
         This environment controls a single robot soccer in VSS League 3v3 match
     Observation:
-        Type: Box(41)
-        Num     Observation units in meters
+        Type: Box(53)
+        Num     Observation normalized
         0        Ball X
         1        Ball Y
         2        Ball Vx
         3        Ball Vy
+        x        id i Blue Robot target_x
+        x        id i Blue Robot target_y
         x        id i Blue Robot X
         x        id i Blue Robot Y
         x        id i Blue Robot sin(theta)
@@ -26,8 +28,6 @@ class VSS3v3Env(VSSBaseEnv):
         x        id i Blue Robot Vx
         x        id i Blue Robot Vy
         x        id i Blue Robot v_theta
-        x        id i Blue Robot last_command[0]
-        x        id i Blue Robot last_command[1]
         x        id i Yellow Robot X
         x        id i Yellow Robot Y
         x        id i Yellow Robot sin(theta)
@@ -38,11 +38,9 @@ class VSS3v3Env(VSSBaseEnv):
     Actions:
         Type: Box(2, )
         Num     Action
-        0       id 0 Blue Linear Speed (%)
-        1       id 0 Blue Angular 2 Speed (%)
+        0       id 0 Blue Angular Speed (%)
+        1       id 0 Blue Linear Speed (%)
     Reward:
-        1 if Blue Team Goal
-        -1 if Yellow Team Goal
     Starting State:
         TODO
     Episode Termination:
@@ -54,7 +52,7 @@ class VSS3v3Env(VSSBaseEnv):
         self.action_space = gym.spaces.Box(
             low=-1, high=1, shape=(2, ), dtype=np.float32)
         self.observation_space = gym.spaces.Box(
-            low=-0, high=1, shape=(53, ) dtype=np.float32)
+            low=-0, high=1, shape=(53, ), dtype=np.float32)
         print('Environment initialized')
 
     def _frame_to_observations(self):
@@ -63,16 +61,30 @@ class VSS3v3Env(VSSBaseEnv):
 
         width = 1.3/2.0
         lenght = (1.5/2.0) + 0.1
-        
         observation.append(1 - (self.frame.time / 300))
         observation.append(normX(lenght + self.frame.ball.x))
         observation.append(normX(width - self.frame.ball.y))
         observation.append(normVx(self.frame.ball.v_x))
-        observation.append(normVx(self.frame.ball.v_y))
+        observation.append(normVx(-self.frame.ball.v_y))
 
         for i in range(self.n_robots_blue):
-            observation.append(normX(lenght + self.frame.robots_blue[i].x)) # TODO
-            observation.append(normX(width - self.frame.robots_blue[i].y))  # TODO
+            if self.actions != None:
+                target_theta = (np.deg2rad(self.frame.robots_blue[i].theta) + (
+                    self.actions[i][0] * self.simulator.angular_speed_range
+                    * self.time_step * 5.3))
+
+                target_x = self.frame.robots_blue[i].x + (
+                    self.actions[i][1] * self.simulator.linear_speed_range
+                    * np.cos(target_theta)) * 0.52  # * self.time_step
+
+                target_y = self.frame.robots_blue[i].y + (
+                    self.actions[i][1] * self.simulator.linear_speed_range
+                    * np.sin(target_theta)) * 0.52  # * self.time_step
+            else:
+                target_x = self.frame.robots_blue[i].x
+                target_y = self.frame.robots_blue[i].y
+            observation.append(normX(lenght + target_x))
+            observation.append(normX(width - target_y))
             observation.append(normX(lenght + self.frame.robots_blue[i].x))
             observation.append(normX(width - self.frame.robots_blue[i].y))
             observation.append(
@@ -80,7 +92,7 @@ class VSS3v3Env(VSSBaseEnv):
             observation.append(
                 np.cos(np.deg2rad(-self.frame.robots_blue[i].theta)))
             observation.append(normVx(self.frame.robots_blue[i].v_x))
-            observation.append(normVx(self.frame.robots_blue[i].v_y))
+            observation.append(normVx(-self.frame.robots_blue[i].v_y))
             observation.append(normVt(self.frame.robots_blue[i].v_theta))
 
         for i in range(self.n_robots_yellow):
@@ -91,39 +103,32 @@ class VSS3v3Env(VSSBaseEnv):
             observation.append(
                 np.cos(np.deg2rad(-self.frame.robots_yellow[i].theta)))
             observation.append(normVx(self.frame.robots_yellow[i].v_x))
-            observation.append(normVx(self.frame.robots_yellow[i].v_y))
+            observation.append(normVx(-self.frame.robots_yellow[i].v_y))
             observation.append(normVt(self.frame.robots_yellow[i].v_theta))
 
         return np.array(observation)
 
     def _get_commands(self, actions):
         commands = []
+        self.actions = {}
 
+        self.actions[0] = actions
         v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions)
         commands.append(Robot(yellow=False, id=0, v_wheel1=v_wheel1,
                               v_wheel2=v_wheel2))
 
         # Send random commands to the other robots
-        v_wheel1, v_wheel2 = self._actions_to_v_wheels(
-            self.action_space.sample())
-        commands.append(Robot(yellow=False, id=1, v_wheel1=v_wheel1,
-                              v_wheel2=v_wheel2))
-        v_wheel1, v_wheel2 = self._actions_to_v_wheels(
-            self.action_space.sample())
-        commands.append(Robot(yellow=False, id=2, v_wheel1=v_wheel1,
-                              v_wheel2=v_wheel2))
-        v_wheel1, v_wheel2 = self._actions_to_v_wheels(
-            self.action_space.sample())
-        commands.append(Robot(yellow=True, id=0, v_wheel1=v_wheel1,
-                              v_wheel2=v_wheel2))
-        v_wheel1, v_wheel2 = self._actions_to_v_wheels(
-            self.action_space.sample())
-        commands.append(Robot(yellow=True, id=1, v_wheel1=v_wheel1,
-                              v_wheel2=v_wheel2))
-        v_wheel1, v_wheel2 = self._actions_to_v_wheels(
-            self.action_space.sample())
-        commands.append(Robot(yellow=True, id=2, v_wheel1=v_wheel1,
-                              v_wheel2=v_wheel2))
+        for i in range(1, 3):
+            actions = self.action_space.sample()
+            self.actions[i] = actions
+            v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions)
+            commands.append(Robot(yellow=False, id=i, v_wheel1=v_wheel1,
+                                  v_wheel2=v_wheel2))
+        for i in range(3):
+            actions = self.action_space.sample()
+            v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions)
+            commands.append(Robot(yellow=True, id=i, v_wheel1=v_wheel1,
+                                  v_wheel2=v_wheel2))
 
         return commands
 
@@ -242,36 +247,23 @@ class VSS3v3Env(VSSBaseEnv):
         return pos_frame
 
     def _actions_to_v_wheels(self, actions):
-        linear_speed_desired = actions[0] * self.simulator.linear_speed_range
-        angular_speed_desired = actions[1] * self.simulator.angular_speed_range
+        linear_speed_desired = actions[1] * self.simulator.linear_speed_range
+        angular_speed_desired = actions[0] * self.simulator.angular_speed_range
+        robot_radius = 0.038
 
-        # calculate wheels' linear speeds:
-        if linear_speed_desired + angular_speed_desired > self.simulator.linear_speed_range:
-            right_wheel_overshoot = linear_speed_desired + \
-                angular_speed_desired - self.simulator.linear_speed_range
-            left_wheel_speed = linear_speed_desired - \
-                angular_speed_desired - right_wheel_overshoot
-            right_wheel_speed = self.simulator.linear_speed_range
-        elif linear_speed_desired + angular_speed_desired < -self.simulator.linear_speed_range:
-            right_wheel_overshoot = linear_speed_desired + \
-                angular_speed_desired + self.simulator.linear_speed_range
-            left_wheel_speed = linear_speed_desired - \
-                angular_speed_desired - right_wheel_overshoot
-            right_wheel_speed = -self.simulator.linear_speed_range
-        elif linear_speed_desired - angular_speed_desired > self.simulator.linear_speed_range:
-            left_wheel_overshoot = linear_speed_desired - \
-                angular_speed_desired - self.simulator.linear_speed_range
-            left_wheel_speed = self.simulator.linear_speed_range
-            right_wheel_speed = linear_speed_desired + \
-                angular_speed_desired - left_wheel_overshoot
-        elif linear_speed_desired - angular_speed_desired < -self.simulator.linear_speed_range:
-            left_wheel_overshoot = linear_speed_desired - \
-                angular_speed_desired + self.simulator.linear_speed_range
-            left_wheel_speed = -self.simulator.linear_speed_range
-            right_wheel_speed = linear_speed_desired + \
-                angular_speed_desired - left_wheel_overshoot
-        else:
-            left_wheel_speed = linear_speed_desired - angular_speed_desired
-            right_wheel_speed = linear_speed_desired + angular_speed_desired
+        left_wheel_speed = linear_speed_desired - \
+            (robot_radius * angular_speed_desired)
+        right_wheel_speed = linear_speed_desired + \
+            (robot_radius * angular_speed_desired)
+
+        # Deadzone
+        if -0.208 < left_wheel_speed < 0.208:
+            left_wheel_speed = 0
+
+        if -0.208 < right_wheel_speed < 0.208:
+            right_wheel_speed = 0
+
+        left_wheel_speed, right_wheel_speed = np.clip(
+            (left_wheel_speed, right_wheel_speed), -2.6, 2.6)
 
         return left_wheel_speed, right_wheel_speed
