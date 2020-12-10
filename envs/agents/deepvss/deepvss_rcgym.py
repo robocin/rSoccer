@@ -189,6 +189,8 @@ if __name__ == "__main__":
         writer_path = model_params['data_path'] + \
             '/logs/' + run_name
         writer = SummaryWriter(log_dir=writer_path+"/agents", comment="-agent")
+        
+        env.set_writer(writer)
 
         queue_size = model_params['batch_size']
         exp_queue = mp.Queue(maxsize=queue_size)
