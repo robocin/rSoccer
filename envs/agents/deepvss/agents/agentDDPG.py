@@ -145,8 +145,6 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
                 if not test and not (evaluation):
                     exp_queue.put(exp)
                 
-                if evaluation or test:
-                    agent_env.render()
                 # else:
                 #     if agent_env.view is not None:
                 #         del(agent_env.view)
@@ -174,6 +172,10 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
                         agent.ou_sigma = params['eval_opponent_exp']
                         print("Evaluation started with opponent eps: %.2f" %
                               agent.ou_sigma)
+
+                # if evaluation or test:
+                    # agent_env.render()
+                    # time.sleep(0.1)
 
                 collected_samples.value += 1
 
