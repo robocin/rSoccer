@@ -122,13 +122,15 @@ class VSS3v3Env(VSSBaseEnv):
 
         # Send random commands to the other robots
         for i in range(1, 3):
-            actions = self.action_space.sample()
+            # actions = self.action_space.sample()
+            actions = [0., 0.]
             self.actions[i] = actions
             v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions)
             commands.append(Robot(yellow=False, id=i, v_wheel1=v_wheel1,
                                   v_wheel2=v_wheel2))
         for i in range(3):
-            actions = self.action_space.sample()
+            # actions = self.action_space.sample()
+            actions = [0., 0.]
             v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions)
             commands.append(Robot(yellow=True, id=i, v_wheel1=v_wheel1,
                                   v_wheel2=v_wheel2))
@@ -173,10 +175,8 @@ class VSS3v3Env(VSSBaseEnv):
 
             if self.last_frame is not None:
                 if self.previous_ball_potential is not None:
-                    grad_ball_potential = np.clip((ball_potential
-                                                   - self.previous_ball_potential)
-                                                  * 4000 /
-                                                  (self.time_step),
+                    grad_ball_potential = np.clip(((ball_potential
+                                                   - self.previous_ball_potential) * 3/ self.time_step),
                                                   -1.0, 1.0)
                 else:
                     grad_ball_potential = 0
@@ -195,7 +195,7 @@ class VSS3v3Env(VSSBaseEnv):
                 ) * 100
 
                 move_reward = prev_dist_robot_ball - dist_robot_ball
-                move_reward = np.clip(move_reward * 5 / (self.time_step),
+                move_reward = np.clip(move_reward / (40 * self.time_step),
                                       -1.0, 1.0)
 
                 energy_penalty = - \
