@@ -6,7 +6,7 @@
 
 
 import time
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import gym
 import numpy as np
@@ -34,10 +34,6 @@ class VSSBaseEnv(gym.Env):
         self.view = None
         self.steps = 0
         self.sent_commands = None
-        self.actions: Dict = None
-        self.previous_ball_potential = None
-        self.reward_shaping_total = None
-        self.summary_writer = None
 
     def step(self, action):
         self.steps += 1
@@ -49,7 +45,9 @@ class VSSBaseEnv(gym.Env):
         self.sent_commands = commands
 
         # Get Frame from simulator
+        self.last_frame = self.frame
         self.frame = self.simulator.get_frame()
+
         # Calculate environment observation, reward and done condition
         observation = self._frame_to_observations()
         reward, done = self._calculate_reward_and_done()
@@ -60,10 +58,11 @@ class VSSBaseEnv(gym.Env):
         self.steps = 0
         self.last_frame = None
         self.sent_commands = None
-        self.actions = None
-        self.reward_shaping_total = None
+
+        # Close render window
         del(self.view)
         self.view = None
+
         initial_pos_frame: Frame = self._get_initial_positions_frame()
         self.simulator.reset(initial_pos_frame)
 
@@ -72,7 +71,7 @@ class VSSBaseEnv(gym.Env):
 
         return self._frame_to_observations()
 
-    def render(self, mode='human') -> None:
+    def render(self, mode: Optional = None) -> None:
         '''
         Renders the game depending on 
         ball's and players' positions.
@@ -91,8 +90,11 @@ class VSSBaseEnv(gym.Env):
                 self.n_robots_blue, self.n_robots_yellow, self.field_params)
 
         self.view.render_frame(self.frame)
-        # if mode == 'human':
-        #     time.sleep(0.01)
+        if mode == 'human':
+            time.sleep(0.01)
+
+    def close(self):
+        self.simulator.stop()
 
     def _get_commands(self, action):
         '''returns a list of commands of type List[Robot] from type action_space action'''
@@ -109,6 +111,3 @@ class VSSBaseEnv(gym.Env):
     def _get_initial_positions_frame(self) -> Frame:
         '''returns frame with robots initial positions'''
         raise NotImplementedError
-
-    def close(self):
-        self.simulator.stop()

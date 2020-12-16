@@ -73,8 +73,7 @@ def print_with_description(state):
     
 # env.reset()
 # Run for 10 episode and print reward at the end
-for i in range(1):
-    init = time.perf_counter()
+for i in range(10):
     done = False
     next_state = env.reset()
     # print_with_description(next_state)
@@ -86,11 +85,6 @@ for i in range(1):
         epi_rew += reward
         env.render()
         # print_with_description(next_state)
-        # print(np.sqrt((env.frame.robots_blue[0].v_x * env.frame.robots_blue[0].v_x) + (env.frame.robots_blue[0].v_y * env.frame.robots_blue[0].v_y)))
-        # print(env.frame.robots_blue[0].v_theta)
-
-end = time.perf_counter()
-
-print(300 / (end - init))
+    print(epi_rew)
 
 env.close()
