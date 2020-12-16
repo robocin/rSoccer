@@ -9,42 +9,49 @@ from rc_gym.Utils import distance, normVt, normVx, normX
 
 
 class VSS3v3Env(VSSBaseEnv):
-    """
-    Description:
-        This environment controls a single robot soccer in VSS League 3v3 match
-    Observation:
-        Type: Box(53)
-        Num     Observation normalized
-        0        Ball X
-        1        Ball Y
-        2        Ball Vx
-        3        Ball Vy
-        x        id i Blue Robot target_x
-        x        id i Blue Robot target_y
-        x        id i Blue Robot X
-        x        id i Blue Robot Y
-        x        id i Blue Robot sin(theta)
-        x        id i Blue Robot cos(theta)
-        x        id i Blue Robot Vx
-        x        id i Blue Robot Vy
-        x        id i Blue Robot v_theta
-        x        id i Yellow Robot X
-        x        id i Yellow Robot Y
-        x        id i Yellow Robot sin(theta)
-        x        id i Yellow Robot cos(theta)
-        x        id i Yellow Robot Vx
-        x        id i Yellow Robot Vy
-        x        id i Yellow Robot v_theta
-    Actions:
-        Type: Box(2, )
-        Num     Action
-        0       id 0 Blue Angular Speed (%)
-        1       id 0 Blue Linear Speed (%)
-    Reward:
-    Starting State:
-        TODO
-    Episode Termination:
-        Match time or goal
+    """This environment controls a single robot in a VSS soccer League 3v3 match 
+
+
+        Description:
+        Observation:
+            Type: Box(53)
+            Normalized Bounds to [0, 1]
+            Num             Observation normalized          
+            0               Ball X
+            1               Ball Y
+            2               Ball Vx
+            3               Ball Vy
+            5 + (9 * i)     id i Blue Robot target_x
+            6 + (9 * i)     id i Blue Robot target_y
+            7 + (9 * i)     id i Blue Robot X
+            8 + (9 * i)     id i Blue Robot Y
+            9 + (9 * i)     id i Blue Robot sin(theta)
+            10 + (9 * i)    id i Blue Robot cos(theta)
+            11 + (9 * i)    id i Blue Robot Vx
+            12 + (9 * i)    id i Blue Robot Vy
+            13 + (9 * i)    id i Blue Robot v_theta
+            32 + (7 * i)    id i Yellow Robot X
+            33 + (7 * i)    id i Yellow Robot Y
+            34 + (7 * i)    id i Yellow Robot sin(theta)
+            35 + (7 * i)    id i Yellow Robot cos(theta)
+            36 + (7 * i)    id i Yellow Robot Vx
+            37 + (7 * i)    id i Yellow Robot Vy
+            38 + (7 * i)    id i Yellow Robot v_theta
+        Actions:
+            Type: Box(2, )
+            Num     Action
+            0       id 0 Blue Angular Speed (%)
+            1       id 0 Blue Linear Speed  (%)
+        Reward:
+            Sum of Rewards:
+                Goal
+                Ball Gradient
+                Move to Ball
+                Energy Penalty
+        Starting State:
+            Randomized Robots and Ball initial Position
+        Episode Termination:
+            5 minutes match time
     """
 
     def __init__(self):
@@ -54,19 +61,33 @@ class VSS3v3Env(VSSBaseEnv):
         self.action_space = gym.spaces.Box(
             low=-1, high=1, shape=(2, ), dtype=np.float32)
         self.observation_space = gym.spaces.Box(
-            low=-0, high=1, shape=(53, ), dtype=np.float32)
+            low=0, high=1, shape=(53, ), dtype=np.float32)
+
+        # Initialize Class Atributes
         self.matches_played = 0
+        self.previous_ball_potential = None
+        self.actions: Dict = None
+        self.reward_shaping_total = None
+        self.summary_writer = None
+
         print('Environment initialized')
+
+    def reset(self):
+        self.actions = None
+        self.reward_shaping_total = None
+
+        return super().reset()
 
     def _frame_to_observations(self):
 
         observation = []
 
-        width = 1.3/2.0
-        lenght = (1.5/2.0) + 0.1
+        half_width = self.field_params['field_width'] / 2.0
+        half_lenght = (self.field_params['field_length'] / 2.0)\
+            + self.field_params['goal_depth']
         observation.append(1 - (self.frame.time / 300))
-        observation.append(normX(lenght + self.frame.ball.x))
-        observation.append(normX(width - self.frame.ball.y))
+        observation.append(normX(half_lenght + self.frame.ball.x))
+        observation.append(normX(half_width - self.frame.ball.y))
         observation.append(normVx(self.frame.ball.v_x))
         observation.append(normVx(-self.frame.ball.v_y))
 
@@ -86,10 +107,11 @@ class VSS3v3Env(VSSBaseEnv):
             else:
                 target_x = self.frame.robots_blue[i].x
                 target_y = self.frame.robots_blue[i].y
-            observation.append(normX(lenght + target_x))
-            observation.append(normX(width - target_y))
-            observation.append(normX(lenght + self.frame.robots_blue[i].x))
-            observation.append(normX(width - self.frame.robots_blue[i].y))
+            observation.append(normX(half_lenght + target_x))
+            observation.append(normX(half_width - target_y))
+            observation.append(
+                normX(half_lenght + self.frame.robots_blue[i].x))
+            observation.append(normX(half_width - self.frame.robots_blue[i].y))
             observation.append(
                 np.sin(np.deg2rad(-self.frame.robots_blue[i].theta)))
             observation.append(
@@ -99,8 +121,10 @@ class VSS3v3Env(VSSBaseEnv):
             observation.append(normVt(self.frame.robots_blue[i].v_theta))
 
         for i in range(self.n_robots_yellow):
-            observation.append(normX(lenght + self.frame.robots_yellow[i].x))
-            observation.append(normX(width - self.frame.robots_yellow[i].y))
+            observation.append(
+                normX(half_lenght + self.frame.robots_yellow[i].x))
+            observation.append(
+                normX(half_width - self.frame.robots_yellow[i].y))
             observation.append(
                 np.sin(np.deg2rad(-self.frame.robots_yellow[i].theta)))
             observation.append(
@@ -122,15 +146,13 @@ class VSS3v3Env(VSSBaseEnv):
 
         # Send random commands to the other robots
         for i in range(1, 3):
-            # actions = self.action_space.sample()
-            actions = [0., 0.]
+            actions = self.action_space.sample()
             self.actions[i] = actions
             v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions)
             commands.append(Robot(yellow=False, id=i, v_wheel1=v_wheel1,
                                   v_wheel2=v_wheel2))
         for i in range(3):
-            # actions = self.action_space.sample()
-            actions = [0., 0.]
+            actions = self.action_space.sample()
             v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions)
             commands.append(Robot(yellow=True, id=i, v_wheel1=v_wheel1,
                                   v_wheel2=v_wheel2))
@@ -163,20 +185,22 @@ class VSS3v3Env(VSSBaseEnv):
             goal = True
         else:
             # Calculate ball potential
-            width = 1.3/2.0
-            lenght = (1.5/2.0) + 0.1
-            dx_d = 0 - (lenght + self.frame.ball.x) * \
+            half_width = self.field_params['field_width'] / 2.0
+            half_lenght = (self.field_params['field_length'] / 2.0)\
+                + self.field_params['goal_depth']
+
+            dx_d = 0 - (half_lenght + self.frame.ball.x) * \
                 100  # distance to defence
-            dx_a = 170.0 - (lenght + self.frame.ball.x) * \
+            dx_a = 170.0 - (half_lenght + self.frame.ball.x) * \
                 100  # distance to attack
-            dy = 65.0 - (width - self.frame.ball.y) * 100
+            dy = 65.0 - (half_width - self.frame.ball.y) * 100
             ball_potential = ((-math.sqrt(dx_a ** 2 + 2 * dy ** 2)
                                + math.sqrt(dx_d ** 2 + 2 * dy ** 2)) / 170 - 1) / 2
 
             if self.last_frame is not None:
                 if self.previous_ball_potential is not None:
                     grad_ball_potential = np.clip(((ball_potential
-                                                   - self.previous_ball_potential) * 3/ self.time_step),
+                                                    - self.previous_ball_potential) * 3 / self.time_step),
                                                   -1.0, 1.0)
                 else:
                     grad_ball_potential = 0
@@ -205,14 +229,12 @@ class VSS3v3Env(VSSBaseEnv):
                 reward = w_move * move_reward + \
                     w_ball_grad * grad_ball_potential + \
                     w_energy * energy_penalty
-                
+
                 self.reward_shaping_total['move'] += w_move * move_reward
                 self.reward_shaping_total['ball_grad'] +=\
                     w_ball_grad * grad_ball_potential
-                self.reward_shaping_total['energy'] += w_energy * energy_penalty
-                
-
-            self.last_frame = self.frame
+                self.reward_shaping_total['energy'] += w_energy * \
+                    energy_penalty
 
         if goal:
             initial_pos_frame: Frame = self._get_initial_positions_frame()
@@ -223,12 +245,18 @@ class VSS3v3Env(VSSBaseEnv):
         done = self.steps * self.time_step >= 300
 
         if done and self.summary_writer != None:
-            self.summary_writer.add_scalar("rw/goal_score", self.reward_shaping_total['goal_score'], self.matches_played)
-            self.summary_writer.add_scalar("rw/move", self.reward_shaping_total['move'], self.matches_played)
-            self.summary_writer.add_scalar("rw/ball_grad", self.reward_shaping_total['ball_grad'], self.matches_played)
-            self.summary_writer.add_scalar("rw/energy", self.reward_shaping_total['energy'], self.matches_played)
-            self.summary_writer.add_scalar("rw/goals_blue", self.reward_shaping_total['goals_blue'], self.matches_played)
-            self.summary_writer.add_scalar("rw/goals_yellow", self.reward_shaping_total['goals_yellow'], self.matches_played)
+            self.summary_writer.add_scalar(
+                "rw/goal_score", self.reward_shaping_total['goal_score'], self.matches_played)
+            self.summary_writer.add_scalar(
+                "rw/move", self.reward_shaping_total['move'], self.matches_played)
+            self.summary_writer.add_scalar(
+                "rw/ball_grad", self.reward_shaping_total['ball_grad'], self.matches_played)
+            self.summary_writer.add_scalar(
+                "rw/energy", self.reward_shaping_total['energy'], self.matches_played)
+            self.summary_writer.add_scalar(
+                "rw/goals_blue", self.reward_shaping_total['goals_blue'], self.matches_played)
+            self.summary_writer.add_scalar(
+                "rw/goals_yellow", self.reward_shaping_total['goals_yellow'], self.matches_played)
 
         return reward, done
 
@@ -285,6 +313,6 @@ class VSS3v3Env(VSSBaseEnv):
 
     def set_writer(self, writer):
         self.summary_writer = writer
-        
+
     def set_matches_played(self, matches):
         self.matches_played = matches
