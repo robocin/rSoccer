@@ -61,7 +61,7 @@ class VSS3v3Env(VSSBaseEnv):
         self.action_space = gym.spaces.Box(
             low=-1, high=1, shape=(2, ), dtype=np.float32)
         self.observation_space = gym.spaces.Box(
-            low=0, high=1, shape=(53, ), dtype=np.float32)
+            low=0, high=1, shape=(41, ), dtype=np.float32)
 
         # Initialize Class Atributes
         self.matches_played = 0
@@ -92,23 +92,6 @@ class VSS3v3Env(VSSBaseEnv):
         observation.append(normVx(-self.frame.ball.v_y))
 
         for i in range(self.n_robots_blue):
-            if self.actions != None:
-                target_theta = (np.deg2rad(self.frame.robots_blue[i].theta) + (
-                    self.actions[i][0] * self.simulator.angular_speed_range
-                    * self.time_step * 5.3))
-
-                target_x = self.frame.robots_blue[i].x + (
-                    self.actions[i][1] * self.simulator.linear_speed_range
-                    * np.cos(target_theta)) * 0.52  # * self.time_step
-
-                target_y = self.frame.robots_blue[i].y + (
-                    self.actions[i][1] * self.simulator.linear_speed_range
-                    * np.sin(target_theta)) * 0.52  # * self.time_step
-            else:
-                target_x = self.frame.robots_blue[i].x
-                target_y = self.frame.robots_blue[i].y
-            observation.append(normX(half_lenght + target_x))
-            observation.append(normX(half_width - target_y))
             observation.append(
                 normX(half_lenght + self.frame.robots_blue[i].x))
             observation.append(normX(half_width - self.frame.robots_blue[i].y))
@@ -125,10 +108,6 @@ class VSS3v3Env(VSSBaseEnv):
                 normX(half_lenght + self.frame.robots_yellow[i].x))
             observation.append(
                 normX(half_width - self.frame.robots_yellow[i].y))
-            observation.append(
-                np.sin(np.deg2rad(-self.frame.robots_yellow[i].theta)))
-            observation.append(
-                np.cos(np.deg2rad(-self.frame.robots_yellow[i].theta)))
             observation.append(normVx(self.frame.robots_yellow[i].v_x))
             observation.append(normVx(-self.frame.robots_yellow[i].v_y))
             observation.append(normVt(self.frame.robots_yellow[i].v_theta))
