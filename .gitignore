@@ -147,3 +147,9 @@ cython_debug/
 
 # VSCode
 .vscode/
+
+# Models
+*.pth
+
+# Logs
+*tfevents*
