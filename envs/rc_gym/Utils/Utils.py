@@ -55,7 +55,7 @@ def clip(val, vmin, vmax):
 
 
 def normX(x):
-    return clip(x / 1.7, -0.2, 1.2)
+    return clip(x / 0.85, -1.2, 1.2)
 
 
 def normVx(v_x):

@@ -14,29 +14,26 @@ class VSS3v3Env(VSSBaseEnv):
 
         Description:
         Observation:
-            Type: Box(53)
-            Normalized Bounds to [0, 1]
-            Num             Observation normalized          
-            0               Ball X
-            1               Ball Y
-            2               Ball Vx
-            3               Ball Vy
-            5 + (9 * i)     id i Blue Robot target_x
-            6 + (9 * i)     id i Blue Robot target_y
-            7 + (9 * i)     id i Blue Robot X
-            8 + (9 * i)     id i Blue Robot Y
-            9 + (9 * i)     id i Blue Robot sin(theta)
-            10 + (9 * i)    id i Blue Robot cos(theta)
-            11 + (9 * i)    id i Blue Robot Vx
-            12 + (9 * i)    id i Blue Robot Vy
-            13 + (9 * i)    id i Blue Robot v_theta
-            32 + (7 * i)    id i Yellow Robot X
-            33 + (7 * i)    id i Yellow Robot Y
-            34 + (7 * i)    id i Yellow Robot sin(theta)
-            35 + (7 * i)    id i Yellow Robot cos(theta)
-            36 + (7 * i)    id i Yellow Robot Vx
-            37 + (7 * i)    id i Yellow Robot Vy
-            38 + (7 * i)    id i Yellow Robot v_theta
+            Type: Box(41)
+            Normalized Bounds to [-1, 1]
+            Num             Observation normalized  
+            0               Episode Time        
+            1               Ball X
+            2               Ball Y
+            3               Ball Vx
+            4               Ball Vy
+            5 + (7 * i)     id i Blue Robot X
+            6 + (7 * i)     id i Blue Robot Y
+            7 + (7 * i)     id i Blue Robot sin(theta)
+            8 + (7 * i)     id i Blue Robot cos(theta)
+            9 + (7 * i)     id i Blue Robot Vx
+            10 + (7 * i)    id i Blue Robot Vy
+            11 + (7 * i)    id i Blue Robot v_theta
+            26 + (5 * i)    id i Yellow Robot X
+            27 + (5 * i)    id i Yellow Robot Y
+            28 + (5 * i)    id i Yellow Robot Vx
+            29 + (5 * i)    id i Yellow Robot Vy
+            30 + (5 * i)    id i Yellow Robot v_theta
         Actions:
             Type: Box(2, )
             Num     Action
@@ -82,34 +79,30 @@ class VSS3v3Env(VSSBaseEnv):
 
         observation = []
 
-        half_width = self.field_params['field_width'] / 2.0
-        half_lenght = (self.field_params['field_length'] / 2.0)\
-            + self.field_params['goal_depth']
         observation.append(1 - (self.frame.time / 300))
-        observation.append(normX(half_lenght + self.frame.ball.x))
-        observation.append(normX(half_width - self.frame.ball.y))
+        observation.append(normX(self.frame.ball.x))
+        observation.append(normX(self.frame.ball.y))
         observation.append(normVx(self.frame.ball.v_x))
-        observation.append(normVx(-self.frame.ball.v_y))
+        observation.append(normVx(self.frame.ball.v_y))
 
         for i in range(self.n_robots_blue):
+            observation.append(normX(self.frame.robots_blue[i].x))
+            observation.append(normX(self.frame.robots_blue[i].y))
             observation.append(
-                normX(half_lenght + self.frame.robots_blue[i].x))
-            observation.append(normX(half_width - self.frame.robots_blue[i].y))
+                np.sin(np.deg2rad(self.frame.robots_blue[i].theta))
+                )
             observation.append(
-                np.sin(np.deg2rad(-self.frame.robots_blue[i].theta)))
-            observation.append(
-                np.cos(np.deg2rad(-self.frame.robots_blue[i].theta)))
+                np.cos(np.deg2rad(self.frame.robots_blue[i].theta))
+                )
             observation.append(normVx(self.frame.robots_blue[i].v_x))
-            observation.append(normVx(-self.frame.robots_blue[i].v_y))
+            observation.append(normVx(self.frame.robots_blue[i].v_y))
             observation.append(normVt(self.frame.robots_blue[i].v_theta))
 
         for i in range(self.n_robots_yellow):
-            observation.append(
-                normX(half_lenght + self.frame.robots_yellow[i].x))
-            observation.append(
-                normX(half_width - self.frame.robots_yellow[i].y))
+            observation.append(normX(self.frame.robots_yellow[i].x))
+            observation.append(normX(self.frame.robots_yellow[i].y))
             observation.append(normVx(self.frame.robots_yellow[i].v_x))
-            observation.append(normVx(-self.frame.robots_yellow[i].v_y))
+            observation.append(normVx(self.frame.robots_yellow[i].v_y))
             observation.append(normVt(self.frame.robots_yellow[i].v_theta))
 
         return np.array(observation)
