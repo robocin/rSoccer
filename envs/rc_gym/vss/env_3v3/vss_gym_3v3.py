@@ -37,8 +37,8 @@ class VSS3v3Env(VSSBaseEnv):
         Actions:
             Type: Box(2, )
             Num     Action
-            0       id 0 Blue Angular Speed (%)
-            1       id 0 Blue Linear Speed  (%)
+            0       id 0 Blue Left Wheel Speed  (%)
+            1       id 0 Blue Right Wheel Speed (%)
         Reward:
             Sum of Rewards:
                 Goal
@@ -262,15 +262,9 @@ class VSS3v3Env(VSSBaseEnv):
         return pos_frame
 
     def _actions_to_v_wheels(self, actions):
-        linear_speed_desired = actions[1] * self.simulator.linear_speed_range
-        angular_speed_desired = actions[0] * self.simulator.angular_speed_range
-        robot_radius = 0.038
-
-        left_wheel_speed = linear_speed_desired - \
-            (robot_radius * angular_speed_desired)
-        right_wheel_speed = linear_speed_desired + \
-            (robot_radius * angular_speed_desired)
-
+        left_wheel_speed = actions[0] * self.simulator.linear_speed_range
+        right_wheel_speed = actions[1] * self.simulator.linear_speed_range
+        
         # Deadzone
         if -0.208 < left_wheel_speed < 0.208:
             left_wheel_speed = 0
