@@ -27,6 +27,7 @@ class SimulatorVSS:
         self.angular_speed_range = 11  # rad/s
         # center to wheel + wheel thickness
         self.robot_dist_center_to_wheel = 0.0425
+        self.robot_wheel_radius = 0.026
 
     def reset(self, frame: Frame):
         placement_pos = self._placement_dict_from_frame(frame)
@@ -45,8 +46,8 @@ class SimulatorVSS:
             else:
                 rbt_id = cmd.id
             # convert from linear speed to angular speed
-            sim_commands[rbt_id][0] = cmd.v_wheel1 / 0.026
-            sim_commands[rbt_id][1] = cmd.v_wheel2 / 0.026
+            sim_commands[rbt_id][0] = cmd.v_wheel1 / self.robot_wheel_radius
+            sim_commands[rbt_id][1] = cmd.v_wheel2 / self.robot_wheel_radius
         self.simulator.step(sim_commands)
 
     def _placement_dict_from_frame(self, frame: Frame):
