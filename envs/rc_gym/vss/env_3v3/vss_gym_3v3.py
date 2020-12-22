@@ -17,23 +17,22 @@ class VSS3v3Env(VSSBaseEnv):
             Type: Box(41)
             Normalized Bounds to [-1, 1]
             Num             Observation normalized  
-            0               Episode Time        
-            1               Ball X
-            2               Ball Y
-            3               Ball Vx
-            4               Ball Vy
-            5 + (7 * i)     id i Blue Robot X
-            6 + (7 * i)     id i Blue Robot Y
-            7 + (7 * i)     id i Blue Robot sin(theta)
-            8 + (7 * i)     id i Blue Robot cos(theta)
-            9 + (7 * i)     id i Blue Robot Vx
-            10 + (7 * i)    id i Blue Robot Vy
-            11 + (7 * i)    id i Blue Robot v_theta
-            26 + (5 * i)    id i Yellow Robot X
-            27 + (5 * i)    id i Yellow Robot Y
-            28 + (5 * i)    id i Yellow Robot Vx
-            29 + (5 * i)    id i Yellow Robot Vy
-            30 + (5 * i)    id i Yellow Robot v_theta
+            0               Ball X
+            1               Ball Y
+            2               Ball Vx
+            3               Ball Vy
+            4 + (7 * i)     id i Blue Robot X
+            5 + (7 * i)     id i Blue Robot Y
+            6 + (7 * i)     id i Blue Robot sin(theta)
+            7 + (7 * i)     id i Blue Robot cos(theta)
+            8 + (7 * i)     id i Blue Robot Vx
+            9  + (7 * i)    id i Blue Robot Vy
+            10 + (7 * i)    id i Blue Robot v_theta
+            25 + (5 * i)    id i Yellow Robot X
+            26 + (5 * i)    id i Yellow Robot Y
+            27 + (5 * i)    id i Yellow Robot Vx
+            28 + (5 * i)    id i Yellow Robot Vy
+            29 + (5 * i)    id i Yellow Robot v_theta
         Actions:
             Type: Box(2, )
             Num     Action
@@ -58,7 +57,7 @@ class VSS3v3Env(VSSBaseEnv):
         self.action_space = gym.spaces.Box(
             low=-1, high=1, shape=(2, ), dtype=np.float32)
         self.observation_space = gym.spaces.Box(
-            low=0, high=1, shape=(41, ), dtype=np.float32)
+            low=0, high=1, shape=(40, ), dtype=np.float32)
 
         # Initialize Class Atributes
         self.matches_played = 0
@@ -66,6 +65,7 @@ class VSS3v3Env(VSSBaseEnv):
         self.actions: Dict = None
         self.reward_shaping_total = None
         self.summary_writer = None
+        self.v_wheel_deadzone = 0.05
 
         print('Environment initialized')
 
@@ -79,7 +79,6 @@ class VSS3v3Env(VSSBaseEnv):
 
         observation = []
 
-        observation.append(1 - (self.frame.time / 300))
         observation.append(normX(self.frame.ball.x))
         observation.append(normX(self.frame.ball.y))
         observation.append(normVx(self.frame.ball.v_x))
@@ -161,42 +160,37 @@ class VSS3v3Env(VSSBaseEnv):
             half_lenght = (self.field_params['field_length'] / 2.0)\
                 + self.field_params['goal_depth']
 
-            dx_d = 0 - (half_lenght + self.frame.ball.x) * \
-                100  # distance to defence
-            dx_a = 170.0 - (half_lenght + self.frame.ball.x) * \
-                100  # distance to attack
-            dy = 65.0 - (half_width - self.frame.ball.y) * 100
-            ball_potential = ((-math.sqrt(dx_a ** 2 + 2 * dy ** 2)
-                               + math.sqrt(dx_d ** 2 + 2 * dy ** 2)) / 170 - 1) / 2
+            dx_d = (half_lenght + self.frame.ball.x) * 100  # distance to defence
+            dx_a = (half_lenght - self.frame.ball.x) * 100  # distance to attack
+            dy = (self.frame.ball.y) * 100
+            
+            ball_potential = ((-math.sqrt(dx_a ** 2 + 2 * dy ** 2)\
+                + math.sqrt(dx_d ** 2 + 2 * dy ** 2)) / 170 - 1) / 2
 
             if self.last_frame is not None:
                 if self.previous_ball_potential is not None:
-                    grad_ball_potential = np.clip(((ball_potential
-                                                    - self.previous_ball_potential) * 3 / self.time_step),
+                    grad_ball_potential = np.clip(((ball_potential\
+                        - self.previous_ball_potential) * 3 / self.time_step),
                                                   -1.0, 1.0)
                 else:
                     grad_ball_potential = 0
 
                 self.previous_ball_potential = ball_potential
+                
+                ball = np.array([self.frame.ball.x, self.frame.ball.y])
+                robot = np.array([self.frame.robots_blue[0].x,
+                                  self.frame.robots_blue[0].y])
+                robot_vel = np.array([self.frame.robots_blue[0].v_x,
+                                      self.frame.robots_blue[0].v_y])
+                robot_ball = ball - robot
+                robot_ball = robot_ball/np.linalg.norm(robot_ball)
 
-                # Move Reward : Reward the robot for moving in ball direction
-                prev_dist_robot_ball = distance(
-                    (self.last_frame.ball.x, self.last_frame.ball.y),
-                    (self.last_frame.robots_blue[0].x,
-                     self.last_frame.robots_blue[0].y)
-                ) * 100
-                dist_robot_ball = distance(
-                    (self.frame.ball.x, self.frame.ball.y),
-                    (self.frame.robots_blue[0].x, self.frame.robots_blue[0].y)
-                ) * 100
+                move_reward = np.dot(robot_ball, robot_vel)
 
-                move_reward = prev_dist_robot_ball - dist_robot_ball
-                move_reward = np.clip(move_reward / (40 * self.time_step),
-                                      -1.0, 1.0)
+                move_reward = np.clip(move_reward / 0.4, -1.0, 1.0)
 
-                energy_penalty = - \
-                    (abs(self.sent_commands[0].v_wheel1 / 0.026) +
-                     abs(self.sent_commands[0].v_wheel2 / 0.026))
+                energy_penalty = - (abs(self.sent_commands[0].v_wheel1 / self.simulator.robot_wheel_radius) +
+                                    abs(self.sent_commands[0].v_wheel2 / self.simulator.robot_wheel_radius))
 
                 reward = w_move * move_reward + \
                     w_ball_grad * grad_ball_potential + \
@@ -266,10 +260,10 @@ class VSS3v3Env(VSSBaseEnv):
         right_wheel_speed = actions[1] * self.simulator.linear_speed_range
         
         # Deadzone
-        if -0.208 < left_wheel_speed < 0.208:
+        if -self.v_wheel_deadzone < left_wheel_speed < self.v_wheel_deadzone:
             left_wheel_speed = 0
 
-        if -0.208 < right_wheel_speed < 0.208:
+        if -self.v_wheel_deadzone < right_wheel_speed < self.v_wheel_deadzone:
             right_wheel_speed = 0
 
         left_wheel_speed, right_wheel_speed = np.clip(
