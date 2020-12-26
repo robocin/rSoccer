@@ -137,14 +137,14 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
         steps = 0
         with common.RewardTracker(writer) as reward_tracker:
             while not finish_event.is_set():
-                
+
                 exp = next(exp_source_iter)
                 steps += 1
                 samples = collected_samples.value
 
                 if not test and not (evaluation):
                     exp_queue.put(exp)
-                
+
                 # else:
                 #     if agent_env.view is not None:
                 #         del(agent_env.view)
@@ -152,17 +152,37 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
 
                 new_rewards = exp_source.pop_total_rewards()
                 if new_rewards:  # got a done (match ended)
-                    writer.add_scalar("rw/total", new_rewards[0], matches_played)
+                    writer.add_scalar("rw/total", new_rewards[0],
+                                      matches_played)
                     writer.add_scalar("rw/steps_ep", steps, matches_played)
+                    writer.add_scalar("rw/goal_score",
+                                      agent_env.reward_shaping_total['goal_score'],
+                                      matches_played)
+                    writer.add_scalar("rw/move",
+                                      agent_env.reward_shaping_total['move'],
+                                      matches_played)
+                    writer.add_scalar("rw/ball_grad",
+                                      agent_env.reward_shaping_total['ball_grad'],
+                                      matches_played)
+                    writer.add_scalar("rw/energy",
+                                      agent_env.reward_shaping_total['energy'],
+                                      matches_played)
+                    writer.add_scalar("rw/goals_blue",
+                                      agent_env.reward_shaping_total['goals_blue'],
+                                      matches_played)
+                    writer.add_scalar("rw/goals_yellow",
+                                      agent_env.reward_shaping_total['goals_yellow'],
+                                      matches_played)
                     matches_played += 1
-                    agent_env.set_matches_played(matches_played)
                     steps = 0
 
-                    print('Episode {} rewards: {}'.format(matches_played, new_rewards[0]))
-                    
+                    print('Episode {} rewards: {}'.format(matches_played,
+                                                          new_rewards[0]))
+
                     if not test and evaluation:  # evaluation just finished
                         agent.ou_sigma = params['ou_sigma']
-                        writer.add_scalar("eval/rw", new_rewards[0], matches_played)
+                        writer.add_scalar("eval/rw", new_rewards[0],
+                                          matches_played)
                         print("evaluation finished")
 
                     evaluation = matches_played % eval_freq_matches == 0
@@ -196,7 +216,8 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
     print("Agent finished.")
 
 
-def train(model_params, act_net, device, exp_queue, finish_event, checkpoint=None):
+def train(model_params, act_net, device,
+          exp_queue, finish_event, checkpoint=None):
 
     try:
         run_name = model_params['run_name']
@@ -317,7 +338,8 @@ def train(model_params, act_net, device, exp_queue, finish_event, checkpoint=Non
                     exp_buffer.update_priorities(mem_idxs, mem_loss)
 
                 act_loss_v = calc_loss_ddpg_actor(
-                    batch, act_net, crt_net, cuda=(device.type == "cuda"), cuda_async=True)
+                    batch, act_net, crt_net, cuda=(device.type == "cuda"),
+                    cuda_async=True)
                 act_loss_v.backward()
                 optimizer_act.step()
 
