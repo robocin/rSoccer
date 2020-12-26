@@ -37,7 +37,6 @@ class VSSBaseEnv(gym.Env):
 
     def step(self, action):
         self.steps += 1
-        # TODO talvez substituir o get commands por wrappers
         # Join agent action with environment actions
         commands: List[Robot] = self._get_commands(action)
         # Send command to simulator
