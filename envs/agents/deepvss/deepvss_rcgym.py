@@ -23,12 +23,14 @@ import numpy as np
 writer = None
 collected_samples = None
 
+
 def dict_to_str(dct):
     dict_str = ""
     for key, value in dct.items():
         dict_str += "{}: {}\n".format(key, value)
 
     return dict_str
+
 
 class NormalizedWrapper(gym.Wrapper):
     """
@@ -45,10 +47,10 @@ class NormalizedWrapper(gym.Wrapper):
                           gym.spaces.Box), "This wrapper only works with continuous observation space (spaces.Box)"
 
         # We modify the wrapper action space, so all actions will lie in [-1, 1]
-        self.action_space = gym.spaces.Box(low=-1, high=1, shape=self.env.action_space.shape, dtype=np.float32)
-        self.observation_space = gym.spaces.Box(low=-1, high=1, shape=self.env.observation_space.shape, dtype=np.float32)
-
-
+        self.action_space = gym.spaces.Box(
+            low=-1, high=1, shape=self.env.action_space.shape, dtype=np.float32)
+        self.observation_space = gym.spaces.Box(
+            low=-1, high=1, shape=self.env.observation_space.shape, dtype=np.float32)
 
     def rescale_action(self, scaled_action):
         """
@@ -58,7 +60,7 @@ class NormalizedWrapper(gym.Wrapper):
         :return: (np.ndarray)
         """
         return self.env.action_space.low + (
-                0.5 * (scaled_action + 1.0) * (self.env.action_space.high - self.env.action_space.low))
+            0.5 * (scaled_action + 1.0) * (self.env.action_space.high - self.env.action_space.low))
 
     def scale_observation(self, observation):
         """
@@ -98,7 +100,8 @@ if __name__ == "__main__":
         parser = argparse.ArgumentParser()
         parser.add_argument("--cuda", default=False,
                             action="store_true", help="Enable cuda")
-        parser.add_argument("--name", default='Lambada', help="Experiment name")
+        parser.add_argument("--name", default='Lambada',
+                            help="Experiment name")
         parser.add_argument("--resume", default=[], action='append',
                             nargs='?', help="Pre-trained model to be loaded")
         parser.add_argument("--exp", default=[], action='append',
@@ -137,7 +140,7 @@ if __name__ == "__main__":
         state_shape, action_shape = env.observation_space, env.action_space
         model_params['state_shape'] = state_shape
         model_params['action_shape'] = action_shape
-        
+
         print(f' === Running: <{run_name}> experiment ===')
         print(f'Model params:\n{dict_to_str(model_params)}\n')
 
@@ -148,7 +151,7 @@ if __name__ == "__main__":
 
         device = torch.device("cuda" if args.cuda else "cpu")
         net = create_actor_model(model_params, state_shape,
-         action_shape, device)
+                                 action_shape, device)
 
         checkpoint = {}
 
@@ -189,8 +192,6 @@ if __name__ == "__main__":
         writer_path = model_params['data_path'] + \
             '/logs/' + run_name
         writer = SummaryWriter(log_dir=writer_path+"/agents", comment="-agent")
-        
-        env.set_writer(writer)
 
         queue_size = model_params['batch_size']
         exp_queue = mp.Queue(maxsize=queue_size)
@@ -198,7 +199,6 @@ if __name__ == "__main__":
         torch.set_num_threads(20)
         print("Threads available: %d" % torch.get_num_threads())
 
-        
         th_a = threading.Thread(target=play, args=(
             model_params, net, device, exp_queue, env, args.test, writer, collected_samples, finish_event))
         play_threads.append(th_a)
