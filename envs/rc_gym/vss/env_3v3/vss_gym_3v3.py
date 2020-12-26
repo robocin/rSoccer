@@ -61,6 +61,8 @@ class VSS3v3Env(VSSBaseEnv):
         high_obs_bound = [1.2, 1.2, 1.25, 1.25]
         high_obs_bound += [1.2, 1.2, 1, 1, 1.25, 1.25, 1.2]*3
         high_obs_bound += [1.2, 1.2, 1.25, 1.25, 1.2]*3
+        low_obs_bound = np.array(low_obs_bound)
+        high_obs_bound = np.array(high_obs_bound)
 
         self.action_space = gym.spaces.Box(low=-1, high=1,
                                            shape=(2, ), dtype=np.float32)
