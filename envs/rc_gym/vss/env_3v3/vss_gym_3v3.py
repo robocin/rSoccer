@@ -216,14 +216,12 @@ class VSS3v3Env(VSSBaseEnv):
 
         # Check if goal ocurred
         if self.frame.ball.x > (self.field_params['field_length'] / 2):
-            # print('GOAL BLUE')
-            self.reward_shaping_total['goal_score'] += 10
+            self.reward_shaping_total['goal_score'] += 1
             self.reward_shaping_total['goals_blue'] += 1
             reward = 10
             goal = True
         elif self.frame.ball.x < -(self.field_params['field_length'] / 2):
-            # print('GOAL YELLOW')
-            self.reward_shaping_total['goal_score'] -= 10
+            self.reward_shaping_total['goal_score'] -= 1
             self.reward_shaping_total['goals_yellow'] += 1
             reward = -10
             goal = True

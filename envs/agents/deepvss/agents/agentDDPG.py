@@ -135,6 +135,13 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
         eval_freq_matches = params['eval_freq_matches']
         evaluation = False
         steps = 0
+        rw_move = 0
+        rw_goal_score = 0
+        rw_ball_grad = 0
+        rw_energy = 0
+        rw_goals_blue = 0
+        rw_goals_yellow = 0
+
         with common.RewardTracker(writer) as reward_tracker:
             while not finish_event.is_set():
 
@@ -145,36 +152,36 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
                 if not test and not (evaluation):
                     exp_queue.put(exp)
 
-                # else:
-                #     if agent_env.view is not None:
-                #         del(agent_env.view)
-                #         agent_env.view = None
+                rw_move += agent_env.reward_shaping_total['move']
+                rw_goal_score += agent_env.reward_shaping_total['goal_score']
+                rw_ball_grad += agent_env.reward_shaping_total['ball_grad']
+                rw_energy += agent_env.reward_shaping_total['energy']
+                rw_goals_blue += agent_env.reward_shaping_total['goals_blue']
+                rw_goals_yellow += agent_env.reward_shaping_total['goals_yellow']
 
                 new_rewards = exp_source.pop_total_rewards()
                 if new_rewards:  # got a done (match ended)
                     writer.add_scalar("rw/total", new_rewards[0],
                                       matches_played)
                     writer.add_scalar("rw/steps_ep", steps, matches_played)
-                    writer.add_scalar("rw/goal_score",
-                                      agent_env.reward_shaping_total['goal_score'],
+                    writer.add_scalar("rw/goal_score", rw_goal_score,
                                       matches_played)
-                    writer.add_scalar("rw/move",
-                                      agent_env.reward_shaping_total['move'],
+                    writer.add_scalar("rw/move", rw_move, matches_played)
+                    writer.add_scalar("rw/ball_grad", rw_ball_grad,
                                       matches_played)
-                    writer.add_scalar("rw/ball_grad",
-                                      agent_env.reward_shaping_total['ball_grad'],
+                    writer.add_scalar("rw/energy", rw_energy, matches_played)
+                    writer.add_scalar("rw/goals_blue", rw_goals_blue,
                                       matches_played)
-                    writer.add_scalar("rw/energy",
-                                      agent_env.reward_shaping_total['energy'],
-                                      matches_played)
-                    writer.add_scalar("rw/goals_blue",
-                                      agent_env.reward_shaping_total['goals_blue'],
-                                      matches_played)
-                    writer.add_scalar("rw/goals_yellow",
-                                      agent_env.reward_shaping_total['goals_yellow'],
+                    writer.add_scalar("rw/goals_yellow", rw_goals_yellow,
                                       matches_played)
                     matches_played += 1
                     steps = 0
+                    rw_move = 0
+                    rw_goal_score = 0
+                    rw_ball_grad = 0
+                    rw_energy = 0
+                    rw_goals_blue = 0
+                    rw_goals_yellow = 0
 
                     print('Episode {} rewards: {}'.format(matches_played,
                                                           new_rewards[0]))
