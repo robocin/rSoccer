@@ -15,3 +15,7 @@ register(id='grSimSSLGoToBall-v0',
 register(id='VSS3v3-v0',
          entry_point='rc_gym.vss:VSS3v3Env'
          )
+
+register(id='VSSReach-v0',
+         entry_point='rc_gym.vss:VSSReachEnv'
+         )
