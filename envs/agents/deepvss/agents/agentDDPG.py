@@ -1,15 +1,15 @@
 import os
 import shutil
+import time
 import traceback
 
 import numpy as np
 import ptan
 import torch
 import torch.autograd as autograd
-import torch.nn as nn
-from tensorboardX import SummaryWriter
-
 from lib import common, ddpg_model
+from ptan.experience import ExperienceSourceFirstLast
+from tensorboardX import SummaryWriter
 
 gradMax = 0
 gradAvg = 0
@@ -75,8 +75,6 @@ def calc_loss_ddpg_critic(batch, crt_net, tgt_act_net, tgt_crt_net, gamma, cuda=
     q_last_v = tgt_crt_net(next_states_v, last_act_v)
     q_last_v[done_mask] = 0.0
     q_ref_v = rewards_v.unsqueeze(dim=-1) + q_last_v * gamma
-    #critic_loss_v = nn.functional.mse_loss(q_v, q_ref_v.detach())
-    # critic_loss_v = nn.functional.smooth_l1_loss(q_v, q_ref_v.detach())
     critic_loss_v = (q_v - q_ref_v.detach()).pow(2)
     if per:
         mem_w = Variable(torch.FloatTensor(mem_w))
@@ -124,10 +122,12 @@ def load_actor_model(net, checkpoint):
 def play(params, net, device, exp_queue, agent_env, test, writer, collected_samples, finish_event):
 
     try:
-        agent = ddpg_model.AgentDDPG(
-            net, device=device, ou_teta=params['ou_teta'], ou_sigma=params['ou_sigma'])
-        exp_source = ptan.experience.ExperienceSourceFirstLast(agent_env, agent, gamma=params['gamma'],
-                                                               steps_count=params['unroll_steps'])
+        agent = ddpg_model.AgentDDPG(net, device=device,
+                                     ou_teta=params['ou_teta'],
+                                     ou_sigma=params['ou_sigma'])
+        exp_source = ExperienceSourceFirstLast(
+            agent_env, agent, gamma=params['gamma'],
+            steps_count=params['unroll_steps'])
         exp_source_iter = iter(exp_source)
 
         print(f"agent 1 started from sample {collected_samples.value}.")
@@ -142,69 +142,70 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
         rw_goals_blue = 0
         rw_goals_yellow = 0
 
-        with common.RewardTracker(writer) as reward_tracker:
-            while not finish_event.is_set():
+        while not finish_event.is_set():
 
-                exp = next(exp_source_iter)
-                steps += 1
-                samples = collected_samples.value
+            exp = next(exp_source_iter)
+            steps += 1
 
-                if not test and not (evaluation):
-                    exp_queue.put(exp)
+            if test:
+                agent_env.render()
+                time.sleep(0.1)
 
-                rw_move += agent_env.reward_shaping_total['move']
-                rw_goal_score += agent_env.reward_shaping_total['goal_score']
-                rw_ball_grad += agent_env.reward_shaping_total['ball_grad']
-                rw_energy += agent_env.reward_shaping_total['energy']
-                rw_goals_blue += agent_env.reward_shaping_total['goals_blue']
-                rw_goals_yellow += agent_env.reward_shaping_total['goals_yellow']
+            if not test and not evaluation:
+                exp_queue.put(exp)
 
-                new_rewards = exp_source.pop_total_rewards()
-                if new_rewards:  # got a done (match ended)
-                    writer.add_scalar("rw/total", new_rewards[0],
+            rw_goal_score = agent_env.reward_shaping_total['goal_score']
+            rw_move = agent_env.reward_shaping_total['move']
+            rw_ball_grad = agent_env.reward_shaping_total['ball_grad']
+            rw_energy = agent_env.reward_shaping_total['energy']
+            rw_goals_blue = agent_env.reward_shaping_total['goals_blue']
+            rw_goals_yellow = agent_env.reward_shaping_total['goals_yellow']
+
+            new_rewards = exp_source.pop_total_rewards()
+            # got a done (match ended)
+            if new_rewards:
+                writer.add_scalar("rw/total", new_rewards[0],
+                                  matches_played)
+                writer.add_scalar("rw/steps_ep", steps, matches_played)
+                writer.add_scalar("rw/goal_score",
+                                  rw_goal_score,
+                                  matches_played)
+                writer.add_scalar("rw/move", rw_move, matches_played)
+                writer.add_scalar("rw/ball_grad", rw_ball_grad, matches_played)
+                writer.add_scalar("rw/energy", rw_energy, matches_played)
+                writer.add_scalar("rw/goals_blue",
+                                  rw_goals_blue,
+                                  matches_played)
+                writer.add_scalar("rw/goals_yellow",
+                                  rw_goals_yellow,
+                                  matches_played)
+                matches_played += 1
+                steps = 0
+                rw_move = 0
+                rw_goal_score = 0
+                rw_ball_grad = 0
+                rw_energy = 0
+                rw_goals_blue = 0
+                rw_goals_yellow = 0
+
+                print('Episode {} rewards: {}'.format(matches_played,
+                                                      new_rewards[0]))
+
+                if not test and evaluation:  # evaluation just finished
+                    agent.ou_sigma = params['ou_sigma']
+                    writer.add_scalar("eval/rw", new_rewards[0],
                                       matches_played)
-                    writer.add_scalar("rw/steps_ep", steps, matches_played)
-                    writer.add_scalar("rw/goal_score", rw_goal_score,
-                                      matches_played)
-                    writer.add_scalar("rw/move", rw_move, matches_played)
-                    writer.add_scalar("rw/ball_grad", rw_ball_grad,
-                                      matches_played)
-                    writer.add_scalar("rw/energy", rw_energy, matches_played)
-                    writer.add_scalar("rw/goals_blue", rw_goals_blue,
-                                      matches_played)
-                    writer.add_scalar("rw/goals_yellow", rw_goals_yellow,
-                                      matches_played)
-                    matches_played += 1
-                    steps = 0
-                    rw_move = 0
-                    rw_goal_score = 0
-                    rw_ball_grad = 0
-                    rw_energy = 0
-                    rw_goals_blue = 0
-                    rw_goals_yellow = 0
+                    print("evaluation finished")
 
-                    print('Episode {} rewards: {}'.format(matches_played,
-                                                          new_rewards[0]))
+                evaluation = matches_played % eval_freq_matches == 0
 
-                    if not test and evaluation:  # evaluation just finished
-                        agent.ou_sigma = params['ou_sigma']
-                        writer.add_scalar("eval/rw", new_rewards[0],
-                                          matches_played)
-                        print("evaluation finished")
+                if not test and evaluation:  # evaluation just started
+                    # set exploration high
+                    agent.ou_sigma = params['eval_opponent_exp']
+                    print("Evaluation started with opponent eps: %.2f" %
+                          agent.ou_sigma)
 
-                    evaluation = matches_played % eval_freq_matches == 0
-
-                    if not test and evaluation:  # evaluation just started
-                        # set exploration high
-                        agent.ou_sigma = params['eval_opponent_exp']
-                        print("Evaluation started with opponent eps: %.2f" %
-                              agent.ou_sigma)
-
-                # if evaluation or test:
-                    # agent_env.render()
-                    # time.sleep(0.1)
-
-                collected_samples.value += 1
+            collected_samples.value += 1
 
     except KeyboardInterrupt:
         print("...Agent Finishing...")
@@ -311,7 +312,7 @@ def train(model_params, act_net, device,
         while not finish_event.is_set():
             new_samples = 0
 
-            #print("get qsize: %d" % size)
+            # print("get qsize: %d" % size)
             rewards_gg = [0 for _ in range(0, max(1, int(queue_max_size)))]
             for i in range(0, max(1, int(queue_max_size))):
                 exp = exp_queue.get()
