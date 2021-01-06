@@ -44,7 +44,7 @@ class VSSReachEnv(VSSBaseEnv):
             5 minutes match time
     """
 
-    def __init__(self, auto_objective=True):
+    def __init__(self):
         super().__init__(field_type=0, n_robots_blue=3,
                          n_robots_yellow=3, time_step=0.032)
 
@@ -72,6 +72,7 @@ class VSSReachEnv(VSSBaseEnv):
 
     def set_objective(self, obj):
         self.objective = obj
+        self.auto_objective = False
 
     def __get_objective(self):
         robot = np.array([self.frame.robots_blue[0].x,
@@ -191,7 +192,8 @@ class VSSReachEnv(VSSBaseEnv):
         if self.__reached_objective():
             reward += 10
             self.reward_shaping_total['reach_score'] += 1
-            self.set_objective(self.__get_objective())
+            if self.auto_objective:
+                self.set_objective(self.__get_objective())
             self.last_obj_time = self.frame.time
         else:
 

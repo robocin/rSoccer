@@ -132,7 +132,7 @@ if __name__ == "__main__":
             model_params['run_name'] = args.name
             model_params['writer_path'] = writer_path
             model_params['action_format'] = '2f'
-            model_params['state_format'] = '2f'
+            model_params['state_format'] = '26f'
             net.share_memory()
             train_process = mp.Process(target=train, args=(
                 model_params, net, device, exp_queue, finish_event, checkpoint))
