@@ -125,85 +125,66 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
         agent = ddpg_model.AgentDDPG(net, device=device,
                                      ou_teta=params['ou_teta'],
                                      ou_sigma=params['ou_sigma'])
-        exp_source = ExperienceSourceFirstLast(
-            agent_env, agent, gamma=params['gamma'],
-            steps_count=params['unroll_steps'])
-        exp_source_iter = iter(exp_source)
 
-        print(f"agent 1 started from sample {collected_samples.value}.")
+        print(f"Started from sample {collected_samples.value}.")
+        state = agent_env.reset()
         matches_played = 0
+        epi_reward = 0
+        then = time.time()
         eval_freq_matches = params['eval_freq_matches']
         evaluation = False
         steps = 0
-        rw_move = 0
-        rw_goal_score = 0
-        rw_ball_grad = 0
-        rw_energy = 0
-        rw_goals_blue = 0
-        rw_goals_yellow = 0
 
         while not finish_event.is_set():
-
-            exp = next(exp_source_iter)
+            action = agent(state, steps)
+            next_state, reward, done, info = agent_env.step(action)
             steps += 1
-
-            if test:
-                agent_env.render()
-                time.sleep(0.1)
-
+            epi_reward += reward
+            next_state = next_state if not done else None
+            exp = ptan.experience.ExperienceFirstLast(state, action,
+                                                      reward, next_state)
+            state = next_state
             if not test and not evaluation:
                 exp_queue.put(exp)
+            elif not test:
+                agent_env.render()
 
-            rw_goal_score = agent_env.reward_shaping_total['goal_score']
-            rw_move = agent_env.reward_shaping_total['move']
-            rw_ball_grad = agent_env.reward_shaping_total['ball_grad']
-            rw_energy = agent_env.reward_shaping_total['energy']
-            rw_goals_blue = agent_env.reward_shaping_total['goals_blue']
-            rw_goals_yellow = agent_env.reward_shaping_total['goals_yellow']
-
-            new_rewards = exp_source.pop_total_rewards()
-            # got a done (match ended)
-            if new_rewards:
-                writer.add_scalar("rw/total", new_rewards[0],
-                                  matches_played)
+            if done:
+                fps = steps/(time.time() - then)
+                then = time.time()
+                writer.add_scalar("rw/total", epi_reward, matches_played)
                 writer.add_scalar("rw/steps_ep", steps, matches_played)
                 writer.add_scalar("rw/goal_score",
-                                  rw_goal_score,
+                                  info['goal_score'],
                                   matches_played)
-                writer.add_scalar("rw/move", rw_move, matches_played)
-                writer.add_scalar("rw/ball_grad", rw_ball_grad, matches_played)
-                writer.add_scalar("rw/energy", rw_energy, matches_played)
+                writer.add_scalar("rw/move", info['move'], matches_played)
+                writer.add_scalar(
+                    "rw/ball_grad", info['ball_grad'], matches_played)
+                writer.add_scalar("rw/energy", info['energy'], matches_played)
                 writer.add_scalar("rw/goals_blue",
-                                  rw_goals_blue,
+                                  info['goals_blue'],
                                   matches_played)
                 writer.add_scalar("rw/goals_yellow",
-                                  rw_goals_yellow,
+                                  info['goals_yellow'],
                                   matches_played)
-                matches_played += 1
+                print(f'<======Match {matches_played}======>')
+                print(f'-------Reward:', epi_reward)
+                print(f'-------FPS:', fps)
+                print(f'<==================================>\n')
+                epi_reward = 0
                 steps = 0
-                rw_move = 0
-                rw_goal_score = 0
-                rw_ball_grad = 0
-                rw_energy = 0
-                rw_goals_blue = 0
-                rw_goals_yellow = 0
-
-                print('Episode {} rewards: {}'.format(matches_played,
-                                                      new_rewards[0]))
+                matches_played += 1
+                state = agent_env.reset()
+                agent.ou_noise.reset()
 
                 if not test and evaluation:  # evaluation just finished
-                    agent.ou_sigma = params['ou_sigma']
-                    writer.add_scalar("eval/rw", new_rewards[0],
-                                      matches_played)
+                    writer.add_scalar("eval/rw", epi_reward, matches_played)
                     print("evaluation finished")
 
                 evaluation = matches_played % eval_freq_matches == 0
 
                 if not test and evaluation:  # evaluation just started
-                    # set exploration high
-                    agent.ou_sigma = params['eval_opponent_exp']
-                    print("Evaluation started with opponent eps: %.2f" %
-                          agent.ou_sigma)
+                    print("Evaluation started")
 
             collected_samples.value += 1
 
