@@ -209,7 +209,7 @@ class VSS3v3Env(VSSBaseEnv):
         w_move = 0.2
         w_ball_grad = 0.8
         w_energy = 2e-4
-        if self.reward_shaping_total == None:
+        if self.reward_shaping_total is None:
             self.reward_shaping_total = {'goal_score': 0, 'move': 0,
                                          'ball_grad': 0, 'energy': 0,
                                          'goals_blue': 0, 'goals_yellow': 0}
@@ -240,10 +240,10 @@ class VSS3v3Env(VSSBaseEnv):
                     w_energy * energy_penalty
 
                 self.reward_shaping_total['move'] += w_move * move_reward
-                self.reward_shaping_total['ball_grad'] +=\
-                    w_ball_grad * grad_ball_potential
-                self.reward_shaping_total['energy'] += w_energy * \
-                    energy_penalty
+                self.reward_shaping_total['ball_grad'] += w_ball_grad \
+                    * grad_ball_potential
+                self.reward_shaping_total['energy'] += w_energy \
+                    * energy_penalty
 
         if goal:
             initial_pos_frame: Frame = self._get_initial_positions_frame()
