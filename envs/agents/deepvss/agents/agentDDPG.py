@@ -146,7 +146,7 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
             state = next_state
             if not test and not evaluation:
                 exp_queue.put(exp)
-            elif not test:
+            elif test:
                 agent_env.render()
 
             if done:
