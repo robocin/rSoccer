@@ -5,7 +5,7 @@ from typing import Dict
 import gym
 import numpy as np
 from rc_gym.Entities import Frame, Robot
-from rc_gym.Utils import normVt, normVx, normX
+from rc_gym.Utils import normVx, normX
 from rc_gym.vss.vss_gym_base import VSSBaseEnv
 
 
@@ -78,8 +78,8 @@ class VSSReachEnv(VSSBaseEnv):
         robot = np.array([self.frame.robots_blue[0].x,
                           self.frame.robots_blue[0].y])
 
-        delta = np.random.randint(-30, 30, size=(2,))/100
-        objective = np.clip(robot + delta, -0.5, 0.5)/0.85
+        delta = np.random.randint(-50, 50, size=(2,))/100
+        objective = np.clip(robot + delta, -0.5, 0.5)
         return objective
 
     def reset(self):

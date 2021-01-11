@@ -84,7 +84,7 @@ def play(params, net, device, exp_queue, env_id, test,
         steps = 0
 
         while not finish_event.is_set():
-            state = np.concatenate((state, objective))
+            state = np.concatenate((state, objective/0.85))
             action = agent([state])[0]
             next_state, reward, done, info = agent_env.step(action)
             objective = info['objective']
