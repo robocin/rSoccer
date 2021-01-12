@@ -63,14 +63,15 @@ class VSSReachEnv(VSSBaseEnv):
         self.previous_ball_potential = None
         self.actions: Dict = None
         self.reward_shaping_total = None
-        self.objective = None
+        self.objective = np.array([0, 0])
         self.auto_objective = True
         self.last_obj_time = 0
         self.v_wheel_deadzone = 0.05
 
         print('Environment initialized')
 
-    def set_objective(self, obj):
+    def set_objective(self, obj: np.array):
+        assert obj.shape == self.objective.shape, 'Incorrect Goal shape'
         self.objective = obj
         self.auto_objective = False
 
@@ -78,7 +79,7 @@ class VSSReachEnv(VSSBaseEnv):
         robot = np.array([self.frame.robots_blue[0].x,
                           self.frame.robots_blue[0].y])
 
-        delta = np.random.randint(-50, 50, size=(2,))/100
+        delta = np.random.randint(-30, 30, size=(2,))/100
         objective = np.clip(robot + delta, -0.5, 0.5)
         return objective
 
@@ -175,7 +176,11 @@ class VSSReachEnv(VSSBaseEnv):
     def __reached_objective(self):
         robot = np.array([self.frame.robots_blue[0].x,
                           self.frame.robots_blue[0].y])
-        return np.linalg.norm(robot - self.objective) < 0.01
+        reached = np.linalg.norm(robot - self.objective) < 0.01
+        no_vel = self.frame.robots_blue[0].v_x == 0 \
+            and self.frame.robots_blue[0].v_y == 0 \
+            and self.frame.robots_blue[0].v_theta == 0
+        return reached and no_vel
 
     def _calculate_reward_and_done(self):
         reward = 0
@@ -193,7 +198,7 @@ class VSSReachEnv(VSSBaseEnv):
             reward += 10
             self.reward_shaping_total['reach_score'] += 1
             if self.auto_objective:
-                self.set_objective(self.__get_objective())
+                self.objective = self.__get_objective()
             self.last_obj_time = self.frame.time
         else:
 
