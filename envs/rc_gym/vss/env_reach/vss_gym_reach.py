@@ -44,6 +44,12 @@ class VSSReachEnv(VSSBaseEnv):
             5 minutes match time
     """
 
+    __square = np.array([[0.4, 0.3, 180], [-0.4, 0.3, -90],
+                         [-0.4, -0.3, 0], [0.4, -0.3, 90]])
+    __hexagon = np.array([[0.4, 0.3, 135], [0, 0.45, 225],
+                          [-0.4, 0.3, -90], [-0.4, -0.3, -45],
+                          [0, -0.45, 45], [0.4, -0.3, 90]])
+
     def __init__(self):
         super().__init__(field_type=0, n_robots_blue=3,
                          n_robots_yellow=3, time_step=0.032)
@@ -63,7 +69,7 @@ class VSSReachEnv(VSSBaseEnv):
         self.previous_ball_potential = None
         self.actions: Dict = None
         self.reward_shaping_total = None
-        self.objective = np.array([0, 0])
+        self.objective = (self.__square, 0)
         self.auto_objective = True
         self.last_obj_time = 0
         self.v_wheel_deadzone = 0.05
@@ -71,17 +77,12 @@ class VSSReachEnv(VSSBaseEnv):
         print('Environment initialized')
 
     def set_objective(self, obj: np.array):
-        assert obj.shape == self.objective.shape, 'Incorrect Goal shape'
-        self.objective = obj
+        assert obj.shape == self.objective[0].shape, 'Incorrect Goal shape'
+        self.objective = (obj, 0)
         self.auto_objective = False
 
     def __get_objective(self):
-        robot = np.array([self.frame.robots_blue[0].x,
-                          self.frame.robots_blue[0].y])
-
-        delta = np.random.randint(-30, 30, size=(2,))/100
-        objective = np.clip(robot + delta, -0.5, 0.5)
-        return objective
+        return (random.choice([self.__square, self.__hexagon]), 0)
 
     def reset(self):
         self.actions = None
@@ -95,7 +96,7 @@ class VSSReachEnv(VSSBaseEnv):
     def step(self, action):
         observation, reward, done, _ = super().step(action)
         info = {'reward_shaping': self.reward_shaping_total}
-        info['objective'] = self.objective
+        info['objective'] = self.objective[0][self.objective[1]]
         return observation, reward, done, info
 
     def _frame_to_observations(self):
@@ -176,17 +177,17 @@ class VSSReachEnv(VSSBaseEnv):
     def __reached_objective(self):
         robot = np.array([self.frame.robots_blue[0].x,
                           self.frame.robots_blue[0].y])
-        reached = np.linalg.norm(robot - self.objective) < 0.01
-        no_vel = self.frame.robots_blue[0].v_x == 0 \
-            and self.frame.robots_blue[0].v_y == 0 \
-            and self.frame.robots_blue[0].v_theta == 0
-        return reached and no_vel
+        obj = self.objective[0][self.objective[1]][:-1]
+        reached = np.linalg.norm(robot - obj) < 0.01
+        return reached
 
     def _calculate_reward_and_done(self):
         reward = 0
         w_move = 0.2
         w_energy = 2e-4
         w_time = 2e-3
+        w_angle = 5/180
+        done = False
         if self.reward_shaping_total is None:
             self.reward_shaping_total = {'reach_score': 0,
                                          'move': 0,
@@ -195,11 +196,16 @@ class VSSReachEnv(VSSBaseEnv):
 
         # Check if goal ocurred
         if self.__reached_objective():
-            reward += 10
+            desired_angle = self.objective[0][self.objective[1]][-1]
+            self.objective[1] = (self.objective[1]
+                                 + 1) % len(self.objective[0])
+
+            angle_diff = self.frame.robots_blue[0].theta - desired_angle
+            angle_diff = (angle_diff + 180) % 360 - 180
+
+            reward += 10 - angle_diff/w_angle
             self.reward_shaping_total['reach_score'] += 1
-            if self.auto_objective:
-                self.objective = self.__get_objective()
-            self.last_obj_time = self.frame.time
+            done = True
         else:
 
             if self.last_frame is not None:
@@ -217,8 +223,6 @@ class VSSReachEnv(VSSBaseEnv):
                 self.reward_shaping_total['move'] += w_move * move_reward
                 self.reward_shaping_total['energy'] += w_energy * energy_penalty  # noqa
                 self.reward_shaping_total['time'] += w_time * time_penalty
-
-        done = self.steps * self.time_step >= 300
 
         return reward, done
 
