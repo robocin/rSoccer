@@ -91,7 +91,7 @@ class VSSReachEnv(VSSBaseEnv):
         self.last_obj_time = 0
         if self.auto_objective:
             self.objective = self.__get_objective()
-        return observation, self.objective
+        return observation, self.objective[0][0]
 
     def step(self, action):
         observation, reward, done, _ = super().step(action)
@@ -152,7 +152,7 @@ class VSSReachEnv(VSSBaseEnv):
                           self.frame.robots_blue[0].y])
         robot_vel = np.array([self.frame.robots_blue[0].v_x,
                               self.frame.robots_blue[0].v_y])
-        robot_objective = self.objective - robot
+        robot_objective = self.objective[0][self.objective[1]][:-1] - robot
         robot_objective = robot_objective/np.linalg.norm(robot_objective)
 
         move_reward = np.dot(robot_objective, robot_vel)
@@ -205,7 +205,7 @@ class VSSReachEnv(VSSBaseEnv):
 
             reward += 10 - angle_diff/w_angle
             self.reward_shaping_total['reach_score'] += 1
-            done = True
+            done = self.objective[1] == 0
         else:
 
             if self.last_frame is not None:
@@ -223,6 +223,8 @@ class VSSReachEnv(VSSBaseEnv):
                 self.reward_shaping_total['move'] += w_move * move_reward
                 self.reward_shaping_total['energy'] += w_energy * energy_penalty  # noqa
                 self.reward_shaping_total['time'] += w_time * time_penalty
+
+        done = done or self.steps * self.time_step >= 300
 
         return reward, done
 
@@ -246,7 +248,7 @@ class VSSReachEnv(VSSBaseEnv):
         pos_frame.ball.v_x = 0.
         pos_frame.ball.v_y = 0.
 
-        pos_frame.robots_blue[0] = Robot(x=x(), y=y(), theta=theta())
+        pos_frame.robots_blue[0] = Robot(x=0, y=0, theta=theta())
         pos_frame.robots_blue[1] = Robot(x=x(), y=y(), theta=theta())
         pos_frame.robots_blue[2] = Robot(x=x(), y=y(), theta=theta())
 

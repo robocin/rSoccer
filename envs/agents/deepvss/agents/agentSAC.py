@@ -55,7 +55,7 @@ def avg_rewards(exp_buffer, total):
 
 
 def create_actor_model(model_params, device):
-    act_net = sac_model.GaussianPolicy(model_params['state_shape'].shape[0]+2,
+    act_net = sac_model.GaussianPolicy(model_params['state_shape'].shape[0]+3,
                                        model_params['action_shape'].shape[0]
                                        ).to(device)
     return act_net
@@ -84,7 +84,8 @@ def play(params, net, device, exp_queue, env_id, test,
         steps = 0
 
         while not finish_event.is_set():
-            state = np.concatenate((state, objective/0.85))
+            state = np.concatenate([state, objective[:-1]/0.85])
+            state = np.concatenate([state, objective[-1:]/360])
             action = agent([state])[0]
             next_state, reward, done, info = agent_env.step(action)
             objective = info['objective']
@@ -92,7 +93,10 @@ def play(params, net, device, exp_queue, env_id, test,
             steps += 1
             epi_reward += reward
             next_state = next_state if not done else None
-            ns = np.concatenate((next_state, objective)) if not done else None
+            ns = np.concatenate(
+                (next_state, objective[:-1]/0.85)) if not done else None
+            ns = np.concatenate(
+                (ns, objective[-1:]/360)) if not done else None
             exp = ptan.experience.ExperienceFirstLast(state, action,
                                                       reward, ns)
             state = next_state
