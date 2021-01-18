@@ -205,7 +205,6 @@ class VSSReachEnv(VSSBaseEnv):
 
             reward += 10 - angle_diff/w_angle
             self.reward_shaping_total['reach_score'] += 1
-            self.last_obj_time = self.frame.time
             done = self.objective[1] == 0
         else:
 
