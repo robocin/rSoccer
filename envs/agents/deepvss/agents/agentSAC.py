@@ -164,7 +164,7 @@ def train(model_params, act_net, device, exp_queue, finish_event, checkpoint=Non
         exp_buffer.set_state_action_format(
             state_format=model_params['state_format'], action_format=model_params['action_format'])
 
-        crt_net = sac_model.QNetwork(model_params['state_shape'].shape[0]+2,
+        crt_net = sac_model.QNetwork(model_params['state_shape'].shape[0]+3,
                                      model_params['action_shape'].shape[0]).to(device)
         optimizer_act = torch.optim.Adam(
             act_net.parameters(), lr=model_params['learning_rate'])
