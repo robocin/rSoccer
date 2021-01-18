@@ -69,7 +69,7 @@ class VSSReachEnv(VSSBaseEnv):
         self.previous_ball_potential = None
         self.actions: Dict = None
         self.reward_shaping_total = None
-        self.objective = (self.__square, 0)
+        self.objective = [self.__square, 0]
         self.auto_objective = True
         self.last_obj_time = 0
         self.v_wheel_deadzone = 0.05
@@ -91,7 +91,7 @@ class VSSReachEnv(VSSBaseEnv):
         self.last_obj_time = 0
         if self.auto_objective:
             self.objective = self.__get_objective()
-        return observation, self.objective[0][0]
+        return [observation, self.objective[0][0]]
 
     def step(self, action):
         observation, reward, done, _ = super().step(action)
