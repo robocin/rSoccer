@@ -82,7 +82,7 @@ class VSSReachEnv(VSSBaseEnv):
         self.auto_objective = False
 
     def __get_objective(self):
-        return (random.choice([self.__square, self.__hexagon]), 0)
+        return [random.choice([self.__square, self.__hexagon]), 0]
 
     def reset(self):
         self.actions = None
@@ -91,7 +91,7 @@ class VSSReachEnv(VSSBaseEnv):
         self.last_obj_time = 0
         if self.auto_objective:
             self.objective = self.__get_objective()
-        return [observation, self.objective[0][0]]
+        return observation, self.objective[0][0]
 
     def step(self, action):
         observation, reward, done, _ = super().step(action)
