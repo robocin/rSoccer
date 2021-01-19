@@ -144,18 +144,20 @@ class VSSReachEnv(VSSBaseEnv):
     def __move_reward(self):
         '''Calculate Move to point reward
 
-        Cosine between the robot vel vector and the vector robot -> point.
-        This indicates rather the robot is moving towards the point or not.
+        Difference between last distance and actual distance to objective point.
         '''
 
         robot = np.array([self.frame.robots_blue[0].x,
                           self.frame.robots_blue[0].y])
-        robot_vel = np.array([self.frame.robots_blue[0].v_x,
-                              self.frame.robots_blue[0].v_y])
-        robot_objective = self.objective[0][self.objective[1]][:-1] - robot
-        robot_objective = robot_objective/np.linalg.norm(robot_objective)
+        last_robot = np.array([self.last_frame.robots_blue[0].x,
+                               self.last_frame.robots_blue[0].y])
 
-        move_reward = np.dot(robot_objective, robot_vel)
+        robot_objective = self.objective[0][self.objective[1]][:-1]
+
+        dist = np.linalg.norm(robot, robot_objective)
+        prev_dist = np.linalg.norm(last_robot, robot_objective)
+
+        move_reward = prev_dist - dist
 
         move_reward = np.clip(move_reward / 0.4, -1.0, 1.0)
         return move_reward
@@ -169,32 +171,34 @@ class VSSReachEnv(VSSBaseEnv):
         energy_penalty /= self.simulator.robot_wheel_radius
         return energy_penalty
 
-    def __time_penalty(self):
-        dt = self.last_obj_time - self.frame.time
-        penalty = np.tanh(dt/150)
-        return penalty
+    # def __time_penalty(self):
+    #     dt = self.last_obj_time - self.frame.time
+    #     penalty = np.tanh(dt/150)
+    #     return penalty
 
     def __reached_objective(self):
         robot = np.array([self.frame.robots_blue[0].x,
                           self.frame.robots_blue[0].y])
         obj = self.objective[0][self.objective[1]][:-1]
-        reached = np.linalg.norm(robot - obj) < 0.01
+        reached = np.linalg.norm(robot - obj) <= 0.01
         return reached
 
     def _calculate_reward_and_done(self):
         reward = 0
         w_move = 0.2
         w_energy = 2e-4
-        w_time = 2e-3
+        # w_time = 2e-3
         w_angle = 5/180
         done = False
         if self.reward_shaping_total is None:
-            self.reward_shaping_total = {'reach_score': 0,
-                                         'move': 0,
-                                         'energy': 0,
-                                         'time': 0}
+            self.reward_shaping_total = {
+                'reach_score': 0,
+                'move': 0,
+                'energy': 0,
+                #  'time': 0
+            }
 
-        # Check if goal ocurred
+        # Check if reached a point
         if self.__reached_objective():
             desired_angle = self.objective[0][self.objective[1]][-1]
             self.objective[1] = (self.objective[1]
@@ -214,15 +218,15 @@ class VSSReachEnv(VSSBaseEnv):
                 # Calculate Energy penalty
                 energy_penalty = self.__energy_penalty()
                 # Calculate Time penalty
-                time_penalty = self.__time_penalty()
+                # time_penalty = self.__time_penalty()
 
                 reward = w_move * move_reward\
-                    + w_time * time_penalty\
-                    + w_energy * energy_penalty
+                    # + w_time * time_penalty\
+                + w_energy * energy_penalty
 
                 self.reward_shaping_total['move'] += w_move * move_reward
                 self.reward_shaping_total['energy'] += w_energy * energy_penalty  # noqa
-                self.reward_shaping_total['time'] += w_time * time_penalty
+                # self.reward_shaping_total['time'] += w_time * time_penalty
 
         done = done or self.steps * self.time_step >= 300
 
