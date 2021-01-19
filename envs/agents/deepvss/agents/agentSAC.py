@@ -114,7 +114,7 @@ def play(params, net, device, exp_queue, env_id, test,
                                   info['reach_score'],
                                   matches_played)
                 writer.add_scalar("rw/move", info['move'], matches_played)
-                writer.add_scalar("rw/time", info['time'], matches_played)
+                # writer.add_scalar("rw/time", info['time'], matches_played)
                 writer.add_scalar("rw/energy", info['energy'], matches_played)
                 print(f'<======Match {matches_played}======>')
                 print(f'-------Reward:', epi_reward)
