@@ -5,7 +5,7 @@ from typing import Dict
 import gym
 import numpy as np
 from rc_gym.Entities import Frame, Robot
-from rc_gym.Utils import normVx, normX
+from rc_gym.Utils import normVx, normX, distance
 from rc_gym.vss.vss_gym_base import VSSBaseEnv
 
 
@@ -154,8 +154,8 @@ class VSSReachEnv(VSSBaseEnv):
 
         robot_objective = self.objective[0][self.objective[1]][:-1]
 
-        dist = np.linalg.norm(robot, robot_objective)
-        prev_dist = np.linalg.norm(last_robot, robot_objective)
+        dist = distance(robot, robot_objective)
+        prev_dist = distance(last_robot, robot_objective)
 
         move_reward = prev_dist - dist
 
