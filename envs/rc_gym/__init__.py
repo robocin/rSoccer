@@ -11,3 +11,8 @@ register(id='VSSMA-v0',
 register(id='VSSMAOpp-v0',
          entry_point='rc_gym.vss.env_ma:VSSMAOpp',
          )
+
+#####
+register(id='VSS3v3-v0',
+         entry_point='rc_gym.vss:VSS3v3Env'
+         )
