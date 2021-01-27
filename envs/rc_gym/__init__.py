@@ -13,6 +13,6 @@ register(id='VSSMAOpp-v0',
          )
 
 #####
-register(id='VSS3v3-v0',
-         entry_point='rc_gym.vss:VSS3v3Env'
+register(id='VSSGk-v0',
+         entry_point='rc_gym.vss:rSimVSSGK'
          )

@@ -108,10 +108,11 @@ class rSimVSSGK(VSSBaseEnv):
         print('Environment initialized')
 
     def load_atk(self):
-        device = torch.device('cuda')
+        device = torch.device('cpu')
         atk_path = os.path.dirname(os.path.realpath(
             __file__)) + '/attacker/atk_model.pth'
-        self.attacker = DDPGActor(53, 2)
+        self.attacker = DDPGActor(40, 2)
+        print(atk_path)
         atk_checkpoint = torch.load(atk_path, map_location=device)
         self.attacker.load_state_dict(atk_checkpoint['state_dict_act'])
         self.attacker.eval()
@@ -121,9 +122,14 @@ class rSimVSSGK(VSSBaseEnv):
         angular_speed_desired = atk_action[0] * 7
         linear_speed_desired = atk_action[1] * 90
         self.atk_target_rho = linear_speed_desired / 1.5
-        self.atk_target_theta = to_pi_range(self.atk_target_theta + angular_speed_desired / -7.5)
-        self.atk_target_x = self.frame.robots_yellow[0].x + self.atk_target_rho * math.cos(self.atk_target_theta)
-        self.atk_target_y = self.frame.robots_yellow[0].y + self.atk_target_rho * math.sin(self.atk_target_theta)
+        self.atk_target_theta = to_pi_range(self.atk_target_theta 
+                                            + angular_speed_desired / -7.5)
+        self.atk_target_x = (self.frame.robots_yellow[0].x + self.atk_target_rho 
+                                * math.cos(self.atk_target_theta)
+                            )
+        self.atk_target_y = (self.frame.robots_yellow[0].y + self.atk_target_rho 
+                                * math.sin(self.atk_target_theta)
+                            )
 
     def _atk_obs(self):
         observation = []
@@ -134,17 +140,25 @@ class rSimVSSGK(VSSBaseEnv):
         observation.append(normVx(self.frame.ball.v_x))
         observation.append(normVx(self.frame.ball.v_y))
 
-        for i in range(self.n_robots_yellow):
-            if i == 0:
-                observation.append(normX(self.atk_target_x))
-                observation.append(normX(self.atk_target_y))
-            else:
-                observation.append(normX(self.frame.robots_yellow[i].x))
-                observation.append(normX(self.frame.robots_yellow[i].y))
+
+        observation.append(normX(self.atk_target_x))
+        observation.append(normX(self.atk_target_y))
+        for i in range(1, self.n_robots_yellow):
+            # if i == 0:
+            #     observation.append(normX(self.atk_target_x))
+            #     observation.append(normX(self.atk_target_y))
+            # else:
             observation.append(normX(self.frame.robots_yellow[i].x))
             observation.append(normX(self.frame.robots_yellow[i].y))
-            observation.append(np.sin(self.frame.robots_yellow[i].theta))
-            observation.append(np.cos(self.frame.robots_yellow[i].theta))
+            # observation.append(normX(self.frame.robots_yellow[i].x))
+            # observation.append(normX(self.frame.robots_yellow[i].y))
+
+            observation.append(
+                np.sin(np.deg2rad(self.frame.robots_yellow[i].theta))
+            )
+            observation.append(
+                np.cos(np.deg2rad(self.frame.robots_yellow[i].theta))
+            )
             observation.append(normVx(self.frame.robots_yellow[i].v_x))
             observation.append(normVx(self.frame.robots_yellow[i].v_y))
             observation.append(normVt(self.frame.robots_yellow[i].v_theta))
@@ -152,11 +166,16 @@ class rSimVSSGK(VSSBaseEnv):
         for i in range(self.n_robots_blue):
             observation.append(normX(self.frame.robots_blue[i].x))
             observation.append(normX(self.frame.robots_blue[i].y))
-            observation.append(np.sin(self.frame.robots_blue[i].theta))
-            observation.append(np.cos(self.frame.robots_blue[i].theta))
+            observation.append(
+                np.deg2rad(np.sin(self.frame.robots_blue[i].theta))
+            )
+            observation.append(
+                np.deg2rad(np.cos(self.frame.robots_blue[i].theta))
+            )
             observation.append(normVx(self.frame.robots_blue[i].v_x))
             observation.append(normVx(self.frame.robots_blue[i].v_y))
             observation.append(normVt(self.frame.robots_blue[i].v_theta))
+
         return np.array(observation)
 
     def _frame_to_observations(self):
@@ -170,6 +189,12 @@ class rSimVSSGK(VSSBaseEnv):
         for i in range(self.n_robots_blue):
             observation.append(normX(self.frame.robots_blue[i].x))
             observation.append(normX(self.frame.robots_blue[i].y))
+            observation.append(
+                np.sin(np.deg2rad(self.frame.robots_blue[i].theta))
+            )
+            observation.append(
+                np.cos(np.deg2rad(self.frame.robots_blue[i].theta))
+            )
             observation.append(normVx(self.frame.robots_blue[i].v_x))
             observation.append(normVx(self.frame.robots_blue[i].v_y))
             observation.append(normVt(self.frame.robots_blue[i].v_theta))
