@@ -68,7 +68,7 @@ class RCRender:
         goal_width = int(self.field_params['goal_width']*self.scale)
         goal_length = int(-0.05*self.scale)
 
-        self.screen.fill((0, 254, 19))
+        self.screen.fill((0, 157, 19))
         # Out lines
         pygame.draw.rect(self.screen, (255, 255, 255),
                          pygame.Rect(25, 25,
@@ -132,23 +132,46 @@ class RCRender:
         robot_r = int(0.04*self.scale)
         for blue in frame.robots_blue.values():
             center = self.pos_transform(x=blue.x, y=blue.y)
-            pygame.draw.circle(self.screen, (26, 43, 218),
-                               center,
-                               robot_r, robot_r-3)
+            # pygame.draw.circle(self.screen, (26, 43, 218),
+            #                     center,
+            #                     robot_r, robot_r-3)
+            new_center = [0,0]
+            cos = np.cos(np.deg2rad(blue.theta))
+            sin = np.sin(np.deg2rad(-blue.theta))
 
+
+            new_center = [0,0]
+            new_center[0] = center[0] + (robot_r * (2 ** (1/2)) / 2) 
+            new_center[1] = center[1] + (robot_r * (2 ** (1/2))/ 2) 
+
+            # new_center[0] = center[0] + (robot_r / (2 ** (1/2))) * np.cos(np.deg2rad(blue.theta))
+            # new_center[1] = center[1] + (robot_r * (2 ** (1/2))) * np.sin(np.deg2rad(-blue.theta))
+
+            pygame.draw.rect(self.screen, (26,43,218),
+                              pygame.Rect(new_center[0], new_center[1], robot_r * (2 ** (1/2)), robot_r * (2 ** (1/2))))
             pygame.draw.line(self.screen, (0, 0, 0),
-                             center,
-                             (center[0] + robot_r * np.cos(np.deg2rad(blue.theta)),
-                              center[1] + robot_r * np.sin(np.deg2rad(-blue.theta))), 2)
+                              new_center,
+                              (new_center[0] + (robot_r / (2 ** (1/2))) * np.cos(np.deg2rad(blue.theta)),
+                               new_center[1] + (robot_r / (2 ** (1/2))) * np.sin(np.deg2rad(-blue.theta))), 2)
+            # pygame.draw.line(self.screen, (0, 0, 0),
+            #         new_center,
+            #         (new_center[0],
+            #         new_center[1] - (robot_r / (2 ** (1/2)))))
+            
         for yellow in frame.robots_yellow.values():
             center = self.pos_transform(x=yellow.x, y=yellow.y)
-            pygame.draw.circle(self.screen, (249, 255, 55),
-                               center,
-                               robot_r, robot_r-3)
+            # pygame.draw.circle(self.screen, (249, 255, 55),
+            #                    center,
+            #                    robot_r, robot_r-3)
+            pygame.draw.rect(self.screen, (249, 255, 55),
+                        pygame.Rect(center[0], center[1], robot_r * (2 ** (1/2)), robot_r * (2 ** (1/2))))
+            new_center = [0,0]
+            new_center[0] = center[0] + (robot_r * (2 ** (1/2))) / 2
+            new_center[1] = center[1] + (robot_r * (2 ** (1/2))) / 2
             pygame.draw.line(self.screen, (0, 0, 0),
-                             center,
-                             (center[0] + robot_r * np.cos(np.deg2rad(yellow.theta)),
-                              center[1] + robot_r * np.sin(np.deg2rad(-yellow.theta))), 2)
+                             new_center,
+                             (new_center[0] + (robot_r * (2 ** (1/2))) * np.cos(np.deg2rad(yellow.theta)),
+                              new_center[1] + (robot_r * (2 ** (1/2))) * np.sin(np.deg2rad(-yellow.theta))), 2)
         pygame.display.update()
 
     def pos_transform(self, x: float, y: float) -> np.ndarray:
