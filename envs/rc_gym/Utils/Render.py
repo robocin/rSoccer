@@ -38,16 +38,20 @@ class RCRender:
         '''
         pygame.init()
         
-        self.n_robots_blue   = n_robots_blue
+        self.n_robots_blue = n_robots_blue
         self.n_robots_yellow = n_robots_yellow
-        self.field_params    = field_params
-        self.scale           = 400
-        self.screen_width    = int(
+        self.field_params = field_params
+        self.scale = 400
+        self.screen_width = int(
             self.field_params['field_width']*self.scale) + 50
-        self.screen_height   = int(
+        self.screen_height = int(
             self.field_params['field_length']*self.scale) + 50
-        self.screen          = None
-
+        self.screen = None
+        self.robot_blue_image = pygame.image.\
+            load('./rc_gym/Utils/src/blue.png')
+        self.robot_yellow_image = pygame.image.\
+            load('./rc_gym/Utils/src/yellow.png')
+            
     def __del__(self):
         pygame.display.quit()
 
@@ -168,13 +172,10 @@ class RCRender:
             
             center = self.pos_transform(x=blue.x, y=blue.y)
              
-            surface_from_image = pygame.image.load(
-                './rc_gym/Utils/src/blue.png')
-            
             l = int(robot_r * (2 ** (1/2)))
         
             surface_from_image = pygame.transform.\
-                                 scale(surface_from_image,
+                                 scale(self.robot_blue_image,
                                        (int(l * 1.1),int(l * 1.1)))
             
             new_image = pygame.transform.rotate(surface_from_image,
@@ -188,9 +189,8 @@ class RCRender:
         for yellow in frame.robots_yellow.values():
             center = self.pos_transform(x=yellow.x, y=yellow.y)
             
-            surface_from_image = pygame.image.load('./rc_gym/Utils/src/yellow.png')
             l = int(robot_r * (2 ** (1/2)))
-            surface_from_image = pygame.transform.scale(surface_from_image, 
+            surface_from_image = pygame.transform.scale(self.robot_yellow_image, 
                                                     (int(l * 1.1),int(l * 1.1)))
 
             new_image = pygame.transform.rotate(surface_from_image, yellow.theta - 90)
