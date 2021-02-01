@@ -275,13 +275,49 @@ class VSS3v3Env(VSSBaseEnv):
         pos_frame.ball.v_x = 0.
         pos_frame.ball.v_y = 0.
 
+        agents = []
         pos_frame.robots_blue[0] = Robot(x=x(), y=y(), theta=theta())
+        agents.append(pos_frame.robots_blue[0])
         pos_frame.robots_blue[1] = Robot(x=x(), y=y(), theta=theta())
+        agents.append(pos_frame.robots_blue[1])
         pos_frame.robots_blue[2] = Robot(x=x(), y=y(), theta=theta())
+        agents.append(pos_frame.robots_blue[2])
 
         pos_frame.robots_yellow[0] = Robot(x=x(), y=y(), theta=theta())
+        agents.append(pos_frame.robots_yellow[0])
         pos_frame.robots_yellow[1] = Robot(x=x(), y=y(), theta=theta())
+        agents.append(pos_frame.robots_yellow[1])
         pos_frame.robots_yellow[2] = Robot(x=x(), y=y(), theta=theta())
+        agents.append(pos_frame.robots_yellow[3])
+
+        def same_position_ref(x, y, x_ref, y_ref, radius):
+            if x >= x_ref - radius and x <= x_ref + radius and \
+            y >= y_ref - radius and y <= y_ref + radius:
+                return True
+            return False
+
+        radius_ball = 0.2
+        radius_robot = 0.2
+        same_pos = True
+        
+
+        while same_pos:
+            for i in range(len(agents)):
+                same_pos = False
+                while same_position_ref(agents[i].x,agents[i].y,pos_frame.ball.x, pos_frame.ball.y, radius_ball):
+                    agents[i] = Robot(x=x(), y=y(), theta=theta())
+                    same_pos = True
+                for j in range(i + 1, len(agents)):
+                    while same_position_ref(agents[i].x, agents[i].y, agents[j].x, agents[j].y, radius_robot):
+                        agents[i] = Robot(x=x(), y=y(), theta=theta())
+                        same_pos = True
+                        
+        pos_frame.robots_blue[0] = agents[0]
+        pos_frame.robots_blue[1] = agents[1]
+        pos_frame.robots_blue[2] = agents[2]
+        pos_frame.robots_yellow[0] = agents[3]
+        pos_frame.robots_yellow[1] = agents[4]
+        pos_frame.robots_yellow[2] = agents[5] 
 
         return pos_frame
 
