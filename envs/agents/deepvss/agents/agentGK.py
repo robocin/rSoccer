@@ -138,8 +138,10 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
         while not finish_event.is_set():
             action = agent(state, steps)
             next_state, reward, done, info = agent_env.step(action)
+            time.sleep(0.1)
             steps += 1
             epi_reward += reward
+            agent_env.render()
             next_state = next_state if not done else None
             exp = ptan.experience.ExperienceFirstLast(state, action,
                                                       reward, next_state)
@@ -153,21 +155,23 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
                 # CHANGE REWARD print reward  :
                 fps = steps/(time.time() - then)
                 then = time.time()
-                writer.add_scalar("rw/total", epi_reward, matches_played)
-                writer.add_scalar("rw/steps_ep", steps, matches_played)
-                writer.add_scalar("rw/goal_score",
-                                  info['goal_score'],
-                                  matches_played)
-                writer.add_scalar("rw/move", info['move'], matches_played)
-                writer.add_scalar(
-                    "rw/ball_grad", info['ball_grad'], matches_played)
-                writer.add_scalar("rw/energy", info['energy'], matches_played)
+
+                # writer.add_scalar("rw/total", epi_reward, matches_played)
+                # writer.add_scalar("rw/steps_ep", steps, matches_played)
+                # writer.add_scalar("rw/goal_score",
+                #                   info['goal_score'],
+                #                   matches_played)
+                # writer.add_scalar("rw/move", info['move'], matches_played)
+                # writer.add_scalar(
+                #     "rw/ball_grad", info['ball_grad'], matches_played)
+                # writer.add_scalar("rw/energy", info['energy'], matches_played)
                 writer.add_scalar("rw/goals_blue",
                                   info['goals_blue'],
                                   matches_played)
                 writer.add_scalar("rw/goals_yellow",
                                   info['goals_yellow'],
                                   matches_played)
+
                 print(f'<======Match {matches_played}======>')
                 print(f'-------Reward:', epi_reward)
                 print(f'-------FPS:', fps)

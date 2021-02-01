@@ -145,7 +145,7 @@ if __name__ == "__main__":
         print(f'Model params:\n{dict_to_str(model_params)}\n')
 
         if model_params['agent'] == 'DDPG':
-            from agents.agentDDPG import train, play, create_actor_model, load_actor_model
+            from agents.agentGK import train, play, create_actor_model, load_actor_model
         elif model_params['agent'] == 'SAC':
             from agents.agentSAC import train, play, create_actor_model, load_actor_model
 
