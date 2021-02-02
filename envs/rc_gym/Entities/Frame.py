@@ -10,15 +10,9 @@ class Frame:
         self.ball = Ball()
         self.robots_blue = {}
         self.robots_yellow = {}
-        self.time = None
-        self.goals_yellow = None
-        self.goals_blue = None
 
-    def parse(self, state, status, n_robots_blue=3, n_robots_yellow=3):
+    def parse(self, state, n_robots_blue=3, n_robots_yellow=3):
         """It parses the state received from grSim in a common state for environment"""
-        self.time = status['time_ms'] / 1000
-        self.goals_yellow = status['goals_yellow']
-        self.goals_blue = status['goals_blue']
         self.ball.x = state[0]
         self.ball.y = state[1]
         self.ball.z = state[2]

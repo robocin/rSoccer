@@ -73,11 +73,9 @@ class SimulatorVSS:
 
     def get_frame(self) -> Frame:
         state = self.simulator.get_state()
-        status = self.simulator.get_status()
-        # Update frame with new status and state
+        # Update frame with new state
         frame = Frame()
-        frame.parse(state, status, self.n_robots_blue,
-                    self.n_robots_yellow)
+        frame.parse(state, self.n_robots_blue, self.n_robots_yellow)
 
         return frame
 
