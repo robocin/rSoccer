@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-@dataclass
+@dataclass()
 class Robot:
     yellow: bool = None
     id: int = None
@@ -14,6 +14,7 @@ class Robot:
     kick_v_x: float = 0
     kick_v_z: float = 0
     dribbler: bool = False
+    infrared: bool = False
     wheel_speed: bool = False
     v_wheel1: float = 0
     v_wheel2: float = 0

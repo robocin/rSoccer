@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-@dataclass
+@dataclass()
 class Ball:
     x: float = None
     y: float = None

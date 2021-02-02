@@ -12,15 +12,14 @@ import gym
 import numpy as np
 from rc_gym.Entities import Frame, Robot
 from rc_gym.Utils import RCRender
-from rc_gym.vss.Simulators.robosim.rsim import SimulatorVSS
-# from rc_gym.vss.Simulators.vss_sdk.sdk import SimulatorVSS
+from rc_gym.Simulators.rsim_vss import RSimVSS
 
 
 class VSSBaseEnv(gym.Env):
     def __init__(self, field_type: int,
                  n_robots_blue: int, n_robots_yellow: int, time_step: float):
         self.time_step = time_step
-        self.simulator = SimulatorVSS(field_type=field_type,
+        self.rsim = RSimVSS(field_type=field_type,
                                       n_robots_blue=n_robots_blue,
                                       n_robots_yellow=n_robots_yellow,
                                       time_step_ms=int(self.time_step*1000))
@@ -28,7 +27,7 @@ class VSSBaseEnv(gym.Env):
         self.n_robots_blue: int = n_robots_blue
         self.n_robots_yellow: int = n_robots_yellow
         self.field_params: Dict[str,
-                                np.float64] = self.simulator.get_field_params()
+                                np.float64] = self.rsim.get_field_params()
         self.frame: Frame = None
         self.last_frame: Frame = None
         self.view = None
@@ -40,12 +39,12 @@ class VSSBaseEnv(gym.Env):
         # Join agent action with environment actions
         commands: List[Robot] = self._get_commands(action)
         # Send command to simulator
-        self.simulator.send_commands(commands)
+        self.rsim.send_commands(commands)
         self.sent_commands = commands
 
         # Get Frame from simulator
         self.last_frame = self.frame
-        self.frame = self.simulator.get_frame()
+        self.frame = self.rsim.get_frame()
 
         # Calculate environment observation, reward and done condition
         observation = self._frame_to_observations()
@@ -63,10 +62,10 @@ class VSSBaseEnv(gym.Env):
         self.view = None
 
         initial_pos_frame: Frame = self._get_initial_positions_frame()
-        self.simulator.reset(initial_pos_frame)
+        self.rsim.reset(initial_pos_frame)
 
         # Get frame from simulator
-        self.frame = self.simulator.get_frame()
+        self.frame = self.rsim.get_frame()
 
         return self._frame_to_observations()
 
@@ -93,7 +92,7 @@ class VSSBaseEnv(gym.Env):
             time.sleep(0.01)
 
     def close(self):
-        self.simulator.stop()
+        self.rsim.stop()
 
     def _get_commands(self, action):
         '''returns a list of commands of type List[Robot] from type action_space action'''
