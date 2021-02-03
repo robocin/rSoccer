@@ -6,10 +6,10 @@ import gym
 import numpy as np
 from rc_gym.Entities import Frame, Robot
 from rc_gym.Utils import normVt, normVx, normX
-from rc_gym.vss.vss_gym_base import VSSBaseEnv
+from rc_gym.ssl.ssl_gym_base import SSLBaseEnv
 
 
-class SSL11v11Env(VSSBaseEnv):
+class SSL11v11Env(SSLBaseEnv):
     """This environment controls a single robot in a VSS soccer League 3v3 match 
 
 
@@ -52,7 +52,7 @@ class SSL11v11Env(VSSBaseEnv):
     """
 
     def __init__(self):
-        super().__init__(field_type=0, n_robots_blue=11, n_robots_yellow=11,
+        super().__init__(field_type=0, n_robots_blue=1, n_robots_yellow=1,
                          time_step=0.032)
 
         low_obs_bound = [-1.2, -1.2, -1.25, -1.25]
@@ -128,12 +128,12 @@ class SSL11v11Env(VSSBaseEnv):
                               v_y=self.actions[0][1], v_theta=self.actions[0][2]))
 
         # Send random commands to the other robots
-        for i in range(1, 11):
+        for i in range(1, self.n_robots_blue):
             commands.append(Robot(yellow=False, id=i, v_x=0.0, v_y=0.0,
                                   v_theta=0.0))
-        for i in range(11):
+        for i in range(self.n_robots_yellow):
             commands.append(Robot(yellow=True, id=i, v_x=0.0, v_y=0.0,
-                                  v_theta=0.0))
+                                  v_theta=0.0, dribbler=True))
 
         return commands
 
@@ -227,17 +227,17 @@ class SSL11v11Env(VSSBaseEnv):
                 # Calculate Move ball
                 move_reward = self.__move_reward()
                 # Calculate Energy penalty
-                energy_penalty = self.__energy_penalty()
+                # energy_penalty = self.__energy_penalty()
 
-                reward = w_move * move_reward + \
-                    w_ball_grad * grad_ball_potential + \
-                    w_energy * energy_penalty
+                reward = w_move * move_reward \
+                    + w_ball_grad * grad_ball_potential 
+                    # + w_energy * energy_penalty
 
                 self.reward_shaping_total['move'] += w_move * move_reward
                 self.reward_shaping_total['ball_grad'] += w_ball_grad \
                     * grad_ball_potential
-                self.reward_shaping_total['energy'] += w_energy \
-                    * energy_penalty
+                # self.reward_shaping_total['energy'] += w_energy \
+                #     * energy_penalty
 
         if goal:
             initial_pos_frame: Frame = self._get_initial_positions_frame()
@@ -269,10 +269,10 @@ class SSL11v11Env(VSSBaseEnv):
         pos_frame.ball.v_x = 0.
         pos_frame.ball.v_y = 0.
 
-        for i in range(11):
-            pos_frame.robots_blue[i] = Robot(x=x(), y=y(), theta=theta())
+        for i in range(self.n_robots_blue):
+            pos_frame.robots_blue[i] = Robot(x=-0.5, y=0., theta=0.)
 
-        for i in range(11):
-            pos_frame.robots_yellow[i] = Robot(x=x(), y=y(), theta=theta())
+        for i in range(self.n_robots_yellow):
+            pos_frame.robots_yellow[i] = Robot(x=0.5, y=0., theta=0.)
 
         return pos_frame

@@ -20,9 +20,9 @@ class SSLBaseEnv(gym.Env):
                  n_robots_blue: int, n_robots_yellow: int, time_step: float):
         self.time_step = time_step
         self.rsim = RSimSSL(field_type=field_type,
-                                      n_robots_blue=n_robots_blue,
-                                      n_robots_yellow=n_robots_yellow,
-                                      time_step_ms=int(self.time_step*1000))
+                            n_robots_blue=n_robots_blue,
+                            n_robots_yellow=n_robots_yellow,
+                            time_step_ms=int(self.time_step*1000))
         self.field_type: int = field_type
         self.n_robots_blue: int = n_robots_blue
         self.n_robots_yellow: int = n_robots_yellow
@@ -84,8 +84,10 @@ class SSLBaseEnv(gym.Env):
 
         '''
         if self.view == None:
-            self.view = RCRender(
-                self.n_robots_blue, self.n_robots_yellow, self.field_params)
+            self.view = RCRender(self.n_robots_blue,
+                                 self.n_robots_yellow,
+                                 self.field_params,
+                                 simulator='ssl')
 
         self.view.render_frame(self.frame)
         if mode == 'human':
