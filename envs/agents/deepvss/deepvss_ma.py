@@ -74,7 +74,7 @@ if __name__ == "__main__":
 
         sys.stdout.flush()
 
-        n_robots = args.n_robots
+        n_robots = args.n_agents
         env = gym.make('VSSMA-v0', n_robots_blue=n_robots,
                        n_robots_yellow=n_robots)
         state_shape, action_shape = env.observation_space, env.action_space
