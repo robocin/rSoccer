@@ -9,16 +9,18 @@ import time
 # VSS customization:
 import traceback
 from importlib.machinery import SourceFileLoader
+from pprint import pprint
 
 import gym
+import numpy as np
+import rc_gym
 import torch
 import torch.multiprocessing as mp
+import wandb
 from tensorboardX import SummaryWriter
 
-import rc_gym
-from agents.agentDDPGMA import train, play, create_actor_model, load_actor_model
-import numpy as np
-from pprint import pprint
+from agents.agentDDPGMA import (create_actor_model, load_actor_model, play,
+                                train)
 
 #  Global variables
 writer = None
@@ -119,9 +121,9 @@ if __name__ == "__main__":
         if len(args.exp) > 0:  # load experience buffer
             checkpoint['exp'] = args.exp[0]
 
-        writer_path = model_params['data_path'] + \
-            '/logs/' + run_name
-        writer = SummaryWriter(log_dir=writer_path+"/agents", comment="-agent")
+        wandb.init(name=run_name,
+                   project='RC-Reinforcement',
+                   dir='./data_path/logs')
 
         queue_size = model_params['batch_size']
         exp_queue = mp.Queue(maxsize=queue_size)
@@ -130,7 +132,7 @@ if __name__ == "__main__":
         print("Threads available: %d" % torch.get_num_threads())
 
         th_a = threading.Thread(target=play, args=(
-            model_params, net, device, exp_queue, env, args.test, writer, collected_samples, finish_event))
+            model_params, net, device, exp_queue, env, args.test, collected_samples, finish_event))
         play_threads.append(th_a)
         th_a.start()
 
@@ -140,7 +142,6 @@ if __name__ == "__main__":
 
         else:  # crate train process:
             model_params['run_name'] = run_name
-            model_params['writer_path'] = writer_path
             model_params['action_format'] = '2f'
             model_params['state_format'] = f"{state_shape.shape[0]}f"
             net.share_memory()
