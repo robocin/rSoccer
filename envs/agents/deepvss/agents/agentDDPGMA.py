@@ -2,15 +2,16 @@ import os
 import shutil
 import time
 import traceback
+from pprint import pprint
 
 import numpy as np
 import ptan
 import torch
 import torch.autograd as autograd
+import wandb
 from lib import common, ddpg_model
 from ptan.experience import ExperienceFirstLast
 from tensorboardX import SummaryWriter
-from pprint import pprint
 
 gradMax = 0
 gradAvg = 0
@@ -120,7 +121,7 @@ def load_actor_model(net, checkpoint):
     return net
 
 
-def play(params, net, device, exp_queue, agent_env, test, writer, collected_samples, finish_event):
+def play(params, net, device, exp_queue, agent_env, test, collected_samples, finish_event):
 
     try:
         agent = ddpg_model.AgentDDPG(net, device=device,
@@ -141,7 +142,7 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
             next_states, rewards, done, info = agent_env.step(actions)
             steps += 1
             for i in range(agent_env.n_robots_blue):
-                epi_rewards[f'robot_{i}'] = rewards[f'robot_{i}']
+                epi_rewards[f'robot_{i}'] += rewards[f'robot_{i}']
 
             next_states = next_states if not done \
                 else [None]*agent_env.n_robots_blue
@@ -157,32 +158,19 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
                 agent_env.render('human')
 
             states = next_states
-
             if done:
                 fps = steps/(time.time() - then)
                 then = time.time()
-                writer.add_scalar("rw/goal_score",
-                                  info['goal_score'],
-                                  matches_played)
-                writer.add_scalar("rw/ball_grad",
-                                  info['ball_grad'],
-                                  matches_played)
-                writer.add_scalar("rw/goals_blue",
-                                  info['goals_blue'],
-                                  matches_played)
-                writer.add_scalar("rw/goals_yellow",
-                                  info['goals_yellow'],
-                                  matches_played)
+                log_dict = {}
+                log_dict["rw/goal_score"] = info['goal_score']
+                log_dict["rw/ball_grad"] = info['ball_grad']
+                log_dict["rw/goals_blue"] = info['goals_blue']
+                log_dict["rw/goals_yellow"] = info['goals_yellow']
                 for i in range(agent_env.n_robots_blue):
-                    writer.add_scalar(f"rw/robot_{i}/total",
-                                      epi_rewards[f'robot_{i}'],
-                                      matches_played)
-                    writer.add_scalar(f"rw/robot_{i}/move",
-                                      info[f'robot_{i}']['move'],
-                                      matches_played)
-                    writer.add_scalar(f"rw/robot_{i}/energy",
-                                      info[f'robot_{i}']['energy'],
-                                      matches_played)
+                    log_dict[f"rw/robot_{i}/total"] = epi_rewards[f'robot_{i}']
+                    log_dict[f"rw/robot_{i}/move"] = info[f'robot_{i}']['move']
+                    log_dict[f"rw/robot_{i}/energy"] = info[f'robot_{i}']['energy']
+                wandb.log(log_dict)
                 print(f'<======Match {matches_played}======>')
                 print(f'-------Rewards:')
                 pprint(epi_rewards)
@@ -197,9 +185,7 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
 
                 if not test and evaluation:  # evaluation just finished
                     for i in range(agent_env.n_robots_blue):
-                        writer.add_scalar(f"eval/robot_{i}/",
-                                          epi_rewards[f'robot_{i}'],
-                                          matches_played)
+                        wandb.log({f"eval/robot_{i}/": epi_rewards[f'robot_{i}']})
                     print("evaluation finished")
 
                 evaluation = matches_played % eval_freq_matches == 0
@@ -301,9 +287,6 @@ def train(model_params, act_net, device,
             model_params['save_model_frequency']
         next_net_sync = processed_samples + model_params['target_net_sync']
         queue_max_size = batch_size = model_params['batch_size']
-        writer_path = model_params['writer_path']
-        writer = SummaryWriter(log_dir=writer_path+"/train")
-        tracker = common.RewardTracker(writer)
 
         actor_loss = 0.0
         critic_loss = 0.0
@@ -404,8 +387,9 @@ def train(model_params, act_net, device,
                             (processed_samples-last_loss_average)
                         print("avg_reward:%.4f, avg_loss:%f" %
                               (reward_avg, actor_loss))
-                        tracker.track_training(
-                            processed_samples, reward_avg, actor_loss, critic_loss)
+                        wandb.log({"actor_loss": actor_loss})
+                        wandb.log({"critic_loss": critic_loss})
+
                         actor_loss = 0.0
                         critic_loss = 0.0
                         last_loss_average = processed_samples

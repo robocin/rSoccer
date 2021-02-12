@@ -153,3 +153,5 @@ cython_debug/
 
 # Logs
 *tfevents*
+*wandb/
+*.exb
