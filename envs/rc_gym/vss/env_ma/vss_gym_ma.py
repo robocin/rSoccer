@@ -264,7 +264,7 @@ class VSSMAEnv(VSSBaseEnv):
                         w_move * move_reward + \
                         w_energy * energy_penalty
 
-                    reward[f'robot_{idx}'] = rew
+                    reward[f'robot_{idx}'] += rew
                     self.reward_shaping_total[f'robot_{idx}']['move'] += w_move * move_reward  # noqa
                     self.reward_shaping_total[f'robot_{idx}']['energy'] += w_energy * energy_penalty  # noqa
 

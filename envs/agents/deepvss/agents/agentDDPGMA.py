@@ -154,7 +154,7 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
                     exp_queue.put(exp)
 
             if test:
-                agent_env.render()
+                agent_env.render('human')
 
             states = next_states
 
