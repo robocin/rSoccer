@@ -56,19 +56,19 @@ class VSSMAEnv(VSSBaseEnv):
                          time_step=0.032)
 
         low_obs_bound = [-1.2, -1.2, -1.25, -1.25]
-        low_obs_bound += [-1.2, -1.2, -1, -1, -1.25, -1.25, -1.2]*3
-        low_obs_bound += [-1.2, -1.2, -1.25, -1.25, -1.2]*3
+        low_obs_bound += [-1.2, -1.2, -1, -1, -1.25, -1.25, -1.2]*n_robots_blue
+        low_obs_bound += [-1.2, -1.2, -1.25, -1.25, -1.2]*n_robots_yellow
         high_obs_bound = [1.2, 1.2, 1.25, 1.25]
-        high_obs_bound += [1.2, 1.2, 1, 1, 1.25, 1.25, 1.2]*3
-        high_obs_bound += [1.2, 1.2, 1.25, 1.25, 1.2]*3
+        high_obs_bound += [1.2, 1.2, 1, 1, 1.25, 1.25, 1.2]*n_robots_blue
+        high_obs_bound += [1.2, 1.2, 1.25, 1.25, 1.2]*n_robots_yellow
         low_obs_bound = np.array(low_obs_bound)
         high_obs_bound = np.array(high_obs_bound)
-
         self.action_space = gym.spaces.Box(low=-1, high=1,
                                            shape=(2, ), dtype=np.float32)
         self.observation_space = gym.spaces.Box(low=low_obs_bound,
                                                 high=high_obs_bound,
-                                                shape=(40, ), dtype=np.float32)
+                                                shape=(len(low_obs_bound), ),
+                                                dtype=np.float32)
 
         # Initialize Class Atributes
         self.previous_ball_potential = None
@@ -232,7 +232,8 @@ class VSSMAEnv(VSSBaseEnv):
             self.reward_shaping_total = {'goal_score': 0, 'ball_grad': 0,
                                          'goals_blue': 0, 'goals_yellow': 0}
             for i in range(self.n_robots_blue):
-                self.reward_shaping_total[f'robot_{i}'] = {'move': 0, 'energy': 0}
+                self.reward_shaping_total[f'robot_{i}'] = {
+                    'move': 0, 'energy': 0}
 
         # Check if goal ocurred
         if self.frame.ball.x > (self.field_params['field_length'] / 2):

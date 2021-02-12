@@ -56,7 +56,7 @@ if __name__ == "__main__":
                             action='store_true', help="Test mode")
         parser.add_argument("--params", default=None,
                             help="Path to a python parameters file")
-        parser.add_argument("--n_robots", default=3, type=int,
+        parser.add_argument("--n_agents", default=3, type=int,
                             help="Number of robots for each team")
 
         args = parser.parse_args()
