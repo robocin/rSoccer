@@ -141,13 +141,13 @@ def play(params, net, device, exp_queue, agent_env, test, collected_samples, fin
             actions = agent(states, steps)
             next_states, rewards, done, info = agent_env.step(actions)
             steps += 1
-            for i in range(agent_env.n_robots_blue):
+            for i in range(agent_env.n_robots_control):
                 epi_rewards[f'robot_{i}'] += rewards[f'robot_{i}']
 
             next_states = next_states if not done \
-                else [None]*agent_env.n_robots_blue
+                else [None]*agent_env.n_robots_control
 
-            for i in range(agent_env.n_robots_blue):
+            for i in range(agent_env.n_robots_control):
                 exp = ExperienceFirstLast(states[i], actions[i],
                                           rewards[f'robot_{i}'],
                                           next_states[i])
@@ -166,7 +166,7 @@ def play(params, net, device, exp_queue, agent_env, test, collected_samples, fin
                 log_dict["rw/ball_grad"] = info['ball_grad']
                 log_dict["rw/goals_blue"] = info['goals_blue']
                 log_dict["rw/goals_yellow"] = info['goals_yellow']
-                for i in range(agent_env.n_robots_blue):
+                for i in range(agent_env.n_robots_control):
                     log_dict[f"rw/robot_{i}/total"] = epi_rewards[f'robot_{i}']
                     log_dict[f"rw/robot_{i}/move"] = info[f'robot_{i}']['move']
                     log_dict[f"rw/robot_{i}/energy"] = info[f'robot_{i}']['energy']
@@ -177,14 +177,14 @@ def play(params, net, device, exp_queue, agent_env, test, collected_samples, fin
                 print(f'-------FPS:', fps)
                 print(f'<==================================>\n')
                 epi_rewards = {f'robot_{i}': 0 for i in range(
-                    agent_env.n_robots_blue)}
+                    agent_env.n_robots_control)}
                 steps = 0
                 matches_played += 1
                 states = agent_env.reset()
                 agent.ou_noise.reset()
 
                 if not test and evaluation:  # evaluation just finished
-                    for i in range(agent_env.n_robots_blue):
+                    for i in range(agent_env.n_robots_control):
                         wandb.log(
                             {f"eval/robot_{i}/": epi_rewards[f'robot_{i}']})
                     print("evaluation finished")
