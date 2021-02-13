@@ -51,18 +51,19 @@ class VSSMAEnv(VSSBaseEnv):
             5 minutes match time
     """
 
-    def __init__(self, n_robots_blue=3, n_robots_yellow=3):
-        super().__init__(field_type=0, n_robots_blue=n_robots_blue, n_robots_yellow=n_robots_yellow,
+    def __init__(self, n_robots_control=3):
+        super().__init__(field_type=0, n_robots_blue=3, n_robots_yellow=3,
                          time_step=0.032)
 
         low_obs_bound = [-1.2, -1.2, -1.25, -1.25]
-        low_obs_bound += [-1.2, -1.2, -1, -1, -1.25, -1.25, -1.2]*n_robots_blue
-        low_obs_bound += [-1.2, -1.2, -1.25, -1.25, -1.2]*n_robots_yellow
+        low_obs_bound += [-1.2, -1.2, -1, -1, -1.25, -1.25, -1.2]*3
+        low_obs_bound += [-1.2, -1.2, -1.25, -1.25, -1.2]*3
         high_obs_bound = [1.2, 1.2, 1.25, 1.25]
-        high_obs_bound += [1.2, 1.2, 1, 1, 1.25, 1.25, 1.2]*n_robots_blue
-        high_obs_bound += [1.2, 1.2, 1.25, 1.25, 1.2]*n_robots_yellow
+        high_obs_bound += [1.2, 1.2, 1, 1, 1.25, 1.25, 1.2]*3
+        high_obs_bound += [1.2, 1.2, 1.25, 1.25, 1.2]*3
         low_obs_bound = np.array(low_obs_bound)
         high_obs_bound = np.array(high_obs_bound)
+        self.n_robots_control = n_robots_control
         self.action_space = gym.spaces.Box(low=-1, high=1,
                                            shape=(2, ), dtype=np.float32)
         self.observation_space = gym.spaces.Box(low=low_obs_bound,
@@ -105,7 +106,7 @@ class VSSMAEnv(VSSBaseEnv):
             robots_dict[i].append(normVt(self.frame.robots_blue[i].v_theta))
 
         rotaded_obs = list()
-        for i in range(self.n_robots_blue):
+        for i in range(self.n_robots_control):
             aux_dict = {}
             aux_dict.update(robots_dict)
             rotated = list()
@@ -121,7 +122,7 @@ class VSSMAEnv(VSSBaseEnv):
 
         observations = list()
         robots = self.get_rotated_obs()
-        for idx in range(self.n_robots_blue):
+        for idx in range(self.n_robots_control):
             observation = []
 
             observation.append(normX(self.frame.ball.x))
@@ -148,9 +149,15 @@ class VSSMAEnv(VSSBaseEnv):
         self.actions = {}
 
         # Send random commands to the other robots
-        for i in range(self.n_robots_blue):
+        for i in range(self.n_robots_control):
             self.actions[i] = actions[i]
             v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions[i])
+            commands.append(Robot(yellow=False, id=i, v_wheel1=v_wheel1,
+                                  v_wheel2=v_wheel2))
+
+        for i in range(self.n_robots_control, self.n_robots_blue):
+            actions = self.action_space.sample()
+            v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions)
             commands.append(Robot(yellow=False, id=i, v_wheel1=v_wheel1,
                                   v_wheel2=v_wheel2))
 
@@ -223,7 +230,7 @@ class VSSMAEnv(VSSBaseEnv):
         return energy_penalty
 
     def _calculate_reward_and_done(self):
-        reward = {f'robot_{i}': 0 for i in range(self.n_robots_blue)}
+        reward = {f'robot_{i}': 0 for i in range(self.n_robots_control)}
         goal = False
         w_move = 0.2
         w_ball_grad = 0.8
@@ -231,7 +238,7 @@ class VSSMAEnv(VSSBaseEnv):
         if self.reward_shaping_total is None:
             self.reward_shaping_total = {'goal_score': 0, 'ball_grad': 0,
                                          'goals_blue': 0, 'goals_yellow': 0}
-            for i in range(self.n_robots_blue):
+            for i in range(self.n_robots_control):
                 self.reward_shaping_total[f'robot_{i}'] = {
                     'move': 0, 'energy': 0}
 
@@ -239,13 +246,13 @@ class VSSMAEnv(VSSBaseEnv):
         if self.frame.ball.x > (self.field_params['field_length'] / 2):
             self.reward_shaping_total['goal_score'] += 1
             self.reward_shaping_total['goals_blue'] += 1
-            for i in range(self.n_robots_blue):
+            for i in range(self.n_robots_control):
                 reward[f'robot_{i}'] = 10
             goal = True
         elif self.frame.ball.x < -(self.field_params['field_length'] / 2):
             self.reward_shaping_total['goal_score'] -= 1
             self.reward_shaping_total['goals_yellow'] += 1
-            for i in range(self.n_robots_blue):
+            for i in range(self.n_robots_control):
                 reward[f'robot_{i}'] = -10
             goal = True
         else:
@@ -254,7 +261,7 @@ class VSSMAEnv(VSSBaseEnv):
                 # Calculate ball potential
                 grad_ball_potential = self.__ball_grad()
                 self.reward_shaping_total['ball_grad'] += w_ball_grad * grad_ball_potential  # noqa
-                for idx in range(self.n_robots_blue):
+                for idx in range(self.n_robots_control):
                     # Calculate Move ball
                     move_reward = self.__move_reward(robot_idx=idx)
                     # Calculate Energy penalty
