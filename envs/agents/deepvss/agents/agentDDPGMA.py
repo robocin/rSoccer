@@ -185,7 +185,8 @@ def play(params, net, device, exp_queue, agent_env, test, collected_samples, fin
 
                 if not test and evaluation:  # evaluation just finished
                     for i in range(agent_env.n_robots_blue):
-                        wandb.log({f"eval/robot_{i}/": epi_rewards[f'robot_{i}']})
+                        wandb.log(
+                            {f"eval/robot_{i}/": epi_rewards[f'robot_{i}']})
                     print("evaluation finished")
 
                 evaluation = matches_played % eval_freq_matches == 0
@@ -218,6 +219,9 @@ def train(model_params, act_net, device,
     try:
         run_name = model_params['run_name']
         data_path = model_params['data_path']
+        wandb.init(name=run_name+'_train',
+                   project='RC-Reinforcement',
+                   dir='./data_path/logs')
 
         exp_buffer = common.PersistentExperienceReplayBuffer(experience_source=None,
                                                              buffer_size=model_params['replay_size']) if \
@@ -379,6 +383,8 @@ def train(model_params, act_net, device,
                         'optimizer_act': optimizer_act.state_dict(),
                         'optimizer_crt': optimizer_crt.state_dict(),
                     }, is_best, "model/" + run_name + ".pth")
+                    exp_buffer.sync_exps_to_file(
+                        data_path + "/buffer/" + run_name + ".exb")
 
                     if processed_samples > last_loss_average:
                         actor_loss = batch_size*actor_loss / \
@@ -387,15 +393,11 @@ def train(model_params, act_net, device,
                             (processed_samples-last_loss_average)
                         print("avg_reward:%.4f, avg_loss:%f" %
                               (reward_avg, actor_loss))
-                        wandb.log({"actor_loss": actor_loss})
-                        wandb.log({"critic_loss": critic_loss})
-
+                        wandb.log({"train/actor_loss": actor_loss})
+                        wandb.log({"train/critic_loss": critic_loss})
                         actor_loss = 0.0
                         critic_loss = 0.0
                         last_loss_average = processed_samples
-
-                    exp_buffer.sync_exps_to_file(
-                        data_path + "/buffer/" + run_name + ".exb")
 
                 except Exception:
                     with open(run_name + ".err", 'a') as errfile:
