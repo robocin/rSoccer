@@ -226,7 +226,7 @@ class VSSMAEnv(VSSBaseEnv):
         en_penalty_1 = abs(self.sent_commands[robot_idx].v_wheel1)
         en_penalty_2 = abs(self.sent_commands[robot_idx].v_wheel2)
         energy_penalty = - (en_penalty_1 + en_penalty_2)
-        energy_penalty /= self.simulator.robot_wheel_radius
+        energy_penalty /= self.rsim.robot_wheel_radius
         return energy_penalty
 
     def _calculate_reward_and_done(self):
@@ -277,8 +277,8 @@ class VSSMAEnv(VSSBaseEnv):
 
         if goal:
             initial_pos_frame: Frame = self._get_initial_positions_frame()
-            self.simulator.reset(initial_pos_frame)
-            self.frame = self.simulator.get_frame()
+            self.rsim.reset(initial_pos_frame)
+            self.frame = self.rsim.get_frame()
             self.last_frame = None
 
         done = self.steps * self.time_step >= 300
@@ -316,8 +316,8 @@ class VSSMAEnv(VSSBaseEnv):
         return pos_frame
 
     def _actions_to_v_wheels(self, actions):
-        left_wheel_speed = actions[0] * self.simulator.linear_speed_range
-        right_wheel_speed = actions[1] * self.simulator.linear_speed_range
+        left_wheel_speed = actions[0] * self.rsim.linear_speed_range
+        right_wheel_speed = actions[1] * self.rsim.linear_speed_range
 
         # Deadzone
         if -self.v_wheel_deadzone < left_wheel_speed < self.v_wheel_deadzone:
