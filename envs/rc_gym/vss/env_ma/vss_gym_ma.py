@@ -1,11 +1,14 @@
 import math
+import os
 import random
 from typing import Dict
 
 import gym
 import numpy as np
+import torch
 from rc_gym.Entities import Frame, Robot
 from rc_gym.Utils import normVt, normVx, normX
+from rc_gym.vss.env_ma.opponent.model import DDPGActor
 from rc_gym.vss.vss_gym_base import VSSBaseEnv
 
 
@@ -330,3 +333,80 @@ class VSSMAEnv(VSSBaseEnv):
             (left_wheel_speed, right_wheel_speed), -2.6, 2.6)
 
         return left_wheel_speed, right_wheel_speed
+
+
+class VSSMAOpp(VSSMAEnv):
+
+    def __init__(self, n_robots_control=3):
+        super().__init__(n_robots_control=n_robots_control)
+        self.load_opp()
+
+    def load_opp(self):
+        device = torch.device('cuda')
+        atk_path = os.path.dirname(os.path.realpath(__file__))\
+            + '/opponent/opp.pth'
+        self.opp = DDPGActor(40, 2)
+        atk_checkpoint = torch.load(atk_path, map_location=device)
+        self.opp.load_state_dict(atk_checkpoint['state_dict_act'])
+        self.opp.eval()
+
+    def _opp_obs(self):
+        observation = []
+        observation.append(normX(-self.frame.ball.x))
+        observation.append(normX(self.frame.ball.y))
+        observation.append(normVx(-self.frame.ball.v_x))
+        observation.append(normVx(self.frame.ball.v_y))
+
+        #  we reflect the side that the opp is attacking,
+        #  so that he will attack towards the goal where the goalkeeper is
+        for i in range(self.n_robots_yellow):
+            observation.append(normX(-self.frame.robots_yellow[i].x))
+            observation.append(normX(self.frame.robots_yellow[i].y))
+
+            observation.append(
+                np.sin(np.deg2rad(self.frame.robots_yellow[i].theta))
+            )
+            observation.append(
+                -np.cos(np.deg2rad(self.frame.robots_yellow[i].theta))
+            )
+            observation.append(normVx(-self.frame.robots_yellow[i].v_x))
+            observation.append(normVx(self.frame.robots_yellow[i].v_y))
+
+            observation.append(normVt(-self.frame.robots_yellow[i].v_theta))
+
+        for i in range(self.n_robots_blue):
+            observation.append(normX(-self.frame.robots_blue[i].x))
+            observation.append(normX(self.frame.robots_blue[i].y))
+            observation.append(normVx(-self.frame.robots_blue[i].v_x))
+            observation.append(normVx(self.frame.robots_blue[i].v_y))
+            observation.append(normVt(-self.frame.robots_blue[i].v_theta))
+
+        return np.array(observation)
+
+    def _get_commands(self, actions):
+        commands = []
+        self.actions = {}
+
+        for i in range(self.n_robots_control):
+            self.actions[i] = actions[i]
+            v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions[i])
+            commands.append(Robot(yellow=False, id=i, v_wheel1=v_wheel1,
+                                  v_wheel2=v_wheel2))
+
+        for i in range(self.n_robots_control, self.n_robots_blue):
+            actions = self.action_space.sample()
+            v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions)
+            commands.append(Robot(yellow=False, id=i, v_wheel1=v_wheel1,
+                                  v_wheel2=v_wheel2))
+
+        atk_action = self.opp.get_action(self._opp_obs())
+        v_wheel1, v_wheel2 = self._actions_to_v_wheels(atk_action)
+        commands.append(Robot(yellow=True, id=0, v_wheel1=v_wheel2,
+                              v_wheel2=v_wheel1))
+        for i in range(1, self.n_robots_yellow):
+            actions = self.action_space.sample()
+            v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions)
+            commands.append(Robot(yellow=True, id=i, v_wheel1=v_wheel1,
+                                  v_wheel2=v_wheel2))
+
+        return commands
