@@ -16,10 +16,6 @@ register(id='VSS3v3-v0',
          entry_point='rc_gym.vss:VSS3v3Env'
          )
 
-register(id='SSL11v11-v0',
-         entry_point='rc_gym.ssl:SSL11v11Env'
-         )
-
 register(id='VSSMA-v0',
          entry_point='rc_gym.vss:VSSMAEnv',
          )
