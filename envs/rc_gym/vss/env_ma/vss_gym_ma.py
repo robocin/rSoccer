@@ -342,7 +342,7 @@ class VSSMAOpp(VSSMAEnv):
         self.load_opp()
 
     def load_opp(self):
-        device = torch.device('cuda')
+        device = torch.device('cpu')
         atk_path = os.path.dirname(os.path.realpath(__file__))\
             + '/opponent/opp.pth'
         self.opp = DDPGActor(40, 2)
