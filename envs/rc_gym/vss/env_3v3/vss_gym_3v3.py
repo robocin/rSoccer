@@ -276,19 +276,13 @@ class VSS3v3Env(VSSBaseEnv):
         pos_frame.ball.v_y = 0.
 
         agents = []
-        pos_frame.robots_blue[0] = Robot(x=x(), y=y(), theta=theta())
-        agents.append(pos_frame.robots_blue[0])
-        pos_frame.robots_blue[1] = Robot(x=x(), y=y(), theta=theta())
-        agents.append(pos_frame.robots_blue[1])
-        pos_frame.robots_blue[2] = Robot(x=x(), y=y(), theta=theta())
-        agents.append(pos_frame.robots_blue[2])
+        for i in range(self.n_robots_blue):
+            pos_frame.robots_blue[i] = Robot(x=x(), y=y(), theta=theta())
+            agents.append(pos_frame.robots_blue[i])
 
-        pos_frame.robots_yellow[0] = Robot(x=x(), y=y(), theta=theta())
-        agents.append(pos_frame.robots_yellow[0])
-        pos_frame.robots_yellow[1] = Robot(x=x(), y=y(), theta=theta())
-        agents.append(pos_frame.robots_yellow[1])
-        pos_frame.robots_yellow[2] = Robot(x=x(), y=y(), theta=theta())
-        agents.append(pos_frame.robots_yellow[3])
+        for i in range(self.n_robots_yellow):
+            pos_frame.robots_yellow[i] = Robot(x=x(), y=y(), theta=theta())
+            agents.append(pos_frame.robots_blue[i])
 
         def same_position_ref(x, y, x_ref, y_ref, radius):
             if x >= x_ref - radius and x <= x_ref + radius and \

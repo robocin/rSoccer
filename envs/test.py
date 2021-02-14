@@ -12,8 +12,7 @@ import numpy as np
 import time
 
 # Using penalty env
-# env = gym.make('VSS3v3-v0')
-env = gym.make('SSL11v11-v0')
+env = gym.make('VSS3v3-v0')
 # env = gym.make('grSimSSLPenalty-v0')
 
 
@@ -78,7 +77,7 @@ for i in range(10):
     # print_with_description(next_state)
     epi_rew = 0.
     while not done:
-        action = np.array([0.1, 0., 0.])
+        action = np.array([0.1, 0.])
         # action = env.action_space.sample()
         next_state, reward, done, _ = env.step(action)
         epi_rew += reward
