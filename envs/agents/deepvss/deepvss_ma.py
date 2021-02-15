@@ -77,11 +77,14 @@ if __name__ == "__main__":
         sys.stdout.flush()
 
         n_robots = args.n_agents
-        env = gym.make('VSSMA-v0', n_robots_control=n_robots,)
+        env = gym.make('VSSMAOpp-v0', n_robots_control=n_robots,)
         state_shape, action_shape = env.observation_space, env.action_space
         model_params['state_shape'] = state_shape
         model_params['action_shape'] = action_shape
 
+        wandb.init(name=run_name,
+                   project='RC-Reinforcement',
+                   dir='./data_path/logs')
         print(f' === Running: <{run_name}> experiment ===')
         print(f'Model params:')
         pprint(model_params)
@@ -119,10 +122,6 @@ if __name__ == "__main__":
 
         if len(args.exp) > 0:  # load experience buffer
             checkpoint['exp'] = args.exp[0]
-
-        wandb.init(name=run_name,
-                   project='RC-Reinforcement',
-                   dir='./data_path/logs')
 
         queue_size = model_params['batch_size']
         exp_queue = mp.Queue(maxsize=queue_size)
