@@ -1,25 +1,15 @@
-import pb_fira.packet_pb2 as packet_pb2
-import torch.multiprocessing as mp
-import torch.nn.functional as F
-import torch.optim as optim
-import torch.nn as nn
-import numpy as np
-import collections
-import argparse
 import socket
-import torch
-import ptan
-import time
-import gym
-import os
 
-from rc_gym.Entities.FramePB import FramePB
+import numpy as np
 from rc_gym.Entities import Robot
+from rc_gym.Entities.Frame import FramePB
+
+import pb_fira.packet_pb2 as packet_pb2
 from pb_fira.state_pb2 import *
 from rsim_base import RSim
 
 
-class RSimFira(RSim):
+class Fira(RSim):
     def __init__(
         self,
         vision_ip="224.0.0.1",
@@ -110,76 +100,3 @@ class RSimFira(RSim):
         frame.parse(state, self.n_robots_blue, self.n_robots_yellow)
 
         return frame
-
-
-ENV = "VSS3v3-v0"
-DEADZONE = 0.05
-SPEED_RANGE = 1.15
-WHEEL_RADIUS = 0.026
-# Q_SIZE = 1
-
-
-class DDPGActor(nn.Module):
-    def __init__(self, obs_size, act_size):
-        super(DDPGActor, self).__init__()
-
-        self.net = nn.Sequential(
-            nn.Linear(obs_size, 400),
-            nn.ReLU(),
-            nn.Linear(400, 300),
-            nn.ReLU(),
-            nn.Linear(300, act_size),
-            nn.Tanh(),
-        )
-
-    def forward(self, x):
-        return self.net(x)
-
-
-def _actions_to_v_wheels(actions):
-    left_wheel_speed = actions[0] * SPEED_RANGE
-    right_wheel_speed = actions[1] * SPEED_RANGE
-
-    # Deadzone
-    if -DEADZONE < left_wheel_speed < DEADZONE:
-        left_wheel_speed = 0
-
-    if -DEADZONE < right_wheel_speed < DEADZONE:
-        right_wheel_speed = 0
-
-    left_wheel_speed, right_wheel_speed = np.clip(
-        (left_wheel_speed, right_wheel_speed), -2.6, 2.6
-    )
-
-    return left_wheel_speed / WHEEL_RADIUS, right_wheel_speed / WHEEL_RADIUS
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-m", "--model", required=True, help="Model file to load"
-    )
-    args = parser.parse_args()
-
-    net = DDPGActor(40, 2)
-    net.load_state_dict(torch.load(args.model))
-
-    # client = FiraClient()
-    # client = RSim()
-    client = RSimFira()
-
-    while True:
-        obs_v = torch.FloatTensor(
-            [client.receive(0), client.receive(1), client.receive(2)]
-        )
-
-        print(client.receive(0).shape())
-
-        mu_v = net(obs_v)
-        action = mu_v.squeeze(dim=0).data.numpy()
-        action = np.clip(action, -1, 1)
-        command = []
-        for i in range(3):
-            lw, rw = _actions_to_v_wheels(action[i])
-            command.append(Robot(yellow=False, id=i, v_wheel1=lw, v_wheel2=rw))
-        client.send(command)
