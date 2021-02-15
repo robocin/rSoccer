@@ -6,13 +6,14 @@
 # #
 # '''
 
+
 import gym
 import rc_gym
 import numpy as np
 import time
 
 # Using penalty env
-env = gym.make('VSS3v3-v0')
+env = gym.make("VSS3v3-v0")
 # env = gym.make('grSimSSLPenalty-v0')
 
 
@@ -67,7 +68,8 @@ def print_with_description(state):
     # print("id 2 Yellow Robot Vx = {:.2f}".format(state[50]))
     # print("id 2 Yellow Robot Vy = {:.2f}".format(state[51]))
     # print("id 2 Yellow Robot v_theta = {:.2f}".format(state[52]))
-    
+
+
 # env.reset()
 # Run for 10 episode and print reward at the end
 for i in range(10):
@@ -75,9 +77,9 @@ for i in range(10):
     next_state = env.reset()
     # env.render()
     # print_with_description(next_state)
-    epi_rew = 0.
+    epi_rew = 0.0
     while not done:
-        action = np.array([0.1, 0.])
+        action = np.array([0.1, 0.0])
         # action = env.action_space.sample()
         next_state, reward, done, _ = env.step(action)
         epi_rew += reward

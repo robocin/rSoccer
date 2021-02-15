@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package fira_message.sim_to_ref;
+
+import "common.proto";
+
+message RobotReplacement {
+	Robot  position   = 1;
+	bool   yellowteam = 5;
+	bool   turnon     = 6;
+}
+
+message BallReplacement {
+	double x  = 1;
+	double y  = 2;
+	double vx = 3;
+	double vy = 4;
+}
+
+message Replacement {
+	BallReplacement           ball   = 1;
+	repeated RobotReplacement robots = 2;
+}
