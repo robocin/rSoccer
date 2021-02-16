@@ -2,6 +2,7 @@ import math
 from enum import Enum
 
 import numpy as np
+from rc_gym.Entities import Frame
 from rc_gym.Entities.Field import VSSField
 from rc_gym.Utils.Utils import clip, distancePointSegment
 from rc_gym.vss.env_coach.deterministic_agents.pid import PID
@@ -17,14 +18,15 @@ class DeterministicAgent:
     field = VSSField()
     pid = PID()
 
-    def __init__(self):
+    def __init__(self, robot_idx: int) -> None:
         self.spinDistance = 8.0
         self.action = Actions.MOVE
+        self.robot_idx = robot_idx
 
     def get_action(self, ball_pos: np.ndarray,
                    ball_speed: np.ndarray,
                    robot_pos: np.ndarray,
-                   robot_angle: np.ndarray) -> np.ndarray:
+                   robot_angle: float) -> np.ndarray:
         raise NotImplementedError
 
     def get_objective(self, ball_pos: np.ndarray,
@@ -32,10 +34,13 @@ class DeterministicAgent:
                       robot_pos: np.ndarray) -> np.ndarray:
         raise NotImplementedError
 
-    def __call__(self, ball_pos: np.ndarray,
-                 ball_speed: np.ndarray,
-                 robot_pos: np.ndarray,
-                 robot_angle: np.ndarray) -> np.ndarray:
+    def __call__(self, frame: Frame) -> np.ndarray:
+        ball_pos = np.array([frame.ball.x, frame.ball.y])
+        ball_speed = np.array([frame.ball.v_x, frame.ball.v_y])
+        robot_pos = np.array([frame.robots_blue[self.robot_idx].x,
+                              frame.robots_blue[self.robot_idx].y])
+        robot_angle = frame.robots_blue[self.robot_idx].theta
+
         return self.get_action(ball_pos=ball_pos, ball_speed=ball_speed,
                                robot_pos=robot_pos, robot_angle=robot_angle)
 

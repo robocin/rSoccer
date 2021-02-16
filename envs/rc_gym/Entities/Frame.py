@@ -12,6 +12,12 @@ class Frame:
         self.ball = Ball()
         self.robots_blue = {}
         self.robots_yellow = {}
+    
+    def _mirror_angle(self, angle):
+        if angle < 180:
+            return 180 - angle
+        else:
+            return 180 + (360 - angle)
 
 class FrameVSS(Frame):
     def parse(self, state, n_robots_blue=3, n_robots_yellow=3):
@@ -44,6 +50,39 @@ class FrameVSS(Frame):
             robot.v_y = state[5 + n_robots_blue*6 + (6 * i) + 4]
             robot.v_theta = state[5 + n_robots_blue*6 + (6 * i) + 5]
             self.robots_yellow[robot.id] = robot
+        
+    def get_yellow_frame(self):
+        yellow_frame = Frame()
+        
+        yellow_frame.ball.x = -self.ball.x
+        yellow_frame.ball.y = self.ball.y
+        yellow_frame.ball.z = self.ball.z
+        yellow_frame.ball.v_x = -self.ball.v_x
+        yellow_frame.ball.v_y = self.ball.v_y
+        
+        for i in range(len(self.robots_yellow)):
+            robot = Robot()
+            robot.id = i
+            robot.x = -self.robots_yellow[i].x
+            robot.y = self.robots_yellow[i].y
+            robot.theta = self._mirror_angle(self.robots_yellow[i].theta)
+            robot.v_x = -self.robots_yellow[i].v_x
+            robot.v_y = self.robots_yellow[i].v_y
+            robot.v_theta = -self.robots_yellow[i].v_theta
+            yellow_frame.robots_blue[robot.id] = robot
+
+        for i in range(len(self.robots_blue)):
+            robot = Robot()
+            robot.id = i
+            robot.x = -self.robots_blue[i].x
+            robot.y = self.robots_blue[i].y
+            robot.theta = self._mirror_angle(self.robots_blue[i].theta)
+            robot.v_x = -self.robots_blue[i].v_x
+            robot.v_y = self.robots_blue[i].v_y
+            robot.v_theta = -self.robots_blue[i].v_theta
+            yellow_frame.robots_yellow[robot.id] = robot
+        
+        return yellow_frame
 
 class FrameSSL(Frame):
     def parse(self, state, n_robots_blue=3, n_robots_yellow=3):

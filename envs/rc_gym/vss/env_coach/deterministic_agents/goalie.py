@@ -16,7 +16,7 @@ class Goalie(DeterministicAgent):
     def get_action(self, ball_pos: np.ndarray,
                    ball_speed: np.ndarray,
                    robot_pos: np.ndarray,
-                   robot_angle: np.ndarray) -> np.ndarray:
+                   robot_angle: float) -> np.ndarray:
         spinDirection = False
         pred_ball = ball_pos + ball_speed*5
 
