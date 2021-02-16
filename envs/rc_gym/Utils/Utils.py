@@ -1,6 +1,7 @@
 import math
 import numpy as np
 import gym
+from rc_gym.Entities.Field import VSSField
 
 
 # Math methods
@@ -69,6 +70,71 @@ def normVt(vt):
 
 def roundTo5(x, base=5):
     return int(base * round(float(x) / base))
+
+
+def dot(p1, p2):
+    return (p1[0] * p2[0]) + (p1[1] * p2[1])
+
+
+def projectPointToSegment(t_a, t_b, t_c):
+    p = (t_b[0] - t_a[0], t_b[1] - t_a[1])
+    r = dot(p, p)
+
+    if (math.fabs(r) < 0.0001):
+        return t_a
+
+    r = dot((t_c[0] - t_a[0], t_c[1] - t_a[1]),
+            (t_b[0] - t_a[0], t_b[1] - t_a[1])) / r
+
+    if (r < 0):
+        return t_a
+
+    if (r > 1):
+        return t_b
+    aux = (t_b[0] - t_a[0], t_b[1] - t_a[1])
+    return (t_a[0] + aux[0] * r, t_a[1] + aux[1] * r)
+
+
+def distancePointSegment(t_a, t_b, t_c):
+    return distance(t_c, projectPointToSegment(t_a, t_b, t_c))
+
+
+def spin(robot_pos, ball_pos, ball_speed):
+    field = VSSField()
+    spinDirection = False
+    if (robot_pos[1] > ball_pos[1]):
+        spinDirection = False
+    else:
+        spinDirection = True
+    if(ball_pos[0] > field.middle[0] - 10):
+        if(ball_pos[1] > field.middle[1]):
+            if(ball_pos[1] < robot_pos[1] and ball_pos[0] > robot_pos[0]):
+                spinDirection = not spinDirection
+        else:
+            if(ball_pos[1] > robot_pos[1] and ball_pos[0] > robot_pos[0]):
+                spinDirection = not spinDirection
+
+    if (ball_pos[0] < 20):
+        if (ball_pos[0] < robot_pos[0]):
+            if (ball_pos[1] < field.middle[1]):
+                spinDirection = False
+            else:
+                spinDirection = True
+
+    if(robot_pos[0] > field.m_max[0] - 3.75):
+        if(ball_pos[0] < robot_pos[0]):
+            p1 = ball_pos
+            p2 = (ball_pos[0] + ball_speed[0]*5, ball_pos[1] + ball_speed[1]*5)
+            angle = math.atan2(p1[1] - p2[1], p1[0] - p2[0])
+            if(math.sin(angle) > 0):
+                spinDirection = True
+            elif(math.sin(angle) < 0):
+                spinDirection = False
+
+    if(spinDirection):
+        return(-70, 70)
+    else:
+        return (70, -70)
 
 # Base on baselines implementation
 class OrnsteinUhlenbeckAction(object):
