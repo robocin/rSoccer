@@ -52,7 +52,7 @@ class VSSCoachEnv(VSSBaseEnv):
         Episode Termination:
             5 minutes match time
     """
-    det_gk = DetGK()
+    det_gk = None
     deep_atks = None
 
     def __init__(self):
@@ -60,6 +60,8 @@ class VSSCoachEnv(VSSBaseEnv):
                          time_step=0.032)
 
         self.versus = 0
+        self.num_atk_faults = 0
+        self.num_penalties = 0
         low_obs_bound = [-1.2, -1.2, -1.25, -1.25]
         low_obs_bound += [-1.2, -1.2, -1, -1,
                           -1.25, -1.25, -1.2]*self.n_robots_blue
@@ -93,6 +95,7 @@ class VSSCoachEnv(VSSBaseEnv):
 
         self.deep_atks = [DeepAtk(robot_idx=i, **atk_params)
                           for i in range(self.n_robots_blue)]
+        self.det_gk = [DetGK(i) for i in range(self.n_robots_blue)]
 
         print('Environment initialized')
 
@@ -149,7 +152,7 @@ class VSSCoachEnv(VSSBaseEnv):
             elif role == 1:
                 v_wheel1, v_wheel2 = self.deep_atks[i](self.frame)
             else:
-                v_wheel1, v_wheel2 = self.det_gk(self.frame)
+                v_wheel1, v_wheel2 = self.det_gk[i](self.frame)
             commands.append(Robot(yellow=False, id=i, v_wheel1=v_wheel1,
                                   v_wheel2=v_wheel2))
 
@@ -162,7 +165,7 @@ class VSSCoachEnv(VSSBaseEnv):
             elif role == 1:
                 v_wheel2, v_wheel1 = self.deep_atks[i](yellow_frame)
             else:
-                v_wheel2, v_wheel1 = self.det_gk(yellow_frame)
+                v_wheel2, v_wheel1 = self.det_gk[i](yellow_frame)
             commands.append(Robot(yellow=True, id=i, v_wheel1=v_wheel1,
                                   v_wheel2=v_wheel2))
 
@@ -204,8 +207,9 @@ class VSSCoachEnv(VSSBaseEnv):
         bx, by = self.frame.ball.x, self.frame.ball.y
         if bx < -0.6 and abs(by) < 0.35:
             one_in_fault_area = False
-            for robot in self.frame.robots_blue:
-                rx, ry = robot.x, robot.y
+            for i in range(self.n_robots_blue):
+                rx = self.frame.robots_blue[i].x
+                ry = self.frame.robots_blue[i].y
                 if rx < -0.6 and abs(ry) < 0.35:
                     if (one_in_fault_area):
                         atk_fault = True
@@ -218,8 +222,9 @@ class VSSCoachEnv(VSSBaseEnv):
         bx, by = self.frame.ball.x, self.frame.ball.y
         if bx > 0.6 and abs(by) < 0.35:
             one_in_pen_area = False
-            for robot in self.frame.robots_blue:
-                rx, ry = robot.x, robot.y
+            for i in range(self.n_robots_blue):
+                rx = self.frame.robots_blue[i].x
+                ry = self.frame.robots_blue[i].y
                 if rx > 0.6 and abs(ry) < 0.35:
                     if (one_in_pen_area):
                         penalty = True

@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from rc_gym.Entities import Frame
 from rc_gym.Utils import normVt, normVx, normX
-from rc_gym.vss.env_coach.stocastich_agents import DDPGActor
+from rc_gym.vss.env_coach.stochastic_agents.ddpg import DDPGActor
 
 
 class Attacker:
@@ -33,8 +33,7 @@ class Attacker:
 
     def __call__(self, frame: Frame) -> np.ndarray:
         observation = self._frame_to_observations(frame)
-        observation = torch.FloatTensor(observation).to(self.device)
-        actions = self.model(observation)
+        actions = self.model.get_action(observation)
         speeds = self._actions_to_v_wheels(actions=actions)
 
         return speeds
@@ -84,7 +83,7 @@ class Attacker:
     def _frame_to_observations(self, frame: Frame) -> np.ndarray:
 
         observation = list()
-        teammates = self.get_rotated_obs()
+        teammates = self.get_rotated_obs(frame)
 
         observation.append(normX(frame.ball.x))
         observation.append(normX(frame.ball.y))

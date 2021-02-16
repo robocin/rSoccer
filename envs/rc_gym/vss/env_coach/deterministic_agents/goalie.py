@@ -8,8 +8,8 @@ from rc_gym.vss.env_coach.deterministic_agents import (Actions,
 
 class Goalie(DeterministicAgent):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, robot_idx: int):
+        super().__init__(robot_idx)
         self.lineOffset = -3
         self.boundGK = 4.3
 
