@@ -153,7 +153,7 @@ class VSSCoachEnv(VSSBaseEnv):
             commands.append(Robot(yellow=False, id=i, v_wheel1=v_wheel1,
                                   v_wheel2=v_wheel2))
 
-        formation = self.formations[self.versus]      
+        formation = self.formations[self.versus]
         for i in range(self.n_robots_yellow):
             role = int(formation[i])
             yellow_frame = self.frame.get_yellow_frame()
@@ -230,12 +230,12 @@ class VSSCoachEnv(VSSBaseEnv):
     def _calculate_reward_and_done(self):
         reward = 0
         goal = False
-        w_move = 0.2
+        penalty = False
+        fault = False
         w_ball_grad = 0.8
-        w_energy = 2e-4
         if self.reward_shaping_total is None:
-            self.reward_shaping_total = {'goal_score': 0, 'move': 0,
-                                         'ball_grad': 0, 'energy': 0,
+            self.reward_shaping_total = {'goal_score': 0, 'ball_grad': 0,
+                                         'penalties': 0, 'faults': 0,
                                          'goals_blue': 0, 'goals_yellow': 0}
 
         # Check if goal ocurred
@@ -250,26 +250,25 @@ class VSSCoachEnv(VSSBaseEnv):
             reward = -10
             goal = True
         else:
+            if self.is_penalty():
+                self.num_penalties += 1
+                reward = -3.5
+            if self.is_atk_fault():
+                self.num_atk_faults += 1
+                reward -= 1
 
             if self.last_frame is not None:
                 # Calculate ball potential
                 grad_ball_potential = self.__ball_grad()
-                # Calculate Move ball
-                move_reward = self.__move_reward()
-                # Calculate Energy penalty
-                energy_penalty = self.__energy_penalty()
 
-                reward = w_move * move_reward + \
-                    w_ball_grad * grad_ball_potential + \
-                    w_energy * energy_penalty
+                reward += w_ball_grad * grad_ball_potential
 
-                self.reward_shaping_total['move'] += w_move * move_reward
+                self.reward_shaping_total['penalties'] += self.num_penalties
                 self.reward_shaping_total['ball_grad'] += w_ball_grad \
                     * grad_ball_potential
-                self.reward_shaping_total['energy'] += w_energy \
-                    * energy_penalty
+                self.reward_shaping_total['faults'] += self.num_atk_faults
 
-        if goal:
+        if goal or fault or penalty:
             initial_pos_frame: Frame = self._get_initial_positions_frame()
             self.rsim.reset(initial_pos_frame)
             self.frame = self.rsim.get_frame()
@@ -321,19 +320,23 @@ class VSSCoachEnv(VSSBaseEnv):
         while same_pos:
             for i in range(len(agents)):
                 same_pos = False
-                while same_position_ref(agents[i].x, agents[i].y, pos_frame.ball.x, pos_frame.ball.y, radius_ball):
+                while same_position_ref(agents[i].x, agents[i].y,
+                                        pos_frame.ball.x, pos_frame.ball.y,
+                                        radius_ball):
                     agents[i] = Robot(x=x(), y=y(), theta=theta())
                     same_pos = True
                 for j in range(i + 1, len(agents)):
-                    while same_position_ref(agents[i].x, agents[i].y, agents[j].x, agents[j].y, radius_robot):
+                    while same_position_ref(agents[i].x, agents[i].y,
+                                            agents[j].x, agents[j].y,
+                                            radius_robot):
                         agents[i] = Robot(x=x(), y=y(), theta=theta())
                         same_pos = True
 
-        pos_frame.robots_blue[0] = agents[0]
-        pos_frame.robots_blue[1] = agents[1]
-        pos_frame.robots_blue[2] = agents[2]
-        pos_frame.robots_yellow[0] = agents[3]
-        pos_frame.robots_yellow[1] = agents[4]
-        pos_frame.robots_yellow[2] = agents[5]
+        for i in range(self.n_robots_blue):
+            pos_frame.robots_blue[i] = agents[i]
+
+        for i in range(self.n_robots_blue,
+                       self.n_robots_yellow + self.n_robots_blue):
+            pos_frame.robots_blue[i] = agents[i]
 
         return pos_frame
