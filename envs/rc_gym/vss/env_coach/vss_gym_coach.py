@@ -4,10 +4,12 @@ from typing import Dict
 
 import gym
 import numpy as np
+
+from gym.spaces import Box, Discrete
 from rc_gym.Entities import Frame, Robot
 from rc_gym.Utils import normVt, normVx, normX
 from rc_gym.vss.vss_gym_base import VSSBaseEnv
-from rc_gym.vss.env_coach.deterministic_agents.goalie import Goalie
+from rc_gym.vss.env_coach import DetGK, DeepAtk
 
 
 class VSSCoachEnv(VSSBaseEnv):
@@ -36,28 +38,28 @@ class VSSCoachEnv(VSSBaseEnv):
             28 + (5 * i)    id i Yellow Robot Vy
             29 + (5 * i)    id i Yellow Robot v_theta
         Actions:
-            Type: Box(2, )
+            Type: Discrete(27)
             Num     Action
-            0       id 0 Blue Left Wheel Speed  (%)
-            1       id 0 Blue Right Wheel Speed (%)
+
         Reward:
             Sum of Rewards:
                 Goal
                 Ball Potential Gradient
-                Move to Ball
-                Energy Penalty
+                Penalty Infractions
+                Faults Infractions
         Starting State:
             Randomized Robots and Ball initial Position
         Episode Termination:
             5 minutes match time
     """
-    det_gk = Goalie()
-    deep_atk = None
+    det_gk = DetGK()
+    deep_atks = None
 
     def __init__(self):
         super().__init__(field_type=0, n_robots_blue=3, n_robots_yellow=3,
                          time_step=0.032)
 
+        self.versus = 0
         low_obs_bound = [-1.2, -1.2, -1.25, -1.25]
         low_obs_bound += [-1.2, -1.2, -1, -1,
                           -1.25, -1.25, -1.2]*self.n_robots_blue
@@ -67,25 +69,37 @@ class VSSCoachEnv(VSSBaseEnv):
         high_obs_bound += [1.2, 1.2, 1.25, 1.25, 1.2]*self.n_robots_yellow
         low_obs_bound = np.array(low_obs_bound, dtype=np.float32)
         high_obs_bound = np.array(high_obs_bound, dtype=np.float32)
+        self.formations = ["000", "001", "002", "010",
+                           "011", "012", "020", "021",
+                           "022", "100", "101", "102",
+                           "110", "111", "112", "120",
+                           "121", "122", "200", "201",
+                           "202", "210", "211", "212",
+                           "220", "221", "222"]
 
-        self.action_space = gym.spaces.Box(low=-1, high=1,
-                                           shape=(2, ), dtype=np.float32)
-        
-        self.observation_space = gym.spaces.Box(low=low_obs_bound,
-                                                high=high_obs_bound)
+        self.action_space = Discrete(27)
+        self.observation_space = Box(low=low_obs_bound,
+                                     high=high_obs_bound)
 
         # Initialize Class Atributes
         self.previous_ball_potential = None
         self.actions: Dict = None
         self.reward_shaping_total = None
         self.v_wheel_deadzone = 0.05
+        atk_params = dict(n_robots_blue=self.n_robots_blue,
+                          n_robots_yellow=self.n_robots_yellow,
+                          linear_speed_range=self.rsim.linear_speed_range,
+                          v_wheel_deadzone=self.v_wheel_deadzone)
+
+        self.deep_atks = [DeepAtk(robot_idx=i, **atk_params)
+                          for i in range(self.n_robots_blue)]
 
         print('Environment initialized')
 
     def reset(self):
         self.actions = None
         self.reward_shaping_total = None
-
+        self.versus = int(random.choice([0, 18, 21]))
         return super().reset()
 
     def step(self, action):
@@ -123,25 +137,32 @@ class VSSCoachEnv(VSSBaseEnv):
 
         return np.array(observation)
 
-    def _get_commands(self, actions):
+    def _get_commands(self, action):
         commands = []
-        self.actions = {}
-
-        self.actions[0] = actions
-        v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions)
-        commands.append(Robot(yellow=False, id=0, v_wheel1=v_wheel1,
-                              v_wheel2=v_wheel2))
+        formation = self.formations[action]
 
         # Send random commands to the other robots
-        for i in range(1, 3):
-            actions = self.action_space.sample()
-            self.actions[i] = actions
-            v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions)
+        for i in range(self.n_robots_blue):
+            role = int(formation[i])
+            if role == 0:
+                v_wheel1, v_wheel2 = self.deep_atks[i](self.frame)
+            elif role == 1:
+                v_wheel1, v_wheel2 = self.deep_atks[i](self.frame)
+            else:
+                v_wheel1, v_wheel2 = self.det_gk(self.frame)
             commands.append(Robot(yellow=False, id=i, v_wheel1=v_wheel1,
                                   v_wheel2=v_wheel2))
-        for i in range(3):
-            actions = self.action_space.sample()
-            v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions)
+
+        formation = self.formations[self.versus]      
+        for i in range(self.n_robots_yellow):
+            role = int(formation[i])
+            yellow_frame = self.frame.get_yellow_frame()
+            if role == 0:
+                v_wheel2, v_wheel1 = self.deep_atks[i](yellow_frame)
+            elif role == 1:
+                v_wheel2, v_wheel1 = self.deep_atks[i](yellow_frame)
+            else:
+                v_wheel2, v_wheel1 = self.det_gk(yellow_frame)
             commands.append(Robot(yellow=True, id=i, v_wheel1=v_wheel1,
                                   v_wheel2=v_wheel2))
 
@@ -316,19 +337,3 @@ class VSSCoachEnv(VSSBaseEnv):
         pos_frame.robots_yellow[2] = agents[5]
 
         return pos_frame
-
-    def _actions_to_v_wheels(self, actions):
-        left_wheel_speed = actions[0] * self.rsim.linear_speed_range
-        right_wheel_speed = actions[1] * self.rsim.linear_speed_range
-
-        # Deadzone
-        if -self.v_wheel_deadzone < left_wheel_speed < self.v_wheel_deadzone:
-            left_wheel_speed = 0
-
-        if -self.v_wheel_deadzone < right_wheel_speed < self.v_wheel_deadzone:
-            right_wheel_speed = 0
-
-        left_wheel_speed, right_wheel_speed = np.clip(
-            (left_wheel_speed, right_wheel_speed), -2.6, 2.6)
-
-        return left_wheel_speed, right_wheel_speed
