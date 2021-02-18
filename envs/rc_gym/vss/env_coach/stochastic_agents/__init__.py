@@ -1,1 +1,1 @@
-from .attacker import Attacker  # noqa
+from .agents import Attacker, Defender, Goalie  # noqa

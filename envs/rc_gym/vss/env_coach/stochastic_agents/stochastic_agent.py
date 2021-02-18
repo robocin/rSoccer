@@ -7,7 +7,7 @@ from rc_gym.Utils import normVt, normVx, normX
 from rc_gym.vss.env_coach.stochastic_agents.ddpg import DDPGActor
 
 
-class Attacker:
+class StochasticAgent:
 
     model = DDPGActor(40, 2)
 
@@ -19,17 +19,13 @@ class Attacker:
         self.robot_idx = robot_idx
         self.n_robots_blue = n_robots_blue
         self.n_robots_yellow = n_robots_yellow
-        self.device = torch.device('cpu')
+        self.device = torch.device('cuda')
         self.linear_speed_range = linear_speed_range
         self.v_wheel_deadzone = v_wheel_deadzone
         self.load_model()
 
     def load_model(self):
-        atk_path = os.path.dirname(os.path.realpath(__file__))\
-            + '/models/atk.pth'
-        atk_checkpoint = torch.load(atk_path, map_location=self.device)
-        self.model.load_state_dict(atk_checkpoint['state_dict_act'])
-        self.model.eval()
+        raise NotImplementedError
 
     def __call__(self, frame: Frame) -> np.ndarray:
         observation = self._frame_to_observations(frame)

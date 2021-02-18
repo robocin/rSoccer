@@ -4,12 +4,11 @@ from typing import Dict
 
 import gym
 import numpy as np
-
 from gym.spaces import Box, Discrete
 from rc_gym.Entities import Frame, Robot
 from rc_gym.Utils import normVt, normVx, normX
+from rc_gym.vss.env_coach import DeepAtk, DeepDef, DeepGK, DetGK
 from rc_gym.vss.vss_gym_base import VSSBaseEnv
-from rc_gym.vss.env_coach import DetGK, DeepAtk
 
 
 class VSSCoachEnv(VSSBaseEnv):
@@ -52,8 +51,6 @@ class VSSCoachEnv(VSSBaseEnv):
         Episode Termination:
             5 minutes match time
     """
-    det_gk = None
-    deep_atks = None
 
     def __init__(self):
         super().__init__(field_type=0, n_robots_blue=3, n_robots_yellow=3,
@@ -62,6 +59,7 @@ class VSSCoachEnv(VSSBaseEnv):
         self.versus = 0
         self.num_atk_faults = 0
         self.num_penalties = 0
+        self.stop_counter = 0
         low_obs_bound = [-1.2, -1.2, -1.25, -1.25]
         low_obs_bound += [-1.2, -1.2, -1, -1,
                           -1.25, -1.25, -1.2]*self.n_robots_blue
@@ -95,6 +93,10 @@ class VSSCoachEnv(VSSBaseEnv):
 
         self.deep_atks = [DeepAtk(robot_idx=i, **atk_params)
                           for i in range(self.n_robots_blue)]
+        self.deep_defs = [DeepDef(robot_idx=i, **atk_params)
+                          for i in range(self.n_robots_blue)]
+        self.deep_gks = [DeepGK(robot_idx=i, **atk_params)
+                         for i in range(self.n_robots_blue)]
         self.det_gk = [DetGK(i) for i in range(self.n_robots_blue)]
 
         print('Environment initialized')
@@ -102,6 +104,7 @@ class VSSCoachEnv(VSSBaseEnv):
     def reset(self):
         self.actions = None
         self.reward_shaping_total = None
+        self.stop_counter = 0
         self.versus = int(random.choice([0, 18, 21]))
         return super().reset()
 
@@ -150,9 +153,9 @@ class VSSCoachEnv(VSSBaseEnv):
             if role == 0:
                 v_wheel1, v_wheel2 = self.deep_atks[i](self.frame)
             elif role == 1:
-                v_wheel1, v_wheel2 = self.deep_atks[i](self.frame)
+                v_wheel1, v_wheel2 = self.deep_defs[i](self.frame)
             else:
-                v_wheel1, v_wheel2 = self.det_gk[i](self.frame)
+                v_wheel1, v_wheel2 = self.deep_gks[i](self.frame)
             commands.append(Robot(yellow=False, id=i, v_wheel1=v_wheel1,
                                   v_wheel2=v_wheel2))
 
@@ -163,9 +166,9 @@ class VSSCoachEnv(VSSBaseEnv):
             if role == 0:
                 v_wheel2, v_wheel1 = self.deep_atks[i](yellow_frame)
             elif role == 1:
-                v_wheel2, v_wheel1 = self.deep_atks[i](yellow_frame)
+                v_wheel2, v_wheel1 = self.deep_defs[i](yellow_frame)
             else:
-                v_wheel2, v_wheel1 = self.det_gk[i](yellow_frame)
+                v_wheel2, v_wheel1 = self.deep_gks[i](yellow_frame)
             commands.append(Robot(yellow=True, id=i, v_wheel1=v_wheel1,
                                   v_wheel2=v_wheel2))
 
@@ -205,12 +208,12 @@ class VSSCoachEnv(VSSBaseEnv):
     def is_atk_fault(self):
         atk_fault = False
         bx, by = self.frame.ball.x, self.frame.ball.y
-        if bx < -0.6 and abs(by) < 0.35:
+        if bx > 0.6 and abs(by) < 0.35:
             one_in_fault_area = False
             for i in range(self.n_robots_blue):
                 rx = self.frame.robots_blue[i].x
                 ry = self.frame.robots_blue[i].y
-                if rx < -0.6 and abs(ry) < 0.35:
+                if rx > 0.6 and abs(ry) < 0.35:
                     if (one_in_fault_area):
                         atk_fault = True
                     else:
@@ -220,17 +223,24 @@ class VSSCoachEnv(VSSBaseEnv):
     def is_penalty(self):
         penalty = False
         bx, by = self.frame.ball.x, self.frame.ball.y
-        if bx > 0.6 and abs(by) < 0.35:
+        if bx < -0.6 and abs(by) < 0.35:
             one_in_pen_area = False
             for i in range(self.n_robots_blue):
                 rx = self.frame.robots_blue[i].x
                 ry = self.frame.robots_blue[i].y
-                if rx > 0.6 and abs(ry) < 0.35:
+                if rx < -0.6 and abs(ry) < 0.35:
                     if (one_in_pen_area):
                         penalty = True
                     else:
                         one_in_pen_area = True
         return penalty
+
+    def is_ball_stopped(self):
+        same_x = self.frame.ball.x - self.last_frame.ball.x
+        same_x = same_x < 1.3
+        same_y = self.frame.ball.y - self.last_frame.ball.y
+        same_y = same_y < 1.3
+        return same_x and same_y
 
     def _calculate_reward_and_done(self):
         reward = 0
@@ -242,7 +252,6 @@ class VSSCoachEnv(VSSBaseEnv):
             self.reward_shaping_total = {'goal_score': 0, 'ball_grad': 0,
                                          'penalties': 0, 'faults': 0,
                                          'goals_blue': 0, 'goals_yellow': 0}
-
         # Check if goal ocurred
         if self.frame.ball.x > (self.field_params['field_length'] / 2):
             self.reward_shaping_total['goal_score'] += 1
@@ -256,11 +265,23 @@ class VSSCoachEnv(VSSBaseEnv):
             goal = True
         else:
             if self.is_penalty():
+                print('penalty')
                 self.num_penalties += 1
                 reward = -3.5
+                penalty = True
             if self.is_atk_fault():
+                print('fault')
                 self.num_atk_faults += 1
                 reward -= 1
+                fault = True
+
+            if self.is_ball_stopped():
+                self.stop_counter += 1
+                if self.stop_counter*self.time_step >= 10:
+                    fault = True
+                    self.stop_counter = 0
+            else:
+                self.stop_counter = 0
 
             if self.last_frame is not None:
                 # Calculate ball potential
