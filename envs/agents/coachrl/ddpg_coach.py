@@ -19,7 +19,7 @@ from gym.wrappers import FrameStack
 actor_lr = 0.0005
 critic_lr = 0.0003
 gamma = 0.99
-batch_size = 32
+batch_size = 128
 buffer_limit = 500000
 soft_tau = 0.005  # for target network soft update
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -46,7 +46,7 @@ class ReplayBuffer():
 
         return torch.tensor(s_lst, dtype=torch.float),\
             torch.tensor(a_lst, dtype=torch.float), \
-            torch.tensor(r_lst), \
+            torch.tensor(r_lst, dtype=torch.float), \
             torch.tensor(s_prime_lst, dtype=torch.float), \
             torch.tensor(done_mask_lst)
 
@@ -64,10 +64,10 @@ class Critic(nn.Module):
 
     def forward(self, state, action):
         x = torch.cat([state, action], 1)
-        x = F.relu(self.linear1(x))
-        x = F.relu(self.linear2(x))
-        x = self.linear3(x)
-        return x
+        x2 = F.relu(self.linear1(x))
+        x3 = F.relu(self.linear2(x2))
+        x4 = self.linear3(x3)
+        return x4
 
 
 class Actor(nn.Module):
@@ -79,10 +79,10 @@ class Actor(nn.Module):
         self.linear3 = nn.Linear(128, 3)
 
     def forward(self, state):
-        x = F.relu(self.linear1(state))
-        x = F.relu(self.linear2(x))
-        x = torch.tanh(self.linear3(x))
-        return x
+        x1 = F.relu(self.linear1(state))
+        x2 = F.relu(self.linear2(x1))
+        x3 = torch.tanh(self.linear3(x2))
+        return x3
 
     def get_action(self, state):
         state = torch.from_numpy(state).float().to(device)
@@ -139,7 +139,10 @@ def train(critic, critic_target, actor, actor_target,
     done_batch = done_batch.to(device)
 
     actor_loss = critic(state_batch, actor(state_batch))
-    actor_loss = -actor_loss.mean()
+    z = -torch.mean(actor_loss)
+    actor_optim.zero_grad()
+    z.backward()
+    actor_optim.step()
 
     next_actions_target = actor_target(next_state_batch)
     q_targets = critic_target(next_state_batch, next_actions_target)
@@ -151,10 +154,6 @@ def train(critic, critic_target, actor, actor_target,
     critic_loss.backward()
     critic_optim.step()
 
-    actor_optim.zero_grad()
-    actor_loss.backward()
-    actor_optim.step()
-
     for target_param, param in zip(critic_target.parameters(),
                                    critic.parameters()):
         target_param.data.copy_(
@@ -165,7 +164,7 @@ def train(critic, critic_target, actor, actor_target,
         target_param.data.copy_(
             target_param.data * (1.0 - soft_tau) + param.data * soft_tau)
 
-    return actor_loss.item(), critic_loss.item()
+    return z.item(), critic_loss.item()
 
 
 def find_nearest(array, value):
@@ -229,7 +228,7 @@ def main(load_model=False, test=False):
         total_steps = 0
         for n_epi in range(1000):
             s = env.reset()
-            s = s.__array__()
+            s = s.__array__(dtype=np.float32)
             done = False
             score = 0.0
             epi_step = 0
@@ -241,34 +240,34 @@ def main(load_model=False, test=False):
                     a = a[0]
                 action = mapped_action(a)
                 s_prime, r, done, info = env.step(action)
-                s_prime = s_prime.__array__()
+                s_prime = s_prime.__array__(dtype=np.float32)
                 done_mask = 0.0 if done else 1.0
                 memory.put((s, a, r, s_prime, done_mask))
                 score += r
                 s = s_prime
                 total_steps += 1
                 epi_step += 1
-                if memory.size() > batch_size and not test:
-                    act_loss, critic_loss = train(critic, critic_target, actor,
-                                                  actor_target, critic_optim,
-                                                  actor_optim, memory)
-                    wandb.log({'Loss/DDPG/Actor': act_loss,
-                               'Loss/DDPG/Critic': critic_loss},
-                              step=n_epi)
-                    if total_steps % 1000 == 0:
-                        torch.save(critic.state_dict(),
-                                   f'models/DDPG_CRITIC_{n_epi:06d}.model')
-                        torch.save(actor.state_dict(),
-                                   f'models/DDPG_ACTOR_{n_epi:06d}.model')
-                        torch.save(actor_optim.state_dict(),
-                                   f'models/DDPG_ACTOR_{n_epi:06d}.optim')
-                        torch.save(critic_optim.state_dict(),
-                                   f'models/DDPG_CRITIC_{n_epi:06d}.optim')
+            if memory.size() > batch_size and not test:
+                act_loss, critic_loss = train(critic, critic_target, actor,
+                                                actor_target, critic_optim,
+                                                actor_optim, memory)
+                wandb.log({'Loss/DDPG/Actor': act_loss,
+                            'Loss/DDPG/Critic': critic_loss},
+                            step=n_epi)
+            if n_epi % 10 == 0:
+                torch.save(critic.state_dict(),
+                            f'models/DDPG_CRITIC_{n_epi:06d}.model')
+                torch.save(actor.state_dict(),
+                            f'models/DDPG_ACTOR_{n_epi:06d}.model')
+                torch.save(actor_optim.state_dict(),
+                            f'models/DDPG_ACTOR_{n_epi:06d}.optim')
+                torch.save(critic_optim.state_dict(),
+                            f'models/DDPG_CRITIC_{n_epi:06d}.optim')
 
             if not test:
                 print(f'***********EPI {n_epi} ENDED***********')
                 print(f'Total: {score}')
-                print(f'Goal score: {score}')
+                print('Goal score: {}'.format(info['goal_score']))
                 print('*****************************************')
                 wandb.log({'Rewards/total': score,
                            'Rewards/goal_score': info['goal_score'],

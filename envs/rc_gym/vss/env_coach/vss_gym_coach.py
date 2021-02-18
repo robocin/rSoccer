@@ -287,10 +287,10 @@ class VSSCoachEnv(VSSBaseEnv):
 
                 reward += w_ball_grad * grad_ball_potential
 
-                self.reward_shaping_total['penalties'] += self.num_penalties
+                self.reward_shaping_total['penalties'] = self.num_penalties
                 self.reward_shaping_total['ball_grad'] += w_ball_grad \
                     * grad_ball_potential
-                self.reward_shaping_total['faults'] += self.num_atk_faults
+                self.reward_shaping_total['faults'] = self.num_atk_faults
 
         if goal or fault or penalty:
             initial_pos_frame: Frame = self._get_initial_positions_frame()
