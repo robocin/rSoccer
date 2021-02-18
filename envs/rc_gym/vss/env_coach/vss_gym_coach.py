@@ -265,12 +265,10 @@ class VSSCoachEnv(VSSBaseEnv):
             goal = True
         else:
             if self.is_penalty():
-                print('penalty')
                 self.num_penalties += 1
                 reward = -3.5
                 penalty = True
             if self.is_atk_fault():
-                print('fault')
                 self.num_atk_faults += 1
                 reward -= 1
                 fault = True
