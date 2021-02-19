@@ -131,7 +131,8 @@ def play(params, net, device, exp_queue, agent_env, test, collected_samples, fin
         print(f"Started from sample {collected_samples.value}.")
         states = agent_env.reset()
         matches_played = 0
-        epi_rewards = {f'robot_{i}': 0 for i in range(agent_env.n_robots_control)}
+        epi_rewards = {f'robot_{i}': 0 for i in range(
+            agent_env.n_robots_control)}
         then = time.time()
         eval_freq_matches = params['eval_freq_matches']
         evaluation = False
@@ -170,6 +171,9 @@ def play(params, net, device, exp_queue, agent_env, test, collected_samples, fin
                     log_dict[f"rw/robot_{i}/total"] = epi_rewards[f'robot_{i}']
                     log_dict[f"rw/robot_{i}/move"] = info[f'robot_{i}']['move']
                     log_dict[f"rw/robot_{i}/energy"] = info[f'robot_{i}']['energy']
+                    if 'dist_to_goal' in info:
+                        log_dict[f"rw/robot_{i}/dist_to_goal"] = info[
+                            f'robot_{i}']['dist_to_goal']
                 wandb.log(log_dict)
                 print(f'<======Match {matches_played}======>')
                 print(f'-------Rewards:')
