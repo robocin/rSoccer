@@ -429,7 +429,7 @@ class VSSMADef(VSSMAOpp):
         w_move = 0.2
         w_ball_grad = 0.8
         w_energy = 2e-4
-        w_distance = -0.1
+        w_distance = -0.01
 
         if self.reward_shaping_total is None:
             self.reward_shaping_total = {'goal_score': 0, 'ball_grad': 0,
