@@ -155,7 +155,7 @@ class VSSCoachEnv(VSSBaseEnv):
             elif role == 1:
                 v_wheel1, v_wheel2 = self.deep_defs[i](self.frame)
             else:
-                v_wheel1, v_wheel2 = self.deep_gks[i](self.frame)
+                v_wheel1, v_wheel2 = self.det_gk[i](self.frame)
             commands.append(Robot(yellow=False, id=i, v_wheel1=v_wheel1,
                                   v_wheel2=v_wheel2))
 
