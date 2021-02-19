@@ -19,7 +19,7 @@ from gym.wrappers import FrameStack
 actor_lr = 0.0005
 critic_lr = 0.0003
 gamma = 0.99
-batch_size = 128
+batch_size = 32
 buffer_limit = 500000
 soft_tau = 0.005  # for target network soft update
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -247,13 +247,13 @@ def main(load_model=False, test=False):
                 s = s_prime
                 total_steps += 1
                 epi_step += 1
-            if memory.size() > batch_size and not test:
-                act_loss, critic_loss = train(critic, critic_target, actor,
-                                                actor_target, critic_optim,
-                                                actor_optim, memory)
-                wandb.log({'Loss/DDPG/Actor': act_loss,
-                            'Loss/DDPG/Critic': critic_loss},
-                            step=n_epi)
+                if memory.size() > batch_size and not test:
+                    act_loss, critic_loss = train(critic, critic_target, actor,
+                                                    actor_target, critic_optim,
+                                                    actor_optim, memory)
+                    wandb.log({'Loss/DDPG/Actor': act_loss,
+                                'Loss/DDPG/Critic': critic_loss},
+                                step=total_steps)
             if n_epi % 10 == 0:
                 torch.save(critic.state_dict(),
                             f'models/DDPG_CRITIC_{n_epi:06d}.model')
@@ -273,7 +273,7 @@ def main(load_model=False, test=False):
                            'Rewards/goal_score': info['goal_score'],
                            'Rewards/num_penalties': info['penalties'],
                            'Rewards/num_faults': info['faults'],
-                           }, step=n_epi)
+                           }, step=total_steps)
 
         env.close()
     except Exception as e:
