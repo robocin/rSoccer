@@ -171,7 +171,7 @@ def play(params, net, device, exp_queue, agent_env, test, collected_samples, fin
                     log_dict[f"rw/robot_{i}/total"] = epi_rewards[f'robot_{i}']
                     log_dict[f"rw/robot_{i}/move"] = info[f'robot_{i}']['move']
                     log_dict[f"rw/robot_{i}/energy"] = info[f'robot_{i}']['energy']
-                    if 'dist_to_goal' in info:
+                    if 'dist_to_goal' in info[f'robot_{i}'].keys():
                         log_dict[f"rw/robot_{i}/dist_to_goal"] = info[
                             f'robot_{i}']['dist_to_goal']
                 wandb.log(log_dict)
