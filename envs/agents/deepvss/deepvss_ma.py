@@ -77,7 +77,7 @@ if __name__ == "__main__":
         sys.stdout.flush()
 
         n_robots = args.n_agents
-        env = gym.make('VSSMAOpp-v0', n_robots_control=n_robots,)
+        env = gym.make('VSSMADef-v0', n_robots_control=n_robots)
         state_shape, action_shape = env.observation_space, env.action_space
         model_params['state_shape'] = state_shape
         model_params['action_shape'] = action_shape

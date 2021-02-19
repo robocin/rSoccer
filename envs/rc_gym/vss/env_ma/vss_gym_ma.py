@@ -172,7 +172,7 @@ class VSSMAEnv(VSSBaseEnv):
 
         return commands
 
-    def __ball_grad(self):
+    def _ball_grad(self):
         '''Calculate ball potential gradient
         Difference of potential of the ball in time_step seconds.
         '''
@@ -203,7 +203,7 @@ class VSSMAEnv(VSSBaseEnv):
 
         return grad_ball_potential
 
-    def __move_reward(self, robot_idx: int):
+    def _move_reward(self, robot_idx: int):
         '''Calculate Move to ball reward
 
         Cosine between the robot vel vector and the vector robot -> ball.
@@ -223,7 +223,7 @@ class VSSMAEnv(VSSBaseEnv):
         move_reward = np.clip(move_reward / 0.4, -1.0, 1.0)
         return move_reward
 
-    def __energy_penalty(self, robot_idx: int):
+    def _energy_penalty(self, robot_idx: int):
         '''Calculates the energy penalty'''
 
         en_penalty_1 = abs(self.sent_commands[robot_idx].v_wheel1)
@@ -410,3 +410,76 @@ class VSSMAOpp(VSSMAEnv):
                                   v_wheel2=v_wheel2))
 
         return commands
+
+
+class VSSMADef(VSSMAOpp):
+
+    def __init__(self, n_robots_control=2):
+        super().__init__(n_robots_control=n_robots_control)
+
+    def __dist_bar_reward(self, robot_idx: int):
+        goal = np.array([-self.field_params['field_length'] / 2 + 0.1, 0])
+        robot = self.frame.robots_blue[robot_idx]
+        robot_pos = np.array([robot.x, robot.y])
+        return np.linalg.norm(goal - robot_pos)
+
+    def _calculate_reward_and_done(self):
+        reward = {f'robot_{i}': 0 for i in range(self.n_robots_control)}
+        goal = False
+        w_move = 0.2
+        w_ball_grad = 0.8
+        w_energy = 2e-4
+        w_distance = -0.1
+
+        if self.reward_shaping_total is None:
+            self.reward_shaping_total = {'goal_score': 0, 'ball_grad': 0,
+                                         'goals_blue': 0, 'goals_yellow': 0}
+            for i in range(self.n_robots_control):
+                self.reward_shaping_total[f'robot_{i}'] = {
+                    'move': 0, 'energy': 0, 'dist_to_goal': 0}
+
+        # Check if goal ocurred
+        if self.frame.ball.x > (self.field_params['field_length'] / 2):
+            self.reward_shaping_total['goal_score'] += 1
+            self.reward_shaping_total['goals_blue'] += 1
+            for i in range(self.n_robots_control):
+                reward[f'robot_{i}'] = 10
+            goal = True
+        elif self.frame.ball.x < -(self.field_params['field_length'] / 2):
+            self.reward_shaping_total['goal_score'] -= 1
+            self.reward_shaping_total['goals_yellow'] += 1
+            for i in range(self.n_robots_control):
+                reward[f'robot_{i}'] = -50
+            goal = True
+        else:
+
+            if self.last_frame is not None:
+                # Calculate ball potential
+                grad_ball_potential = self._ball_grad()
+                self.reward_shaping_total['ball_grad'] += w_ball_grad * grad_ball_potential  # noqa
+                for idx in range(self.n_robots_control):
+                    # Calculate Move ball
+                    move_reward = self._move_reward(robot_idx=idx)
+                    # Calculate Energy penalty
+                    energy_penalty = self._energy_penalty(robot_idx=idx)
+                    dist_to_bar = self.__dist_bar_reward(robot_idx=idx)
+
+                    rew = w_ball_grad * grad_ball_potential \
+                        + w_move * move_reward \
+                        + w_energy * energy_penalty \
+                        + w_distance * dist_to_bar
+
+                    reward[f'robot_{idx}'] += rew
+                    self.reward_shaping_total[f'robot_{idx}']['move'] += w_move * move_reward  # noqa
+                    self.reward_shaping_total[f'robot_{idx}']['energy'] += w_energy * energy_penalty  # noqa
+                    self.reward_shaping_total[f'robot_{idx}']['dist_to_goal'] += w_distance * dist_to_bar  # noqa
+
+        if goal:
+            initial_pos_frame: Frame = self._get_initial_positions_frame()
+            self.rsim.reset(initial_pos_frame)
+            self.frame = self.rsim.get_frame()
+            self.last_frame = None
+
+        done = self.steps * self.time_step >= 300
+
+        return reward, done
