@@ -23,3 +23,7 @@ register(id='VSSMA-v0',
 register(id='VSSMAOpp-v0',
          entry_point='rc_gym.vss:VSSMAOpp',
          )
+
+register(id='VSSMADef-v0',
+         entry_point='rc_gym.vss:VSSMADef',
+         )
