@@ -6,7 +6,7 @@ MODEL_HYPERPARAMS = {  # DDPG
     'act_type': 'linear',
     'crt_type': 'linear',
     'save_model_frequency': 500000,
-    'replay_size': 5000000,
+    'replay_size': 500000,
     'replay_initial': 100000,
     'target_net_sync': 1 - 1e-3,
     'epsilon_frames': 10 ** 5,
