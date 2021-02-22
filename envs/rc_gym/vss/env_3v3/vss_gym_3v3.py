@@ -1,5 +1,6 @@
 import math
 import random
+from rc_gym.Utils.Utils import OrnsteinUhlenbeckAction
 from typing import Dict
 
 import gym
@@ -61,8 +62,8 @@ class VSS3v3Env(VSSBaseEnv):
         high_obs_bound = [1.2, 1.2, 1.25, 1.25]
         high_obs_bound += [1.2, 1.2, 1, 1, 1.25, 1.25, 1.2]*3
         high_obs_bound += [1.2, 1.2, 1.25, 1.25, 1.2]*3
-        low_obs_bound = np.array(low_obs_bound)
-        high_obs_bound = np.array(high_obs_bound)
+        low_obs_bound = np.array(low_obs_bound, dtype=np.float32)
+        high_obs_bound = np.array(high_obs_bound, dtype=np.float32)
 
         self.action_space = gym.spaces.Box(low=-1, high=1,
                                            shape=(2, ), dtype=np.float32)
@@ -76,11 +77,19 @@ class VSS3v3Env(VSSBaseEnv):
         self.reward_shaping_total = None
         self.v_wheel_deadzone = 0.05
 
+        self.ou_actions = []
+        for i in range(self.n_robots_blue + self.n_robots_yellow):
+            self.ou_actions.append(
+                OrnsteinUhlenbeckAction(self.action_space, dt=self.time_step)
+            )
+
         print('Environment initialized')
 
     def reset(self):
         self.actions = None
         self.reward_shaping_total = None
+        for ou in self.ou_actions:
+            ou.reset()
 
         return super().reset()
 
@@ -129,14 +138,14 @@ class VSS3v3Env(VSSBaseEnv):
                               v_wheel2=v_wheel2))
 
         # Send random commands to the other robots
-        for i in range(1, 3):
-            actions = self.action_space.sample()
+        for i in range(1, self.n_robots_blue):
+            actions = self.ou_actions[i].sample()
             self.actions[i] = actions
             v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions)
             commands.append(Robot(yellow=False, id=i, v_wheel1=v_wheel1,
                                   v_wheel2=v_wheel2))
-        for i in range(3):
-            actions = self.action_space.sample()
+        for i in range(self.n_robots_yellow):
+            actions = self.ou_actions[self.n_robots_blue+i].sample()
             v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions)
             commands.append(Robot(yellow=True, id=i, v_wheel1=v_wheel1,
                                   v_wheel2=v_wheel2))
@@ -286,32 +295,31 @@ class VSS3v3Env(VSSBaseEnv):
 
         def same_position_ref(x, y, x_ref, y_ref, radius):
             if x >= x_ref - radius and x <= x_ref + radius and \
-            y >= y_ref - radius and y <= y_ref + radius:
+                    y >= y_ref - radius and y <= y_ref + radius:
                 return True
             return False
 
         radius_ball = 0.2
         radius_robot = 0.2
         same_pos = True
-        
 
         while same_pos:
             for i in range(len(agents)):
                 same_pos = False
-                while same_position_ref(agents[i].x,agents[i].y,pos_frame.ball.x, pos_frame.ball.y, radius_ball):
+                while same_position_ref(agents[i].x, agents[i].y, pos_frame.ball.x, pos_frame.ball.y, radius_ball):
                     agents[i] = Robot(x=x(), y=y(), theta=theta())
                     same_pos = True
                 for j in range(i + 1, len(agents)):
                     while same_position_ref(agents[i].x, agents[i].y, agents[j].x, agents[j].y, radius_robot):
                         agents[i] = Robot(x=x(), y=y(), theta=theta())
                         same_pos = True
-                        
+
         pos_frame.robots_blue[0] = agents[0]
         pos_frame.robots_blue[1] = agents[1]
         pos_frame.robots_blue[2] = agents[2]
         pos_frame.robots_yellow[0] = agents[3]
         pos_frame.robots_yellow[1] = agents[4]
-        pos_frame.robots_yellow[2] = agents[5] 
+        pos_frame.robots_yellow[2] = agents[5]
 
         return pos_frame
 
@@ -319,14 +327,17 @@ class VSS3v3Env(VSSBaseEnv):
         left_wheel_speed = actions[0] * self.rsim.linear_speed_range
         right_wheel_speed = actions[1] * self.rsim.linear_speed_range
 
+        left_wheel_speed, right_wheel_speed = np.clip(
+            (left_wheel_speed, right_wheel_speed),
+            -self.rsim.linear_speed_range,
+            self.rsim.linear_speed_range
+        )
+
         # Deadzone
         if -self.v_wheel_deadzone < left_wheel_speed < self.v_wheel_deadzone:
             left_wheel_speed = 0
 
         if -self.v_wheel_deadzone < right_wheel_speed < self.v_wheel_deadzone:
             right_wheel_speed = 0
-
-        left_wheel_speed, right_wheel_speed = np.clip(
-            (left_wheel_speed, right_wheel_speed), -2.6, 2.6)
 
         return left_wheel_speed, right_wheel_speed
