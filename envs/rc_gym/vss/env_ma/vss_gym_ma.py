@@ -13,7 +13,7 @@ from rc_gym.vss.vss_gym_base import VSSBaseEnv
 
 
 class VSSMAEnv(VSSBaseEnv):
-    """This environment controls a single robot in a VSS soccer League 3v3 match 
+    """This environment controls N robots in a VSS soccer League 3v3 match 
 
 
         Description:
@@ -38,16 +38,19 @@ class VSSMAEnv(VSSBaseEnv):
             28 + (5 * i)    id i Yellow Robot Vy
             29 + (5 * i)    id i Yellow Robot v_theta
         Actions:
-            Type: Box(2, )
-            Num     Action
-            0       id 0 Blue Left Wheel Speed  (%)
-            1       id 0 Blue Right Wheel Speed (%)
+            Type: Box(N, 2)
+            For each blue robot in control:
+                Num     Action
+                0       Left Wheel Speed  (%)
+                1       Right Wheel Speed (%)
         Reward:
             Sum of Rewards:
-                Goal
-                Ball Potential Gradient
-                Move to Ball
-                Energy Penalty
+                For all robots:
+                    Goal
+                    Ball Potential Gradient
+                Individual:
+                    Move to Ball
+                    Energy Penalty
         Starting State:
             Randomized Robots and Ball initial Position
         Episode Termination:
@@ -58,21 +61,14 @@ class VSSMAEnv(VSSBaseEnv):
         super().__init__(field_type=0, n_robots_blue=3, n_robots_yellow=3,
                          time_step=0.032)
 
-        low_obs_bound = [-1.2, -1.2, -1.25, -1.25]
-        low_obs_bound += [-1.2, -1.2, -1, -1, -1.25, -1.25, -1.2]*3
-        low_obs_bound += [-1.2, -1.2, -1.25, -1.25, -1.2]*3
-        high_obs_bound = [1.2, 1.2, 1.25, 1.25]
-        high_obs_bound += [1.2, 1.2, 1, 1, 1.25, 1.25, 1.2]*3
-        high_obs_bound += [1.2, 1.2, 1.25, 1.25, 1.2]*3
-        low_obs_bound = np.array(low_obs_bound)
-        high_obs_bound = np.array(high_obs_bound)
+        obs_bound = [1.2, 1.2, 1.25, 1.25]
+        obs_bound += [1.2, 1.2, 1, 1, 1.25, 1.25, 1.2]*3
+        obs_bound += [1.2, 1.2, 1.25, 1.25, 1.2]*3
+        obs_bound = np.array(obs_bound, dtype=np.float32)
         self.n_robots_control = n_robots_control
-        self.action_space = gym.spaces.Box(low=-1, high=1,
-                                           shape=(2, ), dtype=np.float32)
-        self.observation_space = gym.spaces.Box(low=low_obs_bound,
-                                                high=high_obs_bound,
-                                                shape=(len(low_obs_bound), ),
-                                                dtype=np.float32)
+        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(2, ))
+        self.observation_space = gym.spaces.Box(low=-obs_bound,
+                                                high=obs_bound)
 
         # Initialize Class Atributes
         self.previous_ball_potential = None
