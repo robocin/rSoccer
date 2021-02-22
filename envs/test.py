@@ -6,10 +6,12 @@
 # #
 # '''
 
+from rc_gym.Utils.Utils import OrnsteinUhlenbeckAction
 import gym
 import rc_gym
 import numpy as np
 import time
+import rc_gym.Utils
 
 # Using penalty env
 env = gym.make('VSS3v3-v0')
@@ -77,8 +79,9 @@ for i in range(10):
     # print_with_description(next_state)
     epi_rew = 0.
     while not done:
-        action = np.array([0.1, 0.])
+        action = np.array([0., 0.])
         # action = env.action_space.sample()
+        # time.sleep(0.1)
         next_state, reward, done, _ = env.step(action)
         epi_rew += reward
         # print_with_description(next_state)
