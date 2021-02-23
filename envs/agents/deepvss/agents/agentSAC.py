@@ -1,19 +1,21 @@
 import os
 import shutil
-import time
 import traceback
-
+import time
 import numpy as np
 import ptan
 import torch
-import torch.autograd as autograd
-from lib import common, ddpg_model
-from ptan.experience import ExperienceSourceFirstLast
+import torch.nn as nn
+import torch.nn.functional as F
 from tensorboardX import SummaryWriter
+
+from lib import common, sac_model
 
 gradMax = 0
 gradAvg = 0
-Variable = lambda *args, **kwargs: autograd.Variable(*args, **kwargs).cuda()
+
+#! is_yellow presente na função play do sac
+# ? nao sabiamos se era pra remover ou nao, entao deixamos
 
 
 def save_checkpoint(state, is_best, filename="checkpoint.pth"):
@@ -56,19 +58,34 @@ def avg_rewards(exp_buffer, total):
     return reward
 
 
-def calc_loss_ddpg_critic(
+def calc_loss_sac_actor(min_qf_pi, log_pi, model_params):
+    alpha = model_params["alpha"]
+
+    policy_loss = ((alpha * log_pi) - min_qf_pi).mean()
+    return policy_loss
+
+
+def calc_loss_sac_critic(
+    model_params,
     batch,
     crt_net,
-    tgt_act_net,
+    act_net,
     tgt_crt_net,
-    gamma,
     cuda=False,
     cuda_async=False,
-    per=False,
-    mem_w=None,
 ):
     states, actions, rewards, dones, next_states = common.unpack_batch(batch)
-    mem_loss = None
+
+    (
+        state_batch,
+        action_batch,
+        reward_batch,
+        mask_batch,
+        next_state_batch,
+    ) = common.unpack_batch(batch)
+
+    alpha = model_params["alpha"]
+    gamma = model_params["gamma"]
 
     states_v = torch.tensor(states, dtype=torch.float32)
     next_states_v = torch.tensor(next_states, dtype=torch.float32)
@@ -82,50 +99,57 @@ def calc_loss_ddpg_critic(
         actions_v = actions_v.cuda(non_blocking=cuda_async)
         rewards_v = rewards_v.cuda(non_blocking=cuda_async)
         done_mask = done_mask.cuda(non_blocking=cuda_async)
+    else:
+        state_batch = torch.FloatTensor(state_batch)
+        next_state_batch = torch.FloatTensor(next_state_batch)
+        action_batch = torch.FloatTensor(action_batch)
+        reward_batch = torch.FloatTensor(reward_batch).unsqueeze(1)
+        mask_batch = torch.BoolTensor(mask_batch)
 
-    # critic
-    q_v = crt_net(states_v, actions_v)
-    last_act_v = tgt_act_net(next_states_v)
-    q_last_v = tgt_crt_net(next_states_v, last_act_v)
-    q_last_v[done_mask] = 0.0
-    q_ref_v = rewards_v.unsqueeze(dim=-1) + q_last_v * gamma
-    critic_loss_v = (q_v - q_ref_v.detach()).pow(2)
-    if per:
-        mem_w = Variable(torch.FloatTensor(mem_w))
-        critic_loss_v = critic_loss_v * mem_w
-        mem_loss = critic_loss_v
-    critic_loss_v = critic_loss_v.mean()
-    return critic_loss_v, mem_loss
+    with torch.no_grad():
+        next_state_action, next_state_log_pi, _ = act_net.sample(
+            next_state_batch
+        )
+        qf1_next_target, qf2_next_target = tgt_crt_net.target_model(
+            next_state_batch, next_state_action
+        )
+        min_qf_next_target = (
+            torch.min(qf1_next_target, qf2_next_target)
+            - alpha * next_state_log_pi
+        )
+        min_qf_next_target[mask_batch] = 0.0
+        next_q_value = reward_batch + gamma * (min_qf_next_target)
 
+    # Two Q-functions to mitigate
 
-def calc_loss_ddpg_actor(batch, act_net, crt_net, cuda=False, cuda_async=False):
-    states, actions, rewards, dones, next_states = common.unpack_batch(batch)
+    # positive bias in the policy improvement step
+    qf1, qf2 = crt_net(state_batch, action_batch)
 
-    states_v = torch.tensor(states, dtype=torch.float32)
-    next_states_v = torch.tensor(next_states, dtype=torch.float32)
-    actions_v = torch.tensor(actions, dtype=torch.float32)
-    rewards_v = torch.tensor(rewards, dtype=torch.float32)
-    done_mask = torch.BoolTensor(dones)
+    # JQ = 𝔼(st,at)~D[0.5(Q1(st,at) - r(st,at) - γ(𝔼st+1~p[V(st+1)]))^2]
+    qf1_loss = F.mse_loss(qf1, next_q_value)
 
-    if cuda:
-        states_v = states_v.cuda(non_blocking=cuda_async)
-        next_states_v = next_states_v.cuda(non_blocking=cuda_async)
-        actions_v = actions_v.cuda(non_blocking=cuda_async)
-        rewards_v = rewards_v.cuda(non_blocking=cuda_async)
-        done_mask = done_mask.cuda(non_blocking=cuda_async)
+    # JQ = 𝔼(st,at)~D[0.5(Q1(st,at) - r(st,at) - γ(𝔼st+1~p[V(st+1)]))^2]
+    qf2_loss = F.mse_loss(qf2, next_q_value)
 
-    # actor
-    cur_actions_v = act_net(states_v)
-    actor_loss_v = -crt_net(states_v, cur_actions_v)
-    actor_loss_v = actor_loss_v.mean()
-    return actor_loss_v
+    pi, log_pi, _ = act_net.sample(state_batch)
+
+    qf1_pi, qf2_pi = crt_net(state_batch, pi)
+    min_qf_pi = torch.min(qf1_pi, qf2_pi)
+
+    # Jπ = 𝔼st∼D,εt∼N[α * logπ(f(εt;st)|st) − Q(st,f(εt;st))]
+    policy_loss = ((alpha * log_pi) - min_qf_pi).mean()
+
+    return qf1_loss, qf2_loss, log_pi, min_qf_pi
 
 
 def create_actor_model(model_params, state_shape, action_shape, device):
-    act_net = ddpg_model.DDPG_MODELS_ACTOR[model_params["act_type"]](
+    act_net = sac_model.GaussianPolicy(
         model_params["state_shape"].shape[0],
         model_params["action_shape"].shape[0],
     ).to(device)
+
+    print(act_net)
+
     return act_net
 
 
@@ -148,13 +172,12 @@ def play(
 ):
 
     try:
-        agent = ddpg_model.AgentDDPG(
+        agent = sac_model.AgentSAC(
             net,
             device=device,
             ou_teta=params["ou_teta"],
             ou_sigma=params["ou_sigma"],
         )
-
         print(f"Started from sample {collected_samples.value}.")
         state = agent_env.reset()
         matches_played = 0
@@ -244,24 +267,15 @@ def train(
         run_name = model_params["run_name"]
         data_path = model_params["data_path"]
 
-        exp_buffer = (
-            common.PersistentExperienceReplayBuffer(
-                experience_source=None, buffer_size=model_params["replay_size"]
-            )
-            if not model_params["per"]
-            else common.PersistentExperiencePrioritizedReplayBuffer(
-                experience_source=None,
-                buffer_size=model_params["replay_size"],
-                alpha=model_params["per_alpha"],
-                beta=model_params["per_beta"],
-            )
+        exp_buffer = common.PersistentExperienceReplayBuffer(
+            experience_source=None, buffer_size=model_params["replay_size"]
         )
         exp_buffer.set_state_action_format(
             state_format=model_params["state_format"],
             action_format=model_params["action_format"],
         )
 
-        crt_net = ddpg_model.DDPG_MODELS_CRITIC[model_params["crt_type"]](
+        crt_net = sac_model.QNetwork(
             model_params["state_shape"].shape[0],
             model_params["action_shape"].shape[0],
         ).to(device)
@@ -269,14 +283,26 @@ def train(
             act_net.parameters(), lr=model_params["learning_rate"]
         )
         optimizer_crt = torch.optim.Adam(
-            crt_net.parameters(), lr=model_params["learning_rate"]
+            crt_net.parameters(),
+            lr=model_params["learning_rate"],
+            weight_decay=model_params["weight_decay"],
         )
-        tgt_act_net = ptan.agent.TargetNet(act_net)
         tgt_crt_net = ptan.agent.TargetNet(crt_net)
+        if model_params["automatic_entropy_tuning"]:
+            target_entropy = -torch.prod(
+                torch.Tensor(model_params["action_shape"].shape).to(device)
+            ).item()
+            log_alpha = torch.zeros(1, requires_grad=True, device=device)
+            alpha_optim = torch.optim.Adam(
+                [log_alpha], lr=model_params["learning_rate"]
+            )
+
+        alpha = model_params["alpha"]
+        gamma = model_params["gamma"]
+        sync_freq = model_params["sync_freq"]
 
         act_net.train(True)
         crt_net.train(True)
-        tgt_act_net.target_model.train(True)
         tgt_crt_net.target_model.train(True)
 
         collected_samples = 0
@@ -293,9 +319,6 @@ def train(
 
                 reward_avg = best_reward = checkpoint["reward"]
                 crt_net.load_state_dict(checkpoint["state_dict_crt"])
-                tgt_act_net.target_model.load_state_dict(
-                    checkpoint["tgt_act_state_dict"]
-                )
                 tgt_crt_net.target_model.load_state_dict(
                     checkpoint["tgt_crt_state_dict"]
                 )
@@ -324,7 +347,7 @@ def train(
                 if load:
                     print("=> Loading experiences from: " + exp + "...")
                     exp_buffer.load_exps_from_file(exp)
-                    print("%d experiences loaded" % (len(exp_buffer)))
+                    print("%d experiences loaded" % (exp_buffer.__len__()))
 
         target_net_sync = model_params["target_net_sync"]
         replay_initial = model_params["replay_initial"]
@@ -337,23 +360,23 @@ def train(
         writer = SummaryWriter(log_dir=writer_path + "/train")
         tracker = common.RewardTracker(writer)
 
-        actor_loss = 0.0
-        critic_loss = 0.0
+        policy_loss = 0.0
+        qf1_loss = 0.0
+        qf2_loss = 0.0
+        alpha_loss = 0.0
         last_loss_average = 0.0
+        first = True
 
         # training loop:
-        print("Training started.")
         while not finish_event.is_set():
             new_samples = 0
 
             # print("get qsize: %d" % size)
-            rewards_gg = [0 for _ in range(0, max(1, int(queue_max_size)))]
-            for i in range(0, max(1, int(queue_max_size))):
+            for _ in range(0, max(1, int(queue_max_size))):
                 exp = exp_queue.get()
                 if exp is None:
                     break
                 exp_buffer._add(exp)
-                rewards_gg[i] = exp.reward
                 new_samples += 1
 
             if len(exp_buffer) < replay_initial:
@@ -363,58 +386,54 @@ def train(
 
             # training loop:
             while exp_queue.qsize() < queue_max_size / 2:
-                mem_w = None
-                if not model_params["per"]:
-                    batch = exp_buffer.sample(batch_size)
-                else:
-                    batch, mem_idxs, mem_w = exp_buffer.sample(batch_size)
-                optimizer_crt.zero_grad()
-                optimizer_act.zero_grad()
+                if first:
+                    print("Training started.")
+                    print(crt_net)
+                    print(act_net)
+                    first = False
 
-                crt_loss_v, mem_loss = calc_loss_ddpg_critic(
+                batch = exp_buffer.sample(batch_size=batch_size)
+
+                qf1_loss, qf2_loss, log_pi, min_qf_pi = calc_loss_sac_critic(
+                    model_params,
                     batch,
                     crt_net,
-                    tgt_act_net.target_model,
-                    tgt_crt_net.target_model,
-                    gamma=model_params["gamma"],
-                    cuda=(device.type == "cuda"),
-                    cuda_async=True,
-                    per=model_params["per"],
-                    mem_w=mem_w,
-                )
-                crt_loss_v.backward()
-                optimizer_crt.step()
-                if model_params["per"]:
-                    mem_loss = mem_loss.detach().cpu().numpy()[0]
-                    exp_buffer.update_priorities(mem_idxs, mem_loss)
-
-                act_loss_v = calc_loss_ddpg_actor(
-                    batch,
                     act_net,
-                    crt_net,
+                    tgt_crt_net.target_model,
                     cuda=(device.type == "cuda"),
                     cuda_async=True,
                 )
-                act_loss_v.backward()
-                optimizer_act.step()
 
+                optimizer_crt.zero_grad()
+                qf1_loss.backward()
+                optimizer_crt.step()
+
+                optimizer_crt.zero_grad()
+                qf2_loss.backward()
+                optimizer_crt.step()
+
+                if model_params["automatic_entropy_tuning"]:
+                    alpha_loss = -(
+                        log_alpha * (log_pi + target_entropy).detach()
+                    ).mean()
+
+                    alpha_optim.zero_grad()
+                    alpha_loss.backward()
+                    alpha_optim.step()
+
+                    alpha = log_alpha.exp()
+                    alpha_tlogs = alpha.clone()  # For TensorboardX logs
+                else:
+                    alpha_loss = torch.tensor(0.0).to(device)
+                    alpha_tlogs = torch.tensor(alpha)  # For TensorboardX logs
                 processed_samples += batch_size
-                critic_loss += crt_loss_v.item()
-                actor_loss += act_loss_v.item()
 
-            # print("|\n")
-
-            # soft sync
-
-            if target_net_sync >= 1:
-                if processed_samples >= next_net_sync:
-                    next_net_sync = processed_samples + target_net_sync
-                    tgt_act_net.sync()
-                    tgt_crt_net.sync()
-            else:
-                tgt_act_net.alpha_sync(alpha=target_net_sync)  # 1 - 1e-3
-                tgt_crt_net.alpha_sync(alpha=target_net_sync)
-
+                policy_loss = calc_loss_sac_actor(
+                    min_qf_pi, log_pi, model_params
+                )
+                optimizer_act.zero_grad()
+                policy_loss.backward()
+                optimizer_act.step()
             if processed_samples >= next_check_point:
                 next_check_point = (
                     processed_samples + model_params["save_model_frequency"]
@@ -434,12 +453,11 @@ def train(
                     )
                     save_checkpoint(
                         {
-                            "model_type": "ddpg",
+                            "model_type": "sac",
                             "collected_samples": collected_samples,
                             "processed_samples": processed_samples,
                             "state_dict_act": act_net.state_dict(),
                             "state_dict_crt": crt_net.state_dict(),
-                            "tgt_act_state_dict": tgt_act_net.target_model.state_dict(),
                             "tgt_crt_state_dict": tgt_crt_net.target_model.state_dict(),
                             "reward": reward_avg,
                             "optimizer_act": optimizer_act.state_dict(),
@@ -448,36 +466,43 @@ def train(
                         is_best,
                         "model/" + run_name + ".pth",
                     )
-
+                    if sync_freq == 0:
+                        if target_net_sync >= 1:
+                            if processed_samples >= next_net_sync:
+                                next_net_sync = (
+                                    processed_samples + target_net_sync
+                                )
+                                tgt_crt_net.sync()
+                        else:
+                            tgt_crt_net.alpha_sync(alpha=target_net_sync)
+                        sync_freq = model_params["sync_freq"]
+                    else:
+                        sync_freq -= 1
                     if processed_samples > last_loss_average:
-                        actor_loss = (
+                        policy_loss = (
                             batch_size
-                            * actor_loss
-                            / (processed_samples - last_loss_average)
-                        )
-                        critic_loss = (
-                            batch_size
-                            * critic_loss
+                            * policy_loss
                             / (processed_samples - last_loss_average)
                         )
                         print(
                             "avg_reward:%.4f, avg_loss:%f"
-                            % (reward_avg, actor_loss)
+                            % (reward_avg, policy_loss)
                         )
-                        tracker.track_training(
+                        tracker.track_training_sac(
                             processed_samples,
                             reward_avg,
-                            actor_loss,
-                            critic_loss,
+                            policy_loss.item(),
+                            qf1_loss.item(),
+                            qf2_loss.item(),
+                            alpha_tlogs.item(),
+                            alpha_loss.item(),
                         )
-                        actor_loss = 0.0
-                        critic_loss = 0.0
+                        policy_loss = 0.0
                         last_loss_average = processed_samples
 
-                    exp_buffer.sync_exps_to_file(
-                        data_path + "/buffer/" + run_name + ".exb"
-                    )
-
+                        exp_buffer.sync_exps_to_file(
+                            data_path + "/buffer/" + run_name + ".exb"
+                        )
                 except Exception:
                     with open(run_name + ".err", "a") as errfile:
                         errfile.write("!!! Exception caught on training !!!")
