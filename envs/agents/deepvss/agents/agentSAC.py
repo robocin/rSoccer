@@ -148,8 +148,6 @@ def create_actor_model(model_params, state_shape, action_shape, device):
         model_params["action_shape"].shape[0],
     ).to(device)
 
-    print(act_net)
-
     return act_net
 
 
@@ -188,7 +186,7 @@ def play(
         steps = 0
 
         while not finish_event.is_set():
-            action = agent(state, steps)
+            action = agent([state], steps)
             next_state, reward, done, info = agent_env.step(action)
             steps += 1
             epi_reward += reward

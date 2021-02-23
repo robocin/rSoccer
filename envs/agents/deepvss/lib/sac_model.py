@@ -5,6 +5,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Normal
 
+from .common import OUNoise
+
+
 LOG_SIG_MAX = 2
 LOG_SIG_MIN = -20
 epsilon = 1e-6
@@ -66,7 +69,9 @@ class QNetwork(nn.Module):
 
 
 class GaussianPolicy(nn.Module):
-    def __init__(self, num_inputs, num_actions, hidden_dim=256, action_space=None):
+    def __init__(
+        self, num_inputs, num_actions, hidden_dim=256, action_space=None
+    ):
         super(GaussianPolicy, self).__init__()
 
         self.linear1 = nn.Linear(num_inputs, hidden_dim)
@@ -79,13 +84,15 @@ class GaussianPolicy(nn.Module):
 
         # action rescaling
         if action_space is None:
-            self.action_scale = torch.tensor(1.)
-            self.action_bias = torch.tensor(0.)
+            self.action_scale = torch.tensor(1.0)
+            self.action_bias = torch.tensor(0.0)
         else:
             self.action_scale = torch.FloatTensor(
-                (action_space.high - action_space.low) / 2.)
+                (action_space.high - action_space.low) / 2.0
+            )
             self.action_bias = torch.FloatTensor(
-                (action_space.high + action_space.low) / 2.)
+                (action_space.high + action_space.low) / 2.0
+            )
 
     def forward(self, state):
         x = F.relu(self.linear1(state))
@@ -99,7 +106,9 @@ class GaussianPolicy(nn.Module):
         mean, log_std = self.forward(state)
         std = log_std.exp()
         normal = Normal(mean, std)
-        x_t = normal.rsample()  # for reparameterization trick (mean + std * N(0,1))
+        x_t = (
+            normal.rsample()
+        )  # for reparameterization trick (mean + std * N(0,1))
         y_t = torch.tanh(x_t)
         action = y_t * self.action_scale + self.action_bias
         log_prob = normal.log_prob(x_t)
@@ -128,13 +137,15 @@ class DeterministicPolicy(nn.Module):
 
         # action rescaling
         if action_space is None:
-            self.action_scale = 1.
-            self.action_bias = 0.
+            self.action_scale = 1.0
+            self.action_bias = 0.0
         else:
             self.action_scale = torch.FloatTensor(
-                (action_space.high - action_space.low) / 2.)
+                (action_space.high - action_space.low) / 2.0
+            )
             self.action_bias = torch.FloatTensor(
-                (action_space.high + action_space.low) / 2.)
+                (action_space.high + action_space.low) / 2.0
+            )
 
     def forward(self, state):
         x = F.relu(self.linear1(state))
@@ -144,10 +155,10 @@ class DeterministicPolicy(nn.Module):
 
     def sample(self, state):
         mean = self.forward(state)
-        noise = self.noise.normal_(0., std=0.1)
+        noise = self.noise.normal_(0.0, std=0.1)
         noise = noise.clamp(-0.25, 0.25)
         action = mean + noise
-        return action, torch.tensor(0.), mean
+        return action, torch.tensor(0.0), mean
 
     def to(self, device):
         self.action_scale = self.action_scale.to(device)
@@ -161,7 +172,15 @@ class AgentSAC(ptan.agent.BaseAgent):
     Agent implementing Orstein-Uhlenbeck exploration process
     """
 
-    def __init__(self, net, device="cpu", ou_enabled=True, ou_mu=0.0, ou_teta=0.15, ou_sigma=0.2):
+    def __init__(
+        self,
+        net,
+        device="cpu",
+        ou_enabled=True,
+        ou_mu=0.0,
+        ou_teta=0.15,
+        ou_sigma=0.2,
+    ):
         self.net = net
         self.device = device
         self.ou_enabled = ou_enabled
@@ -169,29 +188,21 @@ class AgentSAC(ptan.agent.BaseAgent):
         self.ou_teta = ou_teta
         self.ou_sigma = ou_sigma
         self.ou_epsilon = 1.0
+        self.ou_noise = OUNoise(
+            mu=ou_mu, theta=ou_teta, max_sigma=ou_sigma, min_sigma=ou_sigma
+        )
 
     def initial_state(self):
         return None
 
-    def __call__(self, states, agent_states):
+    def __call__(self, states, n_step):
         self.ou_epsilon = 1.0  # self.selector.epsilon
-        #self.ou_epsilon = np.max((self.ou_epsilon*self.ou_epsilon_decay, 0.2))
+        # self.ou_epsilon = np.max((self.ou_epsilon*self.ou_epsilon_decay, 0.2))
 
         states_v = ptan.agent.float32_preprocessor(states).to(self.device)
         mu_v, _, _ = self.net.sample(states_v)
-        actions = mu_v.data.cpu().numpy()
-
-        if self.ou_enabled and self.ou_epsilon > 0:
-            new_a_states = []
-            for a_state, action in zip(agent_states, actions):
-                if a_state is None:
-                    a_state = np.zeros(shape=action.shape, dtype=np.float32)
-                a_state += self.ou_teta * (self.ou_mu - a_state)
-                a_state += self.ou_sigma * np.random.normal(size=action.shape)
-
-                action += self.ou_epsilon * a_state
-                new_a_states.append(a_state)
-        else:
-            new_a_states = agent_states
+        actions = mu_v.data.squeeze().cpu().numpy()
         actions = np.clip(actions, -1, 1)
-        return actions, new_a_states
+        if self.ou_enabled:
+            actions = self.ou_noise.get_action(actions, n_step)
+        return actions
