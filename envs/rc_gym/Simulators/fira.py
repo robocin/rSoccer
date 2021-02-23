@@ -1,12 +1,13 @@
 import socket
+from typing import Dict, List
 
 import numpy as np
 from rc_gym.Entities import Robot
 from rc_gym.Entities.Frame import FramePB
+from rc_gym.Simulators.rsim_base import RSim
 
 import pb_fira.packet_pb2 as packet_pb2
 from pb_fira.state_pb2 import *
-from rsim_base import RSim
 
 
 class Fira(RSim):
@@ -47,17 +48,47 @@ class Fira(RSim):
         )
         self.vision_sock.bind((self.vision_ip, self.vision_port))
 
-    def receive(self, id):
-        """Receive package and decode."""
+    def reset(self, frame: FramePB):
+        placement_pos = self._placement_dict_from_frame(frame)
+        pkt = packet_pb2.Packet()
 
+        ball_pos = placement_pos["ball_pos"][:2]
+        ball_pkt = pkt.replace.ball
+        ball_pkt.x = ball_pos[0]
+        ball_pkt.y = ball_pos[1]
+
+        robots_pkt = pkt.replace.robots
+        for i, robot in enumerate(placement_pos["blue_robots_pos"]):
+            rep_rob = robots_pkt.add()
+            rep_rob.position.robot_id = i+1
+            rep_rob.position.x = robot[0]
+            rep_rob.position.y = robot[1]
+            rep_rob.position.orientation = robot[2]
+            rep_rob.yellowteam = False
+            rep_rob.turnon = True
+        
+        for i, robot in enumerate(placement_pos["yellow_robots_pos"]):
+            rep_rob = robots_pkt.add()
+            rep_rob.position.robot_id = i+1
+            rep_rob.position.x = robot[0]
+            rep_rob.position.y = robot[1]
+            rep_rob.position.orientation = robot[2]
+            rep_rob.yellowteam = True
+            rep_rob.turnon = True
+
+        # send commands
+        data = pkt.SerializeToString()
+        self.com_socket.sendto(data, self.com_address)
+
+    def get_frame(self):
+        """Receive package and decode."""
         data, _ = self.vision_sock.recvfrom(1024)
         decoded_data = packet_pb2.Environment().FromString(data)
-        self.frame = FramePB()
-        self.frame.parse(decoded_data)
+        frame = FramePB()
+        frame.parse(decoded_data)
+        return frame
 
-        return self._frame_to_observations(id)
-
-    def send(self, commands):
+    def send_commands(self, commands):
         # prepare commands
         pkt = packet_pb2.Packet()
         d = pkt.cmd.robot_commands
@@ -69,34 +100,34 @@ class Fira(RSim):
             robot.yellowteam = cmd.yellow
 
             # convert from linear speed to angular speed
-            robot.wheel_left = cmd.v_wheel1
-            robot.wheel_right = cmd.v_wheel2
+            robot.wheel_left = cmd.v_wheel1 / self.robot_wheel_radius
+            robot.wheel_right = cmd.v_wheel2 / self.robot_wheel_radius
 
         # send commands
         data = pkt.SerializeToString()
         self.com_socket.sendto(data, self.com_address)
 
-    def send_commands(self, commands):
-        sim_commands = np.zeros(
-            (self.n_robots_blue + self.n_robots_yellow, 2), dtype=np.float64
-        )
+    def _placement_dict_from_frame(self, frame: FramePB):
+        replacement_pos: Dict[str, np.ndarray] = {}
 
-        for cmd in commands:
-            if cmd.yellow:
-                rbt_id = self.n_robots_blue + cmd.id
-            else:
-                rbt_id = cmd.id
+        ball_pos: List[float] = [
+            frame.ball.x,
+            frame.ball.y,
+            frame.ball.v_x,
+            frame.ball.v_y,
+        ]
+        replacement_pos["ball_pos"] = np.array(ball_pos)
 
-            # Convert from linear speed to angular speed
-            sim_commands[rbt_id][0] = cmd.v_wheel1 / self.robot_wheel_radius
-            sim_commands[rbt_id][1] = cmd.v_wheel2 / self.robot_wheel_radius
+        blue_pos: List[List[float]] = []
+        for robot in frame.robots_blue.values():
+            robot_pos: List[float] = [robot.x, robot.y, robot.theta]
+            blue_pos.append(robot_pos)
+        replacement_pos["blue_robots_pos"] = np.array(blue_pos)
 
-        self.simulator.step(sim_commands)
+        yellow_pos: List[List[float]] = []
+        for robot in frame.robots_yellow.values():
+            robot_pos: List[float] = [robot.x, robot.y, robot.theta]
+            yellow_pos.append(robot_pos)
+        replacement_pos["yellow_robots_pos"] = np.array(yellow_pos)
 
-    def get_frame(self) -> FramePB:
-        state = self.simulator.get_state()
-        # Update frame with new state
-        frame = FramePB()
-        frame.parse(state, self.n_robots_blue, self.n_robots_yellow)
-
-        return frame
+        return replacement_pos
