@@ -19,7 +19,7 @@ class DeterministicAgent:
     pid = PID()
 
     def __init__(self, robot_idx: int) -> None:
-        self.spinDistance = 8.0
+        self.spin_distance = 8.0
         self.action = Actions.MOVE
         self.robot_idx = robot_idx
 
@@ -40,6 +40,8 @@ class DeterministicAgent:
         robot_pos = np.array([frame.robots_blue[self.robot_idx].x,
                               frame.robots_blue[self.robot_idx].y])
         robot_angle = frame.robots_blue[self.robot_idx].theta
+        if robot_angle > 180:
+            robot_angle = -(360 - robot_angle) 
 
         return self.get_action(ball_pos=ball_pos, ball_speed=ball_speed,
                                robot_pos=robot_pos, robot_angle=robot_angle)
@@ -47,25 +49,25 @@ class DeterministicAgent:
     def spin(self, ball_pos: np.ndarray,
              ball_speed: np.ndarray,
              robot_pos: np.ndarray) -> np.ndarray:
-        spinDirection = False
+        spin_direction = False
         if (robot_pos[1] > ball_pos[1]):
-            spinDirection = False
+            spin_direction = False
         else:
-            spinDirection = True
+            spin_direction = True
         if(ball_pos[0] > self.field.middle[0] - 10):
             if(ball_pos[1] > self.field.middle[1]):
                 if(ball_pos[1] < robot_pos[1] and ball_pos[0] > robot_pos[0]):
-                    spinDirection = not spinDirection
+                    spin_direction = not spin_direction
             else:
                 if(ball_pos[1] > robot_pos[1] and ball_pos[0] > robot_pos[0]):
-                    spinDirection = not spinDirection
+                    spin_direction = not spin_direction
 
         if (ball_pos[0] < 20):
             if (ball_pos[0] < robot_pos[0]):
                 if (ball_pos[1] < self.field.middle[1]):
-                    spinDirection = False
+                    spin_direction = False
                 else:
-                    spinDirection = True
+                    spin_direction = True
 
         if(robot_pos[0] > self.field.m_max[0] - 3.75):
             if(ball_pos[0] < robot_pos[0]):
@@ -74,11 +76,11 @@ class DeterministicAgent:
                       ball_pos[1] + ball_speed[1]*5)
                 angle = math.atan2(p1[1] - p2[1], p1[0] - p2[0])
                 if(math.sin(angle) > 0):
-                    spinDirection = True
+                    spin_direction = True
                 elif(math.sin(angle) < 0):
-                    spinDirection = False
+                    spin_direction = False
 
-        if(spinDirection):
+        if(spin_direction):
             return np.array([-0.7, 0.7])
         else:
             return np.array([0.7, -0.7])

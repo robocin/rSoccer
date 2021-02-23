@@ -99,6 +99,14 @@ def distancePointSegment(t_a, t_b, t_c):
     return distance(t_c, projectPointToSegment(t_a, t_b, t_c))
 
 
+def insideOurArea(pos, sumX, sumY):
+    field = VSSField()
+    check_x = pos[0] > field.goal_area_min[0]-sumX
+    check_y = pos[1] > field.goal_area_min[1]-sumY
+    check_y &= pos[1] < field.goal_area_max[1]+sumY
+    return check_x and check_y
+
+
 def spin(robot_pos, ball_pos, ball_speed):
     field = VSSField()
     spinDirection = False
