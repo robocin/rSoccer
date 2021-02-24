@@ -168,8 +168,8 @@ def train(actor, exp_queue, finish_event, load):
         actor_target.load_state_dict(actor.state_dict())
         critic_target.load_state_dict(critic.state_dict())
 
+        memory = ReplayBuffer()
         while not finish_event.is_set():
-            memory = ReplayBuffer()
             for i in range(batch_size):
                 exp = exp_queue.get()
                 if exp is None:
@@ -178,7 +178,7 @@ def train(actor, exp_queue, finish_event, load):
 
             # training loop:
             it = 0
-            if memory.size() > batch_size*100:
+            if memory.size() > batch_size:
 
                 state_batch, action_batch,\
                     reward_batch, next_state_batch, done_batch = memory.sample(
