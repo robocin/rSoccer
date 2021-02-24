@@ -107,15 +107,18 @@ class VSSCoachEnv(VSSBaseEnv):
         # self.det_gks = [DetGK(i) for i in range(self.n_robots_blue)]
         # self.det_defs = [DetDef(i) for i in range(self.n_robots_blue)]
 
-
-        self.blue_gks = [GoalKeeperDeterministic() for _ in range(self.n_robots_blue)]
+        self.blue_gks = [GoalKeeperDeterministic()
+                         for _ in range(self.n_robots_blue)]
         self.blue_pid_gks = [PID() for _ in range(self.n_robots_blue)]
-        self.blue_defenders = [GoalKeeperDeterministic() for _ in range(self.n_robots_blue)]
+        self.blue_defenders = [GoalKeeperDeterministic()
+                               for _ in range(self.n_robots_blue)]
         self.blue_pid_defs = [PID() for _ in range(self.n_robots_blue)]
 
-        self.yellow_gks = [GoalKeeperDeterministic() for _ in range(self.n_robots_yellow)]
+        self.yellow_gks = [GoalKeeperDeterministic()
+                           for _ in range(self.n_robots_yellow)]
         self.yellow_pid_gks = [PID() for _ in range(self.n_robots_yellow)]
-        self.yellow_defenders = [GoalKeeperDeterministic() for _ in range(self.n_robots_yellow)]
+        self.yellow_defenders = [GoalKeeperDeterministic()
+                                 for _ in range(self.n_robots_yellow)]
         self.yellow_pid_defs = [PID() for _ in range(self.n_robots_yellow)]
 
         print('Environment initialized')
@@ -161,7 +164,7 @@ class VSSCoachEnv(VSSBaseEnv):
             observation.append(normVt(self.frame.robots_yellow[i].v_theta))
 
         return np.array(observation)
-    
+
     def run_deterministic_behavior(self, index, yellow, beh, p, goalie):
         width = 1.3/2.0
         lenght = (1.5/2.0) + 0.1
@@ -422,6 +425,12 @@ class VSSCoachEnv(VSSBaseEnv):
         def x(): return random.uniform(-field_half_length + 0.1,
                                        field_half_length - 0.1)
 
+        def x_blue(): return random.uniform(-field_half_length + 0.1,
+                                            0)
+
+        def x_yellow(): return random.uniform(0,
+                                              field_half_length - 0.1)
+
         def y(): return random.uniform(-field_half_width + 0.1,
                                        field_half_width - 0.1)
 
@@ -434,45 +443,11 @@ class VSSCoachEnv(VSSBaseEnv):
         pos_frame.ball.v_x = 0.
         pos_frame.ball.v_y = 0.
 
-        agents = []
         for i in range(self.n_robots_blue):
-            pos_frame.robots_blue[i] = Robot(x=x(), y=y(), theta=theta())
-            agents.append(pos_frame.robots_blue[i])
+            pos_frame.robots_blue[i] = Robot(x=x_blue(), y=y(), theta=theta())
 
         for i in range(self.n_robots_yellow):
-            pos_frame.robots_yellow[i] = Robot(x=x(), y=y(), theta=theta())
-            agents.append(pos_frame.robots_blue[i])
-
-        def same_position_ref(x, y, x_ref, y_ref, radius):
-            if x >= x_ref - radius and x <= x_ref + radius and \
-                    y >= y_ref - radius and y <= y_ref + radius:
-                return True
-            return False
-
-        radius_ball = 0.2
-        radius_robot = 0.2
-        same_pos = True
-
-        while same_pos:
-            for i in range(len(agents)):
-                same_pos = False
-                while same_position_ref(agents[i].x, agents[i].y,
-                                        pos_frame.ball.x, pos_frame.ball.y,
-                                        radius_ball):
-                    agents[i] = Robot(x=x(), y=y(), theta=theta())
-                    same_pos = True
-                for j in range(i + 1, len(agents)):
-                    while same_position_ref(agents[i].x, agents[i].y,
-                                            agents[j].x, agents[j].y,
-                                            radius_robot):
-                        agents[i] = Robot(x=x(), y=y(), theta=theta())
-                        same_pos = True
-
-        for i in range(self.n_robots_blue):
-            pos_frame.robots_blue[i] = agents[i]
-
-        for i in range(self.n_robots_blue,
-                       self.n_robots_yellow + self.n_robots_blue):
-            pos_frame.robots_blue[i] = agents[i]
+            pos_frame.robots_yellow[i] = Robot(
+                x=x_yellow(), y=y(), theta=theta())
 
         return pos_frame
