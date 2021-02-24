@@ -127,6 +127,8 @@ class VSSCoachEnv(VSSBaseEnv):
         self.actions = None
         self.reward_shaping_total = None
         self.stop_counter = 0
+        self.num_atk_faults = 0
+        self.num_penalties = 0
         self.versus = int(random.choice([0, 18, 21]))
         return super().reset()
 
