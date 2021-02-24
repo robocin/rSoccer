@@ -222,8 +222,8 @@ def train(actor, exp_queue, finish_event, load):
                         target_param.data * (1.0 - soft_tau) + param.data * soft_tau)
 
                 wandb.log({'Loss/DDPG/Actor': z.item(),
-                           'Loss/DDPG/Critic': critic_loss},
-                          step=critic_loss.item())
+                           'Loss/DDPG/Critic': critic_loss.item()},
+                          step=it)
                 it += 1
 
                 if it % 100000 == 0:
