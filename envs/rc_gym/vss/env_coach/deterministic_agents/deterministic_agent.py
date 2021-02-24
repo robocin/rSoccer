@@ -35,13 +35,23 @@ class DeterministicAgent:
         raise NotImplementedError
 
     def __call__(self, frame: Frame) -> np.ndarray:
+        width = 1.3/2.0
+        length = (1.5/2.0) + 0.1
         ball_pos = np.array([frame.ball.x, frame.ball.y])
         ball_speed = np.array([frame.ball.v_x, frame.ball.v_y])
         robot_pos = np.array([frame.robots_blue[self.robot_idx].x,
                               frame.robots_blue[self.robot_idx].y])
         robot_angle = frame.robots_blue[self.robot_idx].theta
         if robot_angle > 180:
-            robot_angle = -(360 - robot_angle) 
+            robot_angle = -(360 - robot_angle)
+        
+        robot_angle = np.deg2rad(robot_angle)
+        base_pos = np.array([length, width])
+        robot_pos = base_pos - robot_pos
+        robot_pos *= 100
+        ball_pos = base_pos - ball_pos
+        ball_pos *= 100
+        ball_speed *= 100
 
         return self.get_action(ball_pos=ball_pos, ball_speed=ball_speed,
                                robot_pos=robot_pos, robot_angle=robot_angle)
