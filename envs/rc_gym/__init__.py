@@ -18,10 +18,12 @@ register(id='VSS3v3-v0',
 
 register(id='VSSMA-v0',
          entry_point='rc_gym.vss:VSSMAEnv',
-register(id='VSSCoach-v0',
-         entry_point='rc_gym.vss:VSSCoachEnv'
          )
 
 register(id='VSSMAOpp-v0',
          entry_point='rc_gym.vss:VSSMAOpp',
+         )
+
+register(id='VSSCoach-v0',
+         entry_point='rc_gym.vss:VSSCoachEnv'
          )
