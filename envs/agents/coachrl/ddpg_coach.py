@@ -6,14 +6,16 @@ import random
 
 import gym
 import numpy as np
+import ptan
+import rc_gym
 import torch
+import torch.multiprocessing as mp
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-
-import rc_gym
-import wandb
 from gym.wrappers import FrameStack
+
+import wandb
 
 # Hyperparameters
 actor_lr = 0.0005
@@ -22,7 +24,7 @@ gamma = 0.99
 batch_size = 32
 buffer_limit = 500000
 soft_tau = 0.005  # for target network soft update
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda')
 
 
 class ReplayBuffer():
@@ -122,51 +124,6 @@ class OUNoise(object):
         return np.clip(action + ou_state, self.low, self.high)
 
 
-def train(critic, critic_target, actor, actor_target,
-          critic_optim, actor_optim, memory):
-
-    state_batch, action_batch,\
-        reward_batch, next_state_batch, done_batch = memory.sample(batch_size)
-
-    n_inputs = state_batch.size()[1]*state_batch.size()[2]
-    state_batch = state_batch.view(batch_size, n_inputs)
-    next_state_batch = next_state_batch.view(batch_size, n_inputs)
-
-    state_batch = state_batch.to(device)
-    next_state_batch = next_state_batch.to(device)
-    action_batch = action_batch.to(device).squeeze()
-    reward_batch = reward_batch.to(device)
-    done_batch = done_batch.to(device)
-
-    actor_loss = critic(state_batch, actor(state_batch))
-    z = -torch.mean(actor_loss)
-    actor_optim.zero_grad()
-    z.backward()
-    actor_optim.step()
-
-    next_actions_target = actor_target(next_state_batch)
-    q_targets = critic_target(next_state_batch, next_actions_target)
-    targets = reward_batch + (1.0 - done_batch)*gamma*q_targets
-
-    q_values = critic(state_batch, action_batch)
-    critic_loss = F.smooth_l1_loss(q_values, targets.detach())
-    critic_optim.zero_grad()
-    critic_loss.backward()
-    critic_optim.step()
-
-    for target_param, param in zip(critic_target.parameters(),
-                                   critic.parameters()):
-        target_param.data.copy_(
-            target_param.data * (1.0 - soft_tau) + param.data * soft_tau)
-
-    for target_param, param in zip(actor_target.parameters(),
-                                   actor.parameters()):
-        target_param.data.copy_(
-            target_param.data * (1.0 - soft_tau) + param.data * soft_tau)
-
-    return z.item(), critic_loss.item()
-
-
 def find_nearest(array, value):
     idx = np.searchsorted(array, value, side="left")
     res = math.fabs(value - array[idx-1]) < math.fabs(value - array[idx])
@@ -192,93 +149,177 @@ def mapped_action(action):
     return action_list.index(act)
 
 
-def main(load_model=False, test=False):
+def train(actor, exp_queue, finish_event, load):
+    wandb.init(name="CoachRL-DDPG-train", project="RC-Reinforcement")
     try:
-        if not test:
-            wandb.init(name="CoachRL-DDPG", project="RC-Reinforcement")
-        ori_env = gym.make('VSSCoach-v0')
-        env = FrameStack(ori_env, 60)
-        ou_noise = OUNoise()
-
-        n_inputs = env.observation_space.shape[0] * \
-            env.observation_space.shape[1]
-
-        actor = Actor(n_inputs).to(device)
-        actor_target = Actor(n_inputs).to(device)
-        critic = Critic(n_inputs).to(device)
-        critic_target = Critic(n_inputs).to(device)
+        critic = Critic(40*60).to(device)
+        critic_target = Critic(40*60).to(device)
+        actor_target = Actor(40*60).to(device)
         critic_optim = optim.Adam(critic.parameters(), lr=critic_lr)
         actor_optim = optim.Adam(actor.parameters(), lr=actor_lr)
-
-        if load_model or test:
-            actor_dict = torch.load('models/DDPG_ACTOR.model')
+        if load:
             critic_dict = torch.load('models/DDPG_CRITIC.model')
-            actor.load_state_dict(actor_dict)
             critic.load_state_dict(critic_dict)
-            if not test:
-                actor_optim_dict = torch.load(f'models/DDPG_ACTOR.optim')
-                actor_optim.load_state_dict(actor_optim_dict)
-                critic_optim_dict = torch.load(f'models/DDPG_CRITIC.optim')
-                critic_optim.load_state_dict(critic_optim_dict)
+            actor_optim_dict = torch.load(f'models/DDPG_ACTOR.optim')
+            actor_optim.load_state_dict(actor_optim_dict)
+            critic_optim_dict = torch.load(f'models/DDPG_CRITIC.optim')
+            critic_optim.load_state_dict(critic_optim_dict)
 
         actor_target.load_state_dict(actor.state_dict())
         critic_target.load_state_dict(critic.state_dict())
 
-        memory = ReplayBuffer()
-        total_steps = 0
-        for n_epi in range(1000):
-            s = env.reset()
-            s = s.__array__(dtype=np.float32)
-            done = False
-            score = 0.0
-            epi_step = 0
-            while not done:  # maximum length of episode is 200 for Pendulum-v0
-                a = actor.get_action(s)
+        while not finish_event.is_set():
+            memory = ReplayBuffer()
+            for i in range(batch_size):
+                exp = exp_queue.get()
+                if exp is None:
+                    break
+                memory.put(exp)
+
+            # training loop:
+            it = 0
+            if memory.size() > batch_size*100:
+
+                state_batch, action_batch,\
+                    reward_batch, next_state_batch, done_batch = memory.sample(
+                        batch_size)
+
+                n_inputs = state_batch.size()[1]*state_batch.size()[2]
+                state_batch = state_batch.view(batch_size, n_inputs)
+                next_state_batch = next_state_batch.view(batch_size, n_inputs)
+
+                state_batch = state_batch.to(device)
+                next_state_batch = next_state_batch.to(device)
+                action_batch = action_batch.to(device).squeeze()
+                reward_batch = reward_batch.to(device)
+                done_batch = done_batch.to(device)
+
+                actor_loss = critic(state_batch, actor(state_batch))
+                z = -torch.mean(actor_loss)
+                actor_optim.zero_grad()
+                z.backward()
+                actor_optim.step()
+
+                next_actions_target = actor_target(next_state_batch)
+                q_targets = critic_target(
+                    next_state_batch, next_actions_target)
+                targets = reward_batch + (1.0 - done_batch)*gamma*q_targets
+
+                q_values = critic(state_batch, action_batch)
+                critic_loss = F.smooth_l1_loss(q_values, targets.detach())
+                critic_optim.zero_grad()
+                critic_loss.backward()
+                critic_optim.step()
+
+                for target_param, param in zip(critic_target.parameters(),
+                                               critic.parameters()):
+                    target_param.data.copy_(
+                        target_param.data * (1.0 - soft_tau) + param.data * soft_tau)
+
+                for target_param, param in zip(actor_target.parameters(),
+                                               actor.parameters()):
+                    target_param.data.copy_(
+                        target_param.data * (1.0 - soft_tau) + param.data * soft_tau)
+
+                wandb.log({'Loss/DDPG/Actor': z.item(),
+                           'Loss/DDPG/Critic': critic_loss},
+                          step=critic_loss.item())
+                it += 1
+
+                if it % 100000 == 0:
+                    torch.save(critic.state_dict(),
+                               f'models/DDPG_CRITIC_{it}.model')
+                    torch.save(actor.state_dict(),
+                               f'models/DDPG_ACTOR_{it}.model')
+                    torch.save(actor_optim.state_dict(),
+                               f'models/DDPG_ACTOR_{it}.optim')
+                    torch.save(critic_optim.state_dict(),
+                               f'models/DDPG_CRITIC_{it}.optim')
+    except KeyboardInterrupt:
+        print("...Train Finishing...")
+        finish_event.set()
+
+
+def play(actor, exp_queue, env, test, i, finish_event):
+
+    if not test:
+        wandb.init(name=f"CoachRL-DDPG-{i}", project="RC-Reinforcement")
+    try:
+        while not finish_event.is_set():
+            ori_env = gym.make('VSSCoach-v0')
+            env = FrameStack(ori_env, 60)
+            ou_noise = OUNoise()
+            total_steps = 0
+            for n_epi in range(1000):
+                s = env.reset()
+                s = s.__array__(dtype=np.float32)
+                done = False
+                score = 0.0
+                epi_step = 0
+                while not done:
+                    a = actor.get_action(s)
+                    if not test:
+                        a = ou_noise.get_action(a, epi_step)[0]
+                    else:
+                        a = a[0]
+                    action = mapped_action(a)
+                    s_prime, r, done, info = env.step(action)
+                    s_prime = s_prime.__array__(dtype=np.float32)
+                    done_mask = 0.0 if done else 1.0
+                    exp = (s, a, r, s_prime, done_mask)
+                    if not test:
+                        exp_queue.put(exp)
+                    elif test:
+                        env.unwrapped.render()
+                    score += r
+                    s = s_prime
+                    total_steps += 1
+                    epi_step += 1
+
                 if not test:
-                    a = ou_noise.get_action(a, epi_step)[0]
-                else:
-                    a = a[0]
-                action = mapped_action(a)
-                s_prime, r, done, info = env.step(action)
-                s_prime = s_prime.__array__(dtype=np.float32)
-                done_mask = 0.0 if done else 1.0
-                memory.put((s, a, r, s_prime, done_mask))
-                score += r
-                s = s_prime
-                total_steps += 1
-                epi_step += 1
-                if memory.size() > batch_size and not test:
-                    act_loss, critic_loss = train(critic, critic_target, actor,
-                                                    actor_target, critic_optim,
-                                                    actor_optim, memory)
-                    wandb.log({'Loss/DDPG/Actor': act_loss,
-                                'Loss/DDPG/Critic': critic_loss},
-                                step=total_steps)
-            if n_epi % 10 == 0:
-                torch.save(critic.state_dict(),
-                            f'models/DDPG_CRITIC_{n_epi:06d}.model')
-                torch.save(actor.state_dict(),
-                            f'models/DDPG_ACTOR_{n_epi:06d}.model')
-                torch.save(actor_optim.state_dict(),
-                            f'models/DDPG_ACTOR_{n_epi:06d}.optim')
-                torch.save(critic_optim.state_dict(),
-                            f'models/DDPG_CRITIC_{n_epi:06d}.optim')
+                    print(f'***********EPI {n_epi} ENDED***********')
+                    print(f'Total: {score}')
+                    print('Goal score: {}'.format(info['goal_score']))
+                    print('*****************************************')
+                    wandb.log({'Rewards/total': score,
+                               'Rewards/goal_score': info['goal_score'],
+                               'Rewards/num_penalties': info['penalties'],
+                               'Rewards/num_faults': info['faults'],
+                               }, step=total_steps)
+    except KeyboardInterrupt:
+        print("...Agent Finishing...")
+        finish_event.set()
 
-            if not test:
-                print(f'***********EPI {n_epi} ENDED***********')
-                print(f'Total: {score}')
-                print('Goal score: {}'.format(info['goal_score']))
-                print('*****************************************')
-                wandb.log({'Rewards/total': score,
-                           'Rewards/goal_score': info['goal_score'],
-                           'Rewards/num_penalties': info['penalties'],
-                           'Rewards/num_faults': info['faults'],
-                           }, step=total_steps)
 
-        env.close()
-    except Exception as e:
-        env.close()
-        raise e
+def main(load_model=False, test=False):
+    mp.set_start_method('spawn')
+    os.environ['OMP_NUM_THREADS'] = "8"
+    finish_event = mp.Event()
+    exp_queue = mp.Queue(maxsize=batch_size)
+    n_inputs = 40*60
+    actor = Actor(n_inputs).to(device)
+
+    if load_model or test:
+        actor_dict = torch.load('models/DDPG_ACTOR.model')
+        actor.load_state_dict(actor_dict)
+
+    actor.share_memory()
+    play_threads = []
+    for i in range(1):
+        env = 'VSSCoach-v0'
+        data_proc = mp.Process(target=play, args=(actor, exp_queue, env,
+                                                  test, i, finish_event))
+        data_proc.start()
+        play_threads.append(data_proc)
+
+    if not test:
+        train_process = mp.Process(target=train,
+                                   args=(actor, exp_queue,
+                                         finish_event, load_model))
+        train_process.start()
+        train_process.join()
+    play_threads = [t.join(1)
+                    for t in play_threads if t is not None and t.isAlive()]
 
 
 if __name__ == '__main__':
