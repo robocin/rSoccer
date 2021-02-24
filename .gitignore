@@ -150,6 +150,8 @@ cython_debug/
 
 # Models
 *.pth
+*.optim
+*.model
 
 # Logs
 *tfevents*
