@@ -282,7 +282,6 @@ def play(actor, exp_queue, env, test, i, finish_event):
                 print(f'***********EPI {n_epi} ENDED***********')
                 print(f'Total: {score}')
                 print('Goal score: {}'.format(info['goal_score']))
-                pprint(actions_dict)
                 print('*****************************************')
                 if not test:
                     wandb.log({'Rewards/total': score,
