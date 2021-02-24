@@ -155,3 +155,4 @@ cython_debug/
 *tfevents*
 *wandb/
 *.exb
+envs/test.py
