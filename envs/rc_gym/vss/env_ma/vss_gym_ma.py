@@ -258,13 +258,13 @@ class VSSMAEnv(VSSBaseEnv):
 
             if self.last_frame is not None:
                 # Calculate ball potential
-                grad_ball_potential = self.__ball_grad()
+                grad_ball_potential = self._ball_grad()
                 self.reward_shaping_total['ball_grad'] += w_ball_grad * grad_ball_potential  # noqa
                 for idx in range(self.n_robots_control):
                     # Calculate Move ball
-                    move_reward = self.__move_reward(robot_idx=idx)
+                    move_reward = self._move_reward(robot_idx=idx)
                     # Calculate Energy penalty
-                    energy_penalty = self.__energy_penalty(robot_idx=idx)
+                    energy_penalty = self._energy_penalty(robot_idx=idx)
 
                     rew = w_ball_grad * grad_ball_potential + \
                         w_move * move_reward + \
