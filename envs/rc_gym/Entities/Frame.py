@@ -35,6 +35,8 @@ class FrameVSS(Frame):
             robot.x = state[5 + (6 * i) + 0]
             robot.y = state[5 + (6 * i) + 1]
             robot.theta = state[5 + (6 * i) + 2]
+            if robot.theta > 180:
+                robot.theta = - (360 - robot.theta)
             robot.v_x = state[5 + (6 * i) + 3]
             robot.v_y = state[5 + (6 * i) + 4]
             robot.v_theta = state[5 + (6 * i) + 5]
@@ -46,6 +48,8 @@ class FrameVSS(Frame):
             robot.x = state[5 + n_robots_blue*6 + (6 * i) + 0]
             robot.y = state[5 + n_robots_blue*6 + (6 * i) + 1]
             robot.theta = state[5 + n_robots_blue*6 + (6 * i) + 2]
+            if robot.theta > 180:
+                robot.theta = - (360 - robot.theta)
             robot.v_x = state[5 + n_robots_blue*6 + (6 * i) + 3]
             robot.v_y = state[5 + n_robots_blue*6 + (6 * i) + 4]
             robot.v_theta = state[5 + n_robots_blue*6 + (6 * i) + 5]

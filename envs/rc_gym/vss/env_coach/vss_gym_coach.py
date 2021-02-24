@@ -4,10 +4,17 @@ from typing import Dict
 
 import gym
 import numpy as np
+import rc_gym.vss.env_coach.deterministic_vss.univectorPosture as univectorPosture
+import rc_gym.vss.env_coach.deterministic_vss.utils as utils
 from gym.spaces import Box, Discrete
 from rc_gym.Entities import Frame, Robot
 from rc_gym.Utils import normVt, normVx, normX
-from rc_gym.vss.env_coach import DeepAtk, DeepDef, DeepGK, DetGK
+from rc_gym.vss.env_coach import DeepAtk, DeepDef, DeepGK, DetDef, DetGK
+from rc_gym.vss.env_coach.deterministic_vss.controleDefender import PID
+from rc_gym.vss.env_coach.deterministic_vss.defender import \
+    DefenderDeterministic
+from rc_gym.vss.env_coach.deterministic_vss.goleiro import \
+    GoalKeeperDeterministic
 from rc_gym.vss.vss_gym_base import VSSBaseEnv
 
 
@@ -97,7 +104,19 @@ class VSSCoachEnv(VSSBaseEnv):
                           for i in range(self.n_robots_blue)]
         self.deep_gks = [DeepGK(robot_idx=i, **atk_params)
                          for i in range(self.n_robots_blue)]
-        self.det_gk = [DetGK(i) for i in range(self.n_robots_blue)]
+        # self.det_gks = [DetGK(i) for i in range(self.n_robots_blue)]
+        # self.det_defs = [DetDef(i) for i in range(self.n_robots_blue)]
+
+
+        self.blue_gks = [GoalKeeperDeterministic() for _ in range(self.n_robots_blue)]
+        self.blue_pid_gks = [PID() for _ in range(self.n_robots_blue)]
+        self.blue_defenders = [GoalKeeperDeterministic() for _ in range(self.n_robots_blue)]
+        self.blue_pid_defs = [PID() for _ in range(self.n_robots_blue)]
+
+        self.yellow_gks = [GoalKeeperDeterministic() for _ in range(self.n_robots_yellow)]
+        self.yellow_pid_gks = [PID() for _ in range(self.n_robots_yellow)]
+        self.yellow_defenders = [GoalKeeperDeterministic() for _ in range(self.n_robots_yellow)]
+        self.yellow_pid_defs = [PID() for _ in range(self.n_robots_yellow)]
 
         print('Environment initialized')
 
@@ -142,6 +161,74 @@ class VSSCoachEnv(VSSBaseEnv):
             observation.append(normVt(self.frame.robots_yellow[i].v_theta))
 
         return np.array(observation)
+    
+    def run_deterministic_behavior(self, index, yellow, beh, p, goalie):
+        width = 1.3/2.0
+        lenght = (1.5/2.0) + 0.1
+
+        ball = self.frame.ball
+        robot = self.frame.robots_yellow[index] if yellow else self.frame.robots_blue[index]
+
+        if yellow:
+            angle_rob = np.deg2rad(robot.theta)
+            robot_pos = ((lenght + robot.x)*100, (width + robot.y) * 100)
+            ball_pos = ((lenght + ball.x) * 100, (width + ball.y) * 100)
+            ball_speed = (ball.v_x * 100, ball.v_y * 100)
+
+            allies = []
+            for i in range(len(self.frame.robots_yellow)):
+                robot = self.frame.robots_yellow[i]
+                allies.append(((lenght + robot.x) * 100,
+                               (width + robot.y) * 100))
+            enemies = []
+            for i in range(len(self.frame.robots_blue)):
+                robot = self.frame.robots_blue[i]
+                enemies.append(
+                    ((lenght + robot.x) * 100, (width + robot.y) * 100))
+        else:
+            angle_rob = np.deg2rad(robot.theta + 180)
+            if angle_rob > math.pi:
+                angle_rob -= 2*math.pi
+            elif angle_rob < -math.pi:
+                angle_rob += 2*math.pi
+            robot_pos = ((lenght - robot.x) * 100, (width - robot.y) * 100)
+            ball_pos = ((lenght - ball.x) * 100, (width - ball.y) * 100)
+            ball_speed = (-ball.v_x * 100, -ball.v_y * 100)
+
+            allies = []
+            for i in self.frame.robots_blue:
+                robot = self.frame.robots_blue[i]
+                allies.append(((lenght - robot.x) * 100,
+                               (width - robot.y) * 100))
+            enemies = []
+            for i in self.frame.robots_yellow:
+                robot = self.frame.robots_yellow[i]
+                enemies.append(
+                    ((lenght - robot.x) * 100, (width - robot.y) * 100))
+
+        # print(angle_rob)
+        obj_pos = None
+
+        obj_pos = beh.decideAction(ball_pos, ball_speed, robot_pos)
+
+        # print(obj_pos)
+        ret = None
+        if(obj_pos == None):
+            speeds = utils.spin(robot_pos, ball_pos, ball_speed)
+            ret = (speeds[0], speeds[1])
+
+        else:
+            if(goalie):
+                next_step = univectorPosture.update(
+                    ball_pos, robot_pos, obj_pos, allies, enemies, index)
+                speeds = p.run(angle_rob, next_step, robot_pos)
+            else:
+                next_step = univectorPosture.update(
+                    ball_pos, robot_pos, obj_pos, allies, enemies, index)
+                speeds = p.run(angle_rob, next_step, robot_pos)
+            ret = (speeds[0]*0.02, speeds[1]*0.02)
+
+        return ret
 
     def _get_commands(self, action):
         commands = []
@@ -153,9 +240,22 @@ class VSSCoachEnv(VSSBaseEnv):
             if role == 0:
                 v_wheel1, v_wheel2 = self.deep_atks[i](self.frame)
             elif role == 1:
-                v_wheel1, v_wheel2 = self.deep_defs[i](self.frame)
+                v_wheel1, v_wheel2 = self.run_deterministic_behavior(
+                    index=i,
+                    yellow=False,
+                    beh=self.blue_defenders[i],
+                    p=self.blue_pid_defs[i],
+                    goalie=False
+                )
             else:
-                v_wheel1, v_wheel2 = self.det_gk[i](self.frame)
+                v_wheel1, v_wheel2 = self.run_deterministic_behavior(
+                    index=i,
+                    yellow=False,
+                    beh=self.blue_gks[i],
+                    p=self.blue_pid_gks[i],
+                    goalie=True
+                )
+
             commands.append(Robot(yellow=False, id=i, v_wheel1=v_wheel1,
                                   v_wheel2=v_wheel2))
 
@@ -166,9 +266,21 @@ class VSSCoachEnv(VSSBaseEnv):
             if role == 0:
                 v_wheel2, v_wheel1 = self.deep_atks[i](yellow_frame)
             elif role == 1:
-                v_wheel2, v_wheel1 = self.deep_defs[i](yellow_frame)
+                v_wheel1, v_wheel2 = self.run_deterministic_behavior(
+                    index=i,
+                    yellow=True,
+                    beh=self.yellow_defenders[i],
+                    p=self.yellow_pid_defs[i],
+                    goalie=False
+                )
             else:
-                v_wheel2, v_wheel1 = self.deep_gks[i](yellow_frame)
+                v_wheel1, v_wheel2 = self.run_deterministic_behavior(
+                    index=i,
+                    yellow=True,
+                    beh=self.yellow_gks[i],
+                    p=self.yellow_pid_gks[i],
+                    goalie=True
+                )
             commands.append(Robot(yellow=True, id=i, v_wheel1=v_wheel1,
                                   v_wheel2=v_wheel2))
 

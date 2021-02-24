@@ -6,6 +6,7 @@ from rc_gym.Entities import Frame
 from rc_gym.Entities.Field import VSSField
 from rc_gym.Utils.Utils import clip, distancePointSegment
 from rc_gym.vss.env_coach.deterministic_agents.pid import PID
+from rc_gym.vss.env_coach.deterministic_agents import univector_posture
 
 
 class Actions(Enum):
@@ -25,8 +26,7 @@ class DeterministicAgent:
 
     def get_action(self, ball_pos: np.ndarray,
                    ball_speed: np.ndarray,
-                   robot_pos: np.ndarray,
-                   robot_angle: float) -> np.ndarray:
+                   robot_pos: np.ndarray) -> np.ndarray:
         raise NotImplementedError
 
     def get_objective(self, ball_pos: np.ndarray,
@@ -42,9 +42,12 @@ class DeterministicAgent:
         robot_pos = np.array([frame.robots_blue[self.robot_idx].x,
                               frame.robots_blue[self.robot_idx].y])
         robot_angle = frame.robots_blue[self.robot_idx].theta
-        if robot_angle > 180:
-            robot_angle = -(360 - robot_angle)
-        
+        robot_angle = np.deg2rad(robot_angle + 180)
+        if robot_angle > math.pi:
+            robot_angle -= 2*math.pi
+        elif robot_angle < -math.pi:
+            robot_angle += 2*math.pi
+
         robot_angle = np.deg2rad(robot_angle)
         base_pos = np.array([length, width])
         robot_pos = base_pos - robot_pos
@@ -53,8 +56,29 @@ class DeterministicAgent:
         ball_pos *= 100
         ball_speed *= 100
 
-        return self.get_action(ball_pos=ball_pos, ball_speed=ball_speed,
-                               robot_pos=robot_pos, robot_angle=robot_angle)
+        objective = self.get_action(ball_pos=ball_pos,
+                                    ball_speed=ball_speed,
+                                    robot_pos=robot_pos)
+
+        if self.action == Actions.SPIN:
+            speeds = self.spin(robot_pos, ball_pos, ball_speed)
+        else:
+            allies = []
+            for ally in frame.robots_blue.values():
+                ally_pos = np.array([ally.x, ally.y])
+                ally_pos = base_pos - ally_pos
+                ally_pos *= 100
+                allies.append(ally_pos)
+            enemies = []
+            for enemy in frame.robots_yellow.values():
+                enemy_pos = np.array([enemy.x, enemy.y])
+                enemy_pos = base_pos - enemy_pos
+                enemy_pos *= 100
+                enemies.append(enemy_pos)
+            next_step = univector_posture.update(robot_pos, objective, allies,
+                                                 enemies, self.robot_idx)
+            speeds = self.pid.run(robot_angle, next_step, robot_pos)
+        return speeds
 
     def spin(self, ball_pos: np.ndarray,
              ball_speed: np.ndarray,

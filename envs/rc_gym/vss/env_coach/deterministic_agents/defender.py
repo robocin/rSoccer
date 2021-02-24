@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 from rc_gym.Utils.Utils import (distance, distancePointSegment, insideOurArea,
-                                projectPointToSegment)
+                                projectPointToSegment, point_in_polygon)
 from rc_gym.vss.env_coach.deterministic_agents import (Actions,
                                                        DeterministicAgent)
 from shapely.geometry import Point
@@ -20,22 +20,20 @@ class Defender(DeterministicAgent):
 
     def get_action(self, ball_pos: np.ndarray,
                    ball_speed: np.ndarray,
-                   robot_pos: np.ndarray,
-                   robot_angle: np.ndarray) -> np.ndarray:
+                   robot_pos: np.ndarray) -> np.ndarray:
         can_spin = distance(robot_pos, ball_pos) < self.spin_distance
         should_spin = robot_pos[0] + 3 > ball_pos[0]
         should_spin &= not insideOurArea(ball_pos, 0, 0)
         if can_spin and should_spin:
             self.action = Actions.SPIN
+            objective = None
         else:
             self.action = Actions.MOVE
-            self.objective = self.get_objective(ball_pos,
-                                                robot_pos,
-                                                ball_speed)
-            speeds = self.pid.run(robot_angle,
-                                  self.objective,
-                                  robot_pos)
-            return speeds
+            objective = self.get_objective(ball_pos,
+                                           robot_pos,
+                                           ball_speed)
+
+        return objective
 
     def get_objective(self, ball_pos: np.ndarray,
                       ball_speed: np.ndarray,
@@ -49,15 +47,13 @@ class Defender(DeterministicAgent):
         dest = [ball_pos[0] + math.cos(ball_dir)*self.offensive_safe_radius,
                 ball_pos[1] + math.sin(ball_dir)*self.offensive_safe_radius]
 
-        ball_point = Point(ball_pos)
-        field_point = Point((self.field.goal_area_max[0],
-                             self.field.goal_area_min[1]))
-        goal_point = Point(self.field.goal_area_max)
-        triangle = Polygon((ball_point, field_point, goal_point))
-        if (triangle.contains(Point(ball_pred))):
-            distance = distance(ball_pos, robot_pos)
-            dest = [ball_pos[0] + math.cos(ball_dir)*distance,
-                    ball_pos[1] + math.sin(ball_dir)*distance]
+        triangle = [ball_pos,
+                    (self.field.goal_area_max[0], self.field.goal_area_min[1]),
+                    self.field.goal_area_max]
+        if point_in_polygon(triangle, ball_pred):
+            dist = distance(ball_pos, robot_pos)
+            dest = [ball_pos[0] + math.cos(ball_dir)*dist,
+                    ball_pos[1] + math.sin(ball_dir)*dist]
         else:
             pred_x = math.cos(angle_ball_goal)*self.offensive_safe_radius
             pred_y = math.sin(angle_ball_goal)*self.offensive_safe_radius

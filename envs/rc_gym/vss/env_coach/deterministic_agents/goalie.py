@@ -15,8 +15,7 @@ class Goalie(DeterministicAgent):
 
     def get_action(self, ball_pos: np.ndarray,
                    ball_speed: np.ndarray,
-                   robot_pos: np.ndarray,
-                   robot_angle: float) -> np.ndarray:
+                   robot_pos: np.ndarray) -> np.ndarray:
         spin_direction = False
         pred_ball = ball_pos + ball_speed*5
 
@@ -36,16 +35,14 @@ class Goalie(DeterministicAgent):
 
         if should_spin:
             self.action = Actions.SPIN
-            return self.spin(robot_pos, ball_pos, ball_speed)
+            objective = None
         else:
             self.action = Actions.MOVE
-            self.objective = self.get_objective(ball_pos,
-                                                robot_pos,
-                                                ball_speed)
-            speeds = self.pid.run(robot_angle,
-                                  self.objective,
-                                  robot_pos)
-            return speeds
+            objective = self.get_objective(ball_pos,
+                                           robot_pos,
+                                           ball_speed)
+
+        return objective
 
     def get_objective(self, ball_pos: np.ndarray,
                       ball_speed: np.ndarray,

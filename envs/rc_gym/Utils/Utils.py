@@ -92,7 +92,7 @@ def projectPointToSegment(t_a, t_b, t_c):
     if (r > 1):
         return t_b
     aux = (t_b[0] - t_a[0], t_b[1] - t_a[1])
-    return (t_a[0] + aux[0] * r, t_a[1] + aux[1] * r)
+    return np.array([t_a[0] + aux[0] * r, t_a[1] + aux[1] * r])
 
 
 def distancePointSegment(t_a, t_b, t_c):
@@ -144,7 +144,41 @@ def spin(robot_pos, ball_pos, ball_speed):
     else:
         return (70, -70)
 
+
+def is_near_to_wall(position, alpha):
+    field = VSSField()
+    res = 0
+    if(position[1] <= field.m_min[1]+3.75*alpha and res != 3):
+        res = 1
+    if(position[1] >= field.m_max[1]-3.75*alpha and res != 3):
+        res = 2
+    if (position[1] >= field.goal_min[1] + (3.75*alpha)
+            and position[1] <= field.goal_max[1] - (3.75*alpha)):
+        pass
+    else:
+        if (position[0] <= field.m_min[0] + (3.75*alpha)):
+            res = 4
+        if (position[0] >= field.m_max[0] - (3.75*alpha)):
+            res = 3
+    return res
+
+
+def point_in_polygon(p, q):
+    c = False
+    p_size = len(p)
+    for i in range(p_size):
+        j = (i + 1) % p_size
+        if((p[i][1] <= q[1] and q[1] < p[j][1]
+            or p[j][1] <= q[1] and q[1] < p[i][1])
+           and q[0] < p[i][0] + (p[j][0] - p[i][0])
+           * (q[1] - p[i][1]) / (p[j][1] - p[i][1])):
+            c = not c
+
+    return c
+
 # Base on baselines implementation
+
+
 class OrnsteinUhlenbeckAction(object):
     def __init__(self, action_space, theta=.17, dt=0.032, x0=None):
         self.theta = theta
@@ -155,12 +189,15 @@ class OrnsteinUhlenbeckAction(object):
         self.reset()
 
     def sample(self):
-        x = self.x_prev + self.theta * (self.mu - self.x_prev) * self.dt + self.sigma * np.sqrt(self.dt) * np.random.normal(size=self.mu.shape)
+        x = self.x_prev + self.theta * (self.mu - self.x_prev) * self.dt + \
+            self.sigma * np.sqrt(self.dt) * \
+            np.random.normal(size=self.mu.shape)
         self.x_prev = x
         return x
 
     def reset(self):
-        self.x_prev = self.x0 if self.x0 is not None else np.zeros_like(self.mu)
+        self.x_prev = self.x0 if self.x0 is not None else np.zeros_like(
+            self.mu)
 
     def __repr__(self):
         return 'OrnsteinUhlenbeckActionNoise(mu={}, sigma={})'.format(self.mu, self.sigma)

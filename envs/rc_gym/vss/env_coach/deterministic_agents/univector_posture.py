@@ -57,7 +57,7 @@ def getSurroundings(robotPos, ballPos):
 def adjustToObstacle(source, direction, obstaclePosition):
     Ro = 10.0
     M = 4.0
-    distance = distance(source, obstaclePosition)
+    dist = distance(source, obstaclePosition)
     length_y = (obstaclePosition[0] - source[0]) * math.sin(direction)
     length_x = (source[1] - obstaclePosition[1]) * math.cos(direction)
     length = math.fabs(length_y + length_x)
@@ -66,18 +66,18 @@ def adjustToObstacle(source, direction, obstaclePosition):
     diff_angle = smallestAngleDiff(direction, angle)
 
     if (length < Ro + M and math.fabs(diff_angle) < math.pi / 2.0):
-        if (distance <= Ro):
+        if (dist <= Ro):
             direction = angle - math.pi
-        elif (distance <= Ro + M):
+        elif (dist <= Ro + M):
             alfa = 0.5
 
             if (diff_angle > 0.0):
                 alfa = 1.5
 
-            tmpx = ((distance - Ro) * math.cos(angle - alfa * math.pi)
-                    + (Ro + M - distance) * math.cos(angle - math.pi)) / M
-            tmpy = ((distance - Ro) * math.sin(angle - alfa * math.pi)
-                    + (Ro + M - distance) * math.sin(angle - math.pi)) / M
+            tmpx = ((dist - Ro) * math.cos(angle - alfa * math.pi)
+                    + (Ro + M - dist) * math.cos(angle - math.pi)) / M
+            tmpy = ((dist - Ro) * math.sin(angle - alfa * math.pi)
+                    + (Ro + M - dist) * math.sin(angle - math.pi)) / M
             direction = math.atan2(tmpy, tmpx)
         else:
             multiplier = -1.0
@@ -87,7 +87,7 @@ def adjustToObstacle(source, direction, obstaclePosition):
 
             direction = multiplier \
                 * math.fabs(math.atan((Ro + M)
-                                      / math.sqrt(distance * distance
+                                      / math.sqrt(dist * dist
                                                   + (Ro + M) * (Ro + M))))\
                 + angle
 
