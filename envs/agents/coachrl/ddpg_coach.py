@@ -3,6 +3,7 @@ import collections
 import math
 import os
 import random
+from pprint import pprint
 
 import gym
 import numpy as np
@@ -169,6 +170,7 @@ def train(actor, exp_queue, finish_event, load):
         critic_target.load_state_dict(critic.state_dict())
 
         memory = ReplayBuffer()
+        it = 0
         while not finish_event.is_set():
             for i in range(batch_size):
                 exp = exp_queue.get()
@@ -177,8 +179,7 @@ def train(actor, exp_queue, finish_event, load):
                 memory.put(exp)
 
             # training loop:
-            it = 0
-            if memory.size() > batch_size:
+            while exp_queue.qsize() < batch_size/2:
 
                 state_batch, action_batch,\
                     reward_batch, next_state_batch, done_batch = memory.sample(
@@ -206,7 +207,7 @@ def train(actor, exp_queue, finish_event, load):
                 targets = reward_batch + (1.0 - done_batch)*gamma*q_targets
 
                 q_values = critic(state_batch, action_batch)
-                critic_loss = F.smooth_l1_loss(q_values, targets.detach())
+                critic_loss = F.mse_loss(q_values, targets.detach())
                 critic_optim.zero_grad()
                 critic_loss.backward()
                 critic_optim.step()
@@ -221,12 +222,12 @@ def train(actor, exp_queue, finish_event, load):
                     target_param.data.copy_(
                         target_param.data * (1.0 - soft_tau) + param.data * soft_tau)
 
-                wandb.log({'Loss/DDPG/Actor': z.item(),
-                           'Loss/DDPG/Critic': critic_loss.item()},
+                wandb.log({'Loss/Actor': z.item(),
+                           'Loss/Critic': critic_loss.item()},
                           step=it)
                 it += 1
 
-                if it % 100000 == 0:
+                if it % 10000 == 0:
                     torch.save(critic.state_dict(),
                                f'models/DDPG_CRITIC_{it}.model')
                     torch.save(actor.state_dict(),
@@ -250,7 +251,8 @@ def play(actor, exp_queue, env, test, i, finish_event):
             env = FrameStack(ori_env, 60)
             ou_noise = OUNoise()
             total_steps = 0
-            for n_epi in range(1000):
+            actions_dict = {i: 0 for i in range(27)}
+            for n_epi in range(50):
                 s = env.reset()
                 s = s.__array__(dtype=np.float32)
                 done = False
@@ -263,29 +265,32 @@ def play(actor, exp_queue, env, test, i, finish_event):
                     else:
                         a = a[0]
                     action = mapped_action(a)
+                    actions_dict[action] += 1
                     s_prime, r, done, info = env.step(action)
                     s_prime = s_prime.__array__(dtype=np.float32)
                     done_mask = 0.0 if done else 1.0
                     exp = (s, a, r, s_prime, done_mask)
                     if not test:
                         exp_queue.put(exp)
-                    elif test:
-                        env.unwrapped.render()
+                    # else:
+                    #     env.unwrapped.render()
                     score += r
                     s = s_prime
                     total_steps += 1
                     epi_step += 1
 
+                print(f'***********EPI {n_epi} ENDED***********')
+                print(f'Total: {score}')
+                print('Goal score: {}'.format(info['goal_score']))
+                pprint(actions_dict)
+                print('*****************************************')
                 if not test:
-                    print(f'***********EPI {n_epi} ENDED***********')
-                    print(f'Total: {score}')
-                    print('Goal score: {}'.format(info['goal_score']))
-                    print('*****************************************')
                     wandb.log({'Rewards/total': score,
                                'Rewards/goal_score': info['goal_score'],
                                'Rewards/num_penalties': info['penalties'],
                                'Rewards/num_faults': info['faults'],
                                }, step=total_steps)
+
     except KeyboardInterrupt:
         print("...Agent Finishing...")
         finish_event.set()
@@ -318,8 +323,8 @@ def main(load_model=False, test=False):
                                          finish_event, load_model))
         train_process.start()
         train_process.join()
-    play_threads = [t.join(1)
-                    for t in play_threads if t is not None and t.isAlive()]
+    play_threads = [t.join()
+                    for t in play_threads]
 
 
 if __name__ == '__main__':
