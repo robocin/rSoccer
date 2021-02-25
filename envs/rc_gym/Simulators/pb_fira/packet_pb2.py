@@ -13,9 +13,9 @@ from google.protobuf import descriptor_pb2
 _sym_db = _symbol_database.Default()
 
 
-import pb_fira.command_fira_pb2 as command__fira__pb2
-import pb_fira.replacement_pb2 as replacement__pb2
-import pb_fira.common_pb2 as common__pb2
+import rc_gym.Simulators.pb_fira.command_fira_pb2 as command__fira__pb2
+import rc_gym.Simulators.pb_fira.replacement_pb2 as replacement__pb2
+import rc_gym.Simulators.pb_fira.common_pb2 as common__pb2
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(

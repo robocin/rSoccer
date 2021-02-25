@@ -13,7 +13,7 @@ from google.protobuf import descriptor_pb2
 _sym_db = _symbol_database.Default()
 
 
-import pb_fira.common_pb2 as common__pb2
+import rc_gym.Simulators.pb_fira.common_pb2 as common__pb2
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(
