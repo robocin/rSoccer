@@ -234,10 +234,8 @@ class VSSCoachEnv(VSSBaseEnv):
         formation = self.formations[action]
 
         # Send random commands to the other robots
-        v_wheel1, v_wheel2 = self.deep_atks[0](self.frame)
-        commands.append(Robot(yellow=False, id=0,
-                              v_wheel1=v_wheel1, v_wheel2=v_wheel2))
-        for i in range(1, self.n_robots_blue):
+        formation = "0"+formation
+        for i in range(self.n_robots_blue):
             role = int(formation[i-1])
             if role == 0:
                 v_wheel1, v_wheel2 = self.deep_atks[i](self.frame)
@@ -263,11 +261,9 @@ class VSSCoachEnv(VSSBaseEnv):
 
         yellow_frame = self.frame.get_yellow_frame()
         formation = self.formations[self.versus]
-        v_wheel2, v_wheel1 = self.deep_atks[0](self.frame)
-        commands.append(Robot(yellow=False, id=0,
-                              v_wheel1=v_wheel1, v_wheel2=v_wheel2))
-        for i in range(1, self.n_robots_yellow):
-            role = int(formation[i-1])
+        formation = "0"+formation
+        for i in range(self.n_robots_yellow):
+            role = int(formation[i])
             if role == 0:
                 v_wheel2, v_wheel1 = self.deep_atks[i](yellow_frame)
             elif role == 1:
