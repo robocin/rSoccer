@@ -67,26 +67,15 @@ class NormalizedWrapper(gym.Wrapper):
         :param scaled_action: (np.ndarray)
         :return: (np.ndarray)
         """
-        return self.env.action_space.low + (
-            0.5
-            * (scaled_action + 1.0)
-            * (self.env.action_space.high - self.env.action_space.low)
-        )
+        return self.env.action_space.low + (0.5 * (scaled_action + 1.0)
+            * (self.env.action_space.high - self.env.action_space.low))
 
     def scale_observation(self, observation):
         """
         Scale the observation to bounds [-1, 1]
         """
-        return (
-            2
-            * (
-                (observation - self.env.observation_space.low)
-                / (
-                    self.env.observation_space.high
-                    - self.env.observation_space.low
-                )
-            )
-        ) - 1
+        return (2 * ((observation - self.env.observation_space.low)
+                / (self.env.observation_space.high - self.env.observation_space.low))) - 1
 
     def reset(self):
         """
