@@ -1,1 +1,1 @@
-screen -S coachrl python ddpg_coach.py --test
+screen -S coachrl -L python ddpg_coach.py --test

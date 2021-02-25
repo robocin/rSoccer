@@ -76,10 +76,7 @@ class VSSCoachEnv(VSSBaseEnv):
         high_obs_bound += [1.2, 1.2, 1.25, 1.25, 1.2]*self.n_robots_yellow
         low_obs_bound = np.array(low_obs_bound, dtype=np.float32)
         high_obs_bound = np.array(high_obs_bound, dtype=np.float32)
-        self.formations = ["000", "001", "002", "010", "011", "012",
-                           "020", "021", "100", "101", "102", "110",
-                           "111", "112", "120", "121", "200", "201",
-                           "210", "211"]
+        self.formations = ['00', '01', '02', '10', '11', '12', '20', '21']
 
         self.action_space = Discrete(20)
         self.observation_space = Box(low=low_obs_bound,
@@ -126,7 +123,7 @@ class VSSCoachEnv(VSSBaseEnv):
         self.stop_counter = 0
         self.num_atk_faults = 0
         self.num_penalties = 0
-        self.versus = int(random.choice([0, 2, 5]))
+        self.versus = int(random.choice([1, 5]))
         return super().reset()
 
     def step(self, action):
@@ -237,8 +234,11 @@ class VSSCoachEnv(VSSBaseEnv):
         formation = self.formations[action]
 
         # Send random commands to the other robots
-        for i in range(self.n_robots_blue):
-            role = int(formation[i])
+        v_wheel1, v_wheel2 = self.deep_atks[0](self.frame)
+        commands.append(Robot(yellow=False, id=0,
+                              v_wheel1=v_wheel1, v_wheel2=v_wheel2))
+        for i in range(1, self.n_robots_blue):
+            role = int(formation[i-1])
             if role == 0:
                 v_wheel1, v_wheel2 = self.deep_atks[i](self.frame)
             elif role == 1:
@@ -261,10 +261,13 @@ class VSSCoachEnv(VSSBaseEnv):
             commands.append(Robot(yellow=False, id=i, v_wheel1=v_wheel1,
                                   v_wheel2=v_wheel2))
 
+        yellow_frame = self.frame.get_yellow_frame()
         formation = self.formations[self.versus]
-        for i in range(self.n_robots_yellow):
-            role = int(formation[i])
-            yellow_frame = self.frame.get_yellow_frame()
+        v_wheel2, v_wheel1 = self.deep_atks[0](self.frame)
+        commands.append(Robot(yellow=False, id=0,
+                              v_wheel1=v_wheel1, v_wheel2=v_wheel2))
+        for i in range(1, self.n_robots_yellow):
+            role = int(formation[i-1])
             if role == 0:
                 v_wheel2, v_wheel1 = self.deep_atks[i](yellow_frame)
             elif role == 1:

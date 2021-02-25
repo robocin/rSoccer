@@ -64,7 +64,7 @@ class Critic(nn.Module):
     def __init__(self, num_inputs):
         super(Critic, self).__init__()
 
-        self.linear1 = nn.Linear(num_inputs + 3, 128)
+        self.linear1 = nn.Linear(num_inputs + 2, 128)
         self.linear2 = nn.Linear(128, 128)
         self.linear3 = nn.Linear(128, 1)
 
@@ -82,7 +82,7 @@ class Actor(nn.Module):
         self.num_input = num_inputs
         self.linear1 = nn.Linear(num_inputs, 128)
         self.linear2 = nn.Linear(128, 128)
-        self.linear3 = nn.Linear(128, 3)
+        self.linear3 = nn.Linear(128, 2)
 
     def forward(self, state):
         x1 = F.relu(self.linear1(state))
@@ -106,7 +106,7 @@ class OUNoise(object):
         self.max_sigma = max_sigma
         self.min_sigma = min_sigma
         self.decay_period = decay_period
-        self.action_dim = 3
+        self.action_dim = 2
         self.low = -1.25
         self.high = 1.25
         self.reset()
@@ -138,9 +138,8 @@ def find_nearest(array, value):
 
 
 def mapped_action(action):
-    action_list = ["000", "001", "002", "010", "011", "012", "020", "021",
-                   "100", "101", "102", "110", "111", "112", "120", "121",
-                   "200", "201", "210", "211"]
+    action_list = ['00', '01', '02', '10', '11', '12', '20', '21']
+
     act = ''
     for x in action:
         if x < -0.34:
@@ -150,17 +149,9 @@ def mapped_action(action):
         else:
             act += '2'
 
-    if not act in action_list:
-        act = random.choice(action_list)
-        action = []
-        for x in act:
-            if x == '0':
-                action.append(-0.5)
-            elif x == '1':
-                action.append(0)
-            else:
-                action.append(0.5)
-        action = np.array(action)
+    if act == '22':
+        act = '21'
+        action = np.array([action[0], 0.3])
     return action_list.index(act), action
 
 
@@ -256,9 +247,7 @@ def train(actor, exp_queue, finish_event, load):
 
 
 def play(actor, exp_queue, env, test, i, finish_event):
-    action_list = ["AAA", "AAZ", "AAG", "AZA", "AZZ", "AZG", "AGA", "AGZ",
-                   "ZAA", "ZAZ", "ZAG", "ZZA", "ZZZ", "ZZG", "ZGA", "ZGZ",
-                   "GAA", "GAZ", "GZA", "GZZ"]
+    action_list = ['AA', 'AZ', 'AG', 'ZA', 'ZZ', 'ZG', 'GA', 'GZ']
     if not test:
         wandb.init(name=f"CoachRL-DDPG-{i}", project="RC-Reinforcement")
     try:
@@ -268,7 +257,7 @@ def play(actor, exp_queue, env, test, i, finish_event):
             ou_noise = OUNoise()
             total_steps = 0
             for n_epi in range(20):
-                actions_dict = {x: 0 for x in action_list}
+                actions_dict = {'A'+x: 0 for x in action_list}
                 s = env.reset()
                 s = s.__array__(dtype=np.float32)
                 done = False
