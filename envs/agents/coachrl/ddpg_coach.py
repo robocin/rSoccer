@@ -305,7 +305,7 @@ def play(actor, exp_queue, env, test, i, finish_event):
                                'Rewards/goal_score': info['goal_score'],
                                'Rewards/num_penalties': info['penalties'],
                                'Rewards/num_faults': info['faults'],
-                               }, step=total_steps)
+                               }, step=n_epi)
 
     except KeyboardInterrupt:
         print("...Agent Finishing...")
