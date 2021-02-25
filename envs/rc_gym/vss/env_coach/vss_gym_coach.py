@@ -383,11 +383,11 @@ class VSSCoachEnv(VSSBaseEnv):
         else:
             if self.is_penalty():
                 self.num_penalties += 1
-                reward = -3.5
+                reward = -10
                 penalty = True
             if self.is_atk_fault():
                 self.num_atk_faults += 1
-                reward -= 1
+                reward -= 3.5
                 fault = True
 
             if self.is_ball_stopped():
