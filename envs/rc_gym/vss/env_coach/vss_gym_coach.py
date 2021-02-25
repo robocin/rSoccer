@@ -76,15 +76,12 @@ class VSSCoachEnv(VSSBaseEnv):
         high_obs_bound += [1.2, 1.2, 1.25, 1.25, 1.2]*self.n_robots_yellow
         low_obs_bound = np.array(low_obs_bound, dtype=np.float32)
         high_obs_bound = np.array(high_obs_bound, dtype=np.float32)
-        self.formations = ["000", "001", "002", "010",
-                           "011", "012", "020", "021",
-                           "022", "100", "101", "102",
-                           "110", "111", "112", "120",
-                           "121", "122", "200", "201",
-                           "202", "210", "211", "212",
-                           "220", "221", "222"]
+        self.formations = ["000", "001", "002", "010", "011", "012",
+                           "020", "021", "100", "101", "102", "110",
+                           "111", "112", "120", "121", "200", "201",
+                           "210", "211"]
 
-        self.action_space = Discrete(27)
+        self.action_space = Discrete(20)
         self.observation_space = Box(low=low_obs_bound,
                                      high=high_obs_bound)
 
@@ -486,13 +483,12 @@ class VSSCoachEnv(VSSBaseEnv):
 
         pos_frame.ball.x = -0.375
         pos_frame.ball.y = 0
-                    
+
         pos_frame.robots_blue = {
             0: Robot(id=0, x=blue_gk_x, y=blue_gk_y, theta=blue_gk_theta),
             1: Robot(id=1, x=blue_def_x, y=blue_def_y, theta=blue_def_theta),
             2: Robot(id=2, x=blue_atk_x, y=blue_atk_y, theta=blue_atk_theta)
         }
-
 
         pos_frame.robots_yellow = {
             1: Robot(id=1, x=yellow_gk_x, y=yellow_gk_y, theta=yellow_gk_theta),

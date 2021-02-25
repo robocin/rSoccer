@@ -26,6 +26,9 @@ batch_size = 32
 buffer_limit = 500000
 soft_tau = 0.005  # for target network soft update
 device = torch.device('cuda')
+torch.cuda.manual_seed(441)
+np.random.seed(441)
+random.seed(441)
 
 
 class ReplayBuffer():
@@ -136,9 +139,8 @@ def find_nearest(array, value):
 
 def mapped_action(action):
     action_list = ["000", "001", "002", "010", "011", "012", "020", "021",
-                   "022", "100", "101", "102", "110", "111", "112", "120",
-                   "121", "122", "200", "201", "202", "210", "211", "212",
-                   "220", "221", "222"]
+                   "100", "101", "102", "110", "111", "112", "120", "121",
+                   "200", "201", "210", "211"]
     act = ''
     for x in action:
         if x < -0.34:
@@ -147,7 +149,19 @@ def mapped_action(action):
             act += '1'
         else:
             act += '2'
-    return action_list.index(act)
+
+    if not act in action_list:
+        act = random.choice(action_list)
+        action = []
+        for x in act:
+            if x == '0':
+                action.append(-0.5)
+            elif x == '1':
+                action.append(0)
+            else:
+                action.append(0.5)
+        action = np.array(action)
+    return action_list.index(act), action
 
 
 def train(actor, exp_queue, finish_event, load):
@@ -243,9 +257,8 @@ def train(actor, exp_queue, finish_event, load):
 
 def play(actor, exp_queue, env, test, i, finish_event):
     action_list = ["AAA", "AAZ", "AAG", "AZA", "AZZ", "AZG", "AGA", "AGZ",
-                   "AGG", "ZAA", "ZAZ", "ZAG", "ZZA", "ZZZ", "ZZG", "ZGA",
-                   "ZGZ", "ZGG", "GAA", "GAZ", "GAG", "GZA", "GZZ", "GZG",
-                   "GGA", "GGZ", "GGG"]
+                   "ZAA", "ZAZ", "ZAG", "ZZA", "ZZZ", "ZZG", "ZGA", "ZGZ",
+                   "GAA", "GAZ", "GZA", "GZZ"]
     if not test:
         wandb.init(name=f"CoachRL-DDPG-{i}", project="RC-Reinforcement")
     try:
@@ -267,7 +280,7 @@ def play(actor, exp_queue, env, test, i, finish_event):
                         a = ou_noise.get_action(a, epi_step)[0]
                     else:
                         a = a[0]
-                    action = mapped_action(a)
+                    action, a = mapped_action(a)
                     actions_dict[list(actions_dict.keys())[action]] += 1
                     s_prime, r, done, info = env.step(action)
                     s_prime = s_prime.__array__(dtype=np.float32)
@@ -275,8 +288,8 @@ def play(actor, exp_queue, env, test, i, finish_event):
                     exp = (s, a, r, s_prime, done_mask)
                     if not test:
                         exp_queue.put(exp)
-                    else:
-                        env.unwrapped.render('human')
+                    # else:
+                    env.unwrapped.render('human')
                     score += r
                     s = s_prime
                     total_steps += 1
@@ -313,7 +326,7 @@ def main(load_model=False, test=False):
 
     actor.share_memory()
     play_threads = []
-    for i in range(3):
+    for i in range(1):
         env = 'VSSCoach-v0'
         data_proc = mp.Process(target=play, args=(actor, exp_queue, env,
                                                   test, i, finish_event))
