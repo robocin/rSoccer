@@ -12,7 +12,7 @@ class RSimVSS(RSim):
                          n_robots_yellow=n_robots_yellow, time_step_ms=time_step_ms)
 
         self.linear_speed_range = 1.15  # m/s
-        self.robot_wheel_radius = 0.026
+        self.robot_wheel_radius = 0.02
 
     def send_commands(self, commands):
         sim_commands = np.zeros(

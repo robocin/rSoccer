@@ -129,7 +129,7 @@ class VSSCoachEnv(VSSBaseEnv):
         self.stop_counter = 0
         self.num_atk_faults = 0
         self.num_penalties = 0
-        self.versus = int(random.choice([0, 18, 21]))
+        self.versus = int(random.choice([0, 2, 5]))
         return super().reset()
 
     def step(self, action):
@@ -354,9 +354,9 @@ class VSSCoachEnv(VSSBaseEnv):
 
     def is_ball_stopped(self):
         same_x = self.frame.ball.x - self.last_frame.ball.x
-        same_x = same_x < 1.3
+        same_x = same_x < 0.02
         same_y = self.frame.ball.y - self.last_frame.ball.y
-        same_y = same_y < 1.3
+        same_y = same_y < 0.02
         return same_x and same_y
 
     def _calculate_reward_and_done(self):
@@ -368,18 +368,21 @@ class VSSCoachEnv(VSSBaseEnv):
         if self.reward_shaping_total is None:
             self.reward_shaping_total = {'goal_score': 0, 'ball_grad': 0,
                                          'penalties': 0, 'faults': 0,
-                                         'goals_blue': 0, 'goals_yellow': 0}
+                                         'goals_blue': 0, 'goals_yellow': 0,
+                                         'frozen_ball': 0}
         # Check if goal ocurred
         if self.frame.ball.x > (self.field_params['field_length'] / 2):
             self.reward_shaping_total['goal_score'] += 1
             self.reward_shaping_total['goals_blue'] += 1
             reward = 10
             goal = True
+            print('Goal Blue')
         elif self.frame.ball.x < -(self.field_params['field_length'] / 2):
             self.reward_shaping_total['goal_score'] -= 1
             self.reward_shaping_total['goals_yellow'] += 1
             reward = -10
             goal = True
+
         else:
             if self.is_penalty():
                 self.num_penalties += 1
@@ -395,6 +398,7 @@ class VSSCoachEnv(VSSBaseEnv):
                 if self.stop_counter*self.time_step >= 10:
                     fault = True
                     self.stop_counter = 0
+                    self.reward_shaping_total['frozen_ball'] += 1
             else:
                 self.stop_counter = 0
 
@@ -410,10 +414,15 @@ class VSSCoachEnv(VSSBaseEnv):
                 self.reward_shaping_total['faults'] = self.num_atk_faults
 
         if goal or fault or penalty:
-            initial_pos_frame: Frame = self._get_initial_positions_frame()
+            if penalty:
+                initial_pos_frame: Frame = self._get_penalty_pos_frame()
+            else:
+                initial_pos_frame: Frame = self._get_initial_positions_frame()
             self.rsim.reset(initial_pos_frame)
             self.frame = self.rsim.get_frame()
             self.last_frame = None
+            self.previous_ball_potential = 0
+            self.stop_counter = 0
 
         done = self.steps * self.time_step >= 300
 
@@ -452,4 +461,43 @@ class VSSCoachEnv(VSSBaseEnv):
             pos_frame.robots_yellow[i] = Robot(
                 x=x_yellow(), y=y(), theta=theta())
 
+        return pos_frame
+
+    def _get_penalty_pos_frame(self):
+        blue_gk_x = -0.750
+        blue_gk_y = 0.000
+        blue_gk_theta = 0.000
+        blue_atk_x = 0.059
+        blue_atk_y = -0.229
+        blue_atk_theta = 0.042
+        blue_def_x = 0.059
+        blue_def_y = -0.230
+        blue_def_theta = -0.006
+        yellow_gk_x = 0.750
+        yellow_gk_y = -0.000
+        yellow_gk_theta = 90.000
+        yellow_atk_x = -0.300
+        yellow_atk_y = -0.020
+        yellow_atk_theta = 180
+        yellow_def_x = 0.050
+        yellow_def_y = 0.480
+        yellow_def_theta = 179.984
+
+        pos_frame = Frame()
+
+        pos_frame.ball.x = -0.375
+        pos_frame.ball.y = 0
+                    
+        pos_frame.robots_blue = {
+            0: Robot(id=0, x=blue_gk_x, y=blue_gk_y, theta=blue_gk_theta),
+            1: Robot(id=1, x=blue_def_x, y=blue_def_y, theta=blue_def_theta),
+            2: Robot(id=2, x=blue_atk_x, y=blue_atk_y, theta=blue_atk_theta)
+        }
+
+
+        pos_frame.robots_yellow = {
+            1: Robot(id=1, x=yellow_gk_x, y=yellow_gk_y, theta=yellow_gk_theta),
+            2: Robot(id=2, x=yellow_def_x, y=yellow_def_y, theta=yellow_def_theta),
+            0: Robot(id=0, x=yellow_atk_x, y=yellow_atk_y, theta=yellow_atk_theta)
+        }
         return pos_frame

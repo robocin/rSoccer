@@ -272,8 +272,8 @@ def play(actor, exp_queue, env, test, i, finish_event):
                     exp = (s, a, r, s_prime, done_mask)
                     if not test:
                         exp_queue.put(exp)
-                    # else:
-                    #     env.unwrapped.render()
+                    else:
+                        env.unwrapped.render('human')
                     score += r
                     s = s_prime
                     total_steps += 1
@@ -282,6 +282,7 @@ def play(actor, exp_queue, env, test, i, finish_event):
                 print(f'***********EPI {n_epi} ENDED***********')
                 print(f'Total: {score}')
                 print('Goal score: {}'.format(info['goal_score']))
+                pprint(actions_dict)
                 print('*****************************************')
                 if not test:
                     wandb.log({'Rewards/total': score,
@@ -297,7 +298,7 @@ def play(actor, exp_queue, env, test, i, finish_event):
 
 def main(load_model=False, test=False):
     mp.set_start_method('spawn')
-    os.environ['OMP_NUM_THREADS'] = "8"
+    os.environ['OMP_NUM_THREADS'] = "1"
     finish_event = mp.Event()
     exp_queue = mp.Queue(maxsize=batch_size)
     n_inputs = 40*60
