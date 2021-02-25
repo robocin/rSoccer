@@ -106,6 +106,8 @@ class rSimVSSGK(VSSBaseEnv):
         self.energy_penalty = 0
         self.reward_shaping_total = None
         self.attacker = None
+        self.previous_ball_direction = []
+        self.isInside = False
         self.load_atk()
         print('Environment initialized')
     
@@ -248,19 +250,68 @@ class rSimVSSGK(VSSBaseEnv):
         Cosine between the robot vel vector and the vector robot -> ball.
         This indicates rather the robot is moving towards the ball or not.
         '''
+        
+        if self.frame.ball.x < self.field_params['field_length'] / 4  - 5:
+            ball = np.array([self.frame.ball.x, self.frame.ball.y])
+            robot = np.array([self.frame.robots_blue[0].x,
+                            self.frame.robots_blue[0].y])
+            robot_vel = np.array([self.frame.robots_blue[0].v_x,
+                                self.frame.robots_blue[0].v_y])
+            robot_ball = ball - robot
+            robot_ball = robot_ball/np.linalg.norm(robot_ball)
 
-        ball = np.array([self.frame.ball.x, self.frame.ball.y])
-        robot = np.array([self.frame.robots_blue[0].x,
-                          self.frame.robots_blue[0].y])
-        robot_vel = np.array([self.frame.robots_blue[0].v_x,
-                              self.frame.robots_blue[0].v_y])
+            move_reward = np.dot(robot_ball, robot_vel)
+
+            move_reward = np.clip(move_reward / 0.4, -1.0, 1.0)
+        else:
+            move_reward = 0
+        return move_reward
+
+    def __move_reward_y(self):
+        ball = np.array([self.frame.ball.y])
+        robot = np.array([self.frame.robots_blue[0].y])
+        robot_vel = np.array([self.frame.robots_blue[0].v_y])
         robot_ball = ball - robot
         robot_ball = robot_ball/np.linalg.norm(robot_ball)
 
         move_reward = np.dot(robot_ball, robot_vel)
 
         move_reward = np.clip(move_reward / 0.4, -1.0, 1.0)
+        # print("move reward y:", move_reward)
         return move_reward
+
+    def __defended_ball(self):
+        distance_gk_ball = distance([self.frame.robots_blue[0].x, \
+                                    self.frame.robots_blue[0].y], \
+                                    [self.frame.ball.x, self.frame.ball.y]) * 100 
+        field_half_length = self.field_params['field_length'] / 2
+
+        reward = 0
+        if distance_gk_ball < 8 and not self.isInside:
+            # print("Menor que 8")
+            self.previous_ball_direction.append(self.frame.ball.v_x / \
+                                                abs(self.frame.ball.v_x))
+            self.previous_ball_direction.append(self.frame.ball.v_y / \
+                                                abs(self.frame.ball.v_y))
+            self.isInside = True
+        elif self.isInside:
+            # print("Maior que 8")
+            direction_ball_vx = self.frame.ball.v_x / \
+                                abs(self.frame.ball.v_x)
+            direction_ball_vy = self.frame.ball.v_y / \
+                                abs(self.frame.ball.v_x)
+
+            if (self.previous_ball_direction[0] != direction_ball_vx or \
+                self.previous_ball_direction[1] != direction_ball_vy) and \
+                self.frame.ball.x > -field_half_length+0.1:
+                print("GANHEI RECOMPENSA")
+                # ganha recompensa
+                self.isInside = False
+                self.previous_ball_direction.clear()
+                reward = 1
+        
+        return reward
+            
 
     def __ball_grad(self):
         '''Calculate ball potential gradient
@@ -299,20 +350,23 @@ class rSimVSSGK(VSSBaseEnv):
         goal_score = 0
         dist_future_rew = 0
         ball_potential = 0
-        time_reward = 0
+        move_y_reward = 0
         dist_robot_own_goal_bar = 0
-
-        w_future = 0.1
+        ball_defense_reward = 0
+        
+        w_defense = 1.3
+        w_future = 0.3
         w_ball_pot = 0.1
-
+        w_move_y  = 0.3
         # Revisar
-        w_time = 0.1
+        # w_time = 0.1
         w_distance = 0.1
 
         if self.reward_shaping_total is None:
             self.reward_shaping_total = {'goal_score': 0, 'move': 0,
                                          'ball_grad': 0, 'energy': 0,
-                                         'goals_blue': 0, 'goals_yellow': 0}
+                                         'goals_blue': 0, 'goals_yellow': 0,
+                                         'defense': 0 }
         # Check if a goal has ocurred
         if self.last_frame is not None:
             self.previous_ball_potential = None
@@ -325,49 +379,30 @@ class rSimVSSGK(VSSBaseEnv):
             if self.frame.ball.x < -(self.field_params['field_length'] / 2):
                 self.reward_shaping_total['goals_yellow'] += 1
                 self.reward_shaping_total['goal_score'] -= 1
-                goal_score = -1
+                distance_gk_ball = distance([self.frame.robots_blue[0].x, \
+                                    self.frame.robots_blue[0].y], \
+                                    [self.frame.ball.x, self.frame.ball.y]) * 10
+                goal_score = -1.5 - distance_gk_ball
 
             # If goal scored reward = 1 favoured, and -1 if against
             if goal_score != 0:
                 reward = goal_score
 
             else:
-                # Move Reward : Reward the robot for moving in ball direction
-                # future_ball = self._calculate_future_point(
-                #     [self.last_frame.ball.x, self.last_frame.ball.y],
-                #     [self.last_frame.ball.v_x, self.last_frame.ball.v_y])
-                # if future_ball:
-                #     dist_future_rew = distance(
-                #         (self.frame.robots_blue[0].x,
-                #          self.frame.robots_blue[0].y),
-                #         future_ball)
-                # else:
-                #     dist_future_rew = 0
+
                 dist_future_rew = self.__move_reward()
-                # Ball Potential Reward :
+                move_y_reward = self.__move_reward_y()
 
-                # half_field_length = (
-                #     (self.field_params['field_length'] / 2)
-                #     + self.field_params['goal_depth'])
-
-                # dist_ball_enemy_goal_center = distance(
-                #     (self.frame.ball.x, self.frame.ball.y),
-                #     (half_field_length, 0)
-                # )
-
-                # dist_ball_own_goal_center = distance(
-                #     (self.frame.ball.x, self.frame.ball.y),
-                #     (-half_field_length, 0)
-                # )
+                ball_defense_reward = self.__defended_ball() 
 
                 dist_robot_own_goal_bar = -self.field_params['field_length'] / \
-                    2 + 0.1 - self.frame.robots_blue[0].x
+                    2 + 0.15 - self.frame.robots_blue[0].x
 
-                time_ingame = self.frame.time
+                # time_ingame = self.frame.time
 
-                time_reward = 10 if time_ingame > 10 else 0
+                # time_reward = 10 if time_ingame > 10 else 0
 
-                ball_potential = self.__ball_grad()
+                # ball_potential = self.__ball_grad()
                 """
                 
                 Goleiro:
@@ -382,18 +417,22 @@ class rSimVSSGK(VSSBaseEnv):
                 """
 
                 reward = w_future * dist_future_rew + \
-                    w_ball_pot * ball_potential + \
-                    w_distance * dist_robot_own_goal_bar + \
-                    w_time * time_reward 
+                         w_move_y * move_y_reward + \
+                         w_distance * dist_robot_own_goal_bar + \
+                         ball_defense_reward * w_defense
+
+                # w_ball_pot * ball_potential + \
+                # w_time * time_reward + \
 
                 # + w_collision * collisions
 
                 self.reward_shaping_total['move'] += w_future * dist_future_rew
                 self.reward_shaping_total['ball_grad'] += w_ball_pot * ball_potential
+                self.reward_shaping_total['defense'] += ball_defense_reward * w_defense
 
             self.last_frame = self.frame
 
-        done = self.frame.time >= 20 or goal_score != 0
+        done = self.frame.time >= 30 or goal_score != 0
 
         return reward, done
 
