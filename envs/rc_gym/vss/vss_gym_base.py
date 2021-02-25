@@ -13,6 +13,7 @@ import numpy as np
 from rc_gym.Entities import Frame, Robot
 from rc_gym.Simulators.rsim import RSimVSS
 from rc_gym.Utils import RCGymRender
+from rc_gym.Simulators.fira import Fira
 
 
 
@@ -148,3 +149,11 @@ class VSSBaseEnv(gym.Env):
             -self.NORM_BOUNDS,
             self.NORM_BOUNDS
         )
+
+
+class VSSBaseFIRAEnv(VSSBaseEnv):
+
+    def __init__(self, field_type: int,
+                 n_robots_blue: int, n_robots_yellow: int, time_step: float):
+        super().__init__(field_type, n_robots_blue, n_robots_yellow, time_step)
+        self.rsim = Fira()

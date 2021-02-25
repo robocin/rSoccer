@@ -6,8 +6,8 @@ from rc_gym.Entities import Robot
 from rc_gym.Entities.Frame import FramePB
 from rc_gym.Simulators.rsim_base import RSim
 
-import pb_fira.packet_pb2 as packet_pb2
-from pb_fira.state_pb2 import *
+import rc_gym.Simulators.pb_fira.packet_pb2 as packet_pb2
+from rc_gym.Simulators.pb_fira.state_pb2 import *
 
 
 class Fira(RSim):
@@ -47,6 +47,16 @@ class Fira(RSim):
             socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 1
         )
         self.vision_sock.bind((self.vision_ip, self.vision_port))
+        self.linear_speed_range = 1.15
+        self.robot_wheel_radius = 0.026
+
+    def get_field_params(self):
+        return {'field_width': 1.3, 'field_length': 1.5,
+                'penalty_width': 0.7, 'penalty_length': 0.15,
+                'goal_width': 0.4, 'goal_depth': 0.1}
+
+    def stop(self):
+        pass
 
     def reset(self, frame: FramePB):
         placement_pos = self._placement_dict_from_frame(frame)
@@ -66,7 +76,7 @@ class Fira(RSim):
             rep_rob.position.orientation = robot[2]
             rep_rob.yellowteam = False
             rep_rob.turnon = True
-        
+
         for i, robot in enumerate(placement_pos["yellow_robots_pos"]):
             rep_rob = robots_pkt.add()
             rep_rob.position.robot_id = i+1
