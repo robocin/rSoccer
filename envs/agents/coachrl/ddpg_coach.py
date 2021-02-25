@@ -282,13 +282,15 @@ def play(actor, exp_queue, env, test, i, finish_event):
                 print(f'***********EPI {n_epi} ENDED***********')
                 print(f'Total: {score}')
                 print('Goal score: {}'.format(info['goal_score']))
-                pprint(actions_dict)
+                print(actions_dict)
                 print('*****************************************')
                 if not test:
                     wandb.log({'Rewards/total': score,
                                'Rewards/goal_score': info['goal_score'],
                                'Rewards/num_penalties': info['penalties'],
                                'Rewards/num_faults': info['faults'],
+                               'Rewards/ball_grad': info['ball_grad'],
+                               'Rewards/ball_frozen': info['ball_frozen']
                                }, step=total_steps)
 
     except KeyboardInterrupt:

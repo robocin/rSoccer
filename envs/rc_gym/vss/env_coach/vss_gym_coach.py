@@ -62,7 +62,7 @@ class VSSCoachEnv(VSSBaseEnv):
     def __init__(self):
         super().__init__(field_type=0, n_robots_blue=3, n_robots_yellow=3,
                          time_step=0.032)
-
+        np.random.seed(441)
         self.versus = 0
         self.num_atk_faults = 0
         self.num_penalties = 0
@@ -376,7 +376,6 @@ class VSSCoachEnv(VSSBaseEnv):
             self.reward_shaping_total['goals_blue'] += 1
             reward = 10
             goal = True
-            print('Goal Blue')
         elif self.frame.ball.x < -(self.field_params['field_length'] / 2):
             self.reward_shaping_total['goal_score'] -= 1
             self.reward_shaping_total['goals_yellow'] += 1
@@ -386,11 +385,11 @@ class VSSCoachEnv(VSSBaseEnv):
         else:
             if self.is_penalty():
                 self.num_penalties += 1
-                reward = -10
+                reward = -3.5
                 penalty = True
             if self.is_atk_fault():
                 self.num_atk_faults += 1
-                reward -= 3.5
+                reward -= 1.
                 fault = True
 
             if self.is_ball_stopped():
