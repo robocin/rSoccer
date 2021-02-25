@@ -254,8 +254,8 @@ def play(actor, exp_queue, env, test, i, finish_event):
             env = FrameStack(ori_env, 60)
             ou_noise = OUNoise()
             total_steps = 0
-            actions_dict = {x: 0 for x in action_list}
-            for n_epi in range(50):
+            for n_epi in range(33):
+                actions_dict = {x: 0 for x in action_list}
                 s = env.reset()
                 s = s.__array__(dtype=np.float32)
                 done = False
@@ -313,7 +313,7 @@ def main(load_model=False, test=False):
 
     actor.share_memory()
     play_threads = []
-    for i in range(1):
+    for i in range(3):
         env = 'VSSCoach-v0'
         data_proc = mp.Process(target=play, args=(actor, exp_queue, env,
                                                   test, i, finish_event))
