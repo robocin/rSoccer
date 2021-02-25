@@ -138,7 +138,6 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
         while not finish_event.is_set():
             action = agent(state, steps)
             next_state, reward, done, info = agent_env.step(action)
-            # time.sleep(0.1)
             steps += 1
             epi_reward += reward
             # agent_env.render()
@@ -149,7 +148,7 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
             if not test and not evaluation:
                 exp_queue.put(exp)
             elif test:
-                agent_env.render()
+                agent_env.render("human")
 
             if done:
                 # CHANGE REWARD print reward  :
@@ -171,6 +170,10 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
                 writer.add_scalar("rw/goals_yellow",
                                   info['goals_yellow'],
                                   matches_played)
+                writer.add_scalar("rw/defense",
+                                  info['defense'],
+                                  matches_played)
+                
 
                 print(f'<======Match {matches_played}======>')
                 print(f'-------Reward:', epi_reward)
