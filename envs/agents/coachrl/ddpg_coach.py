@@ -288,8 +288,8 @@ def play(actor, exp_queue, env, test, i, finish_event):
                     exp = (s, a, r, s_prime, done_mask)
                     if not test:
                         exp_queue.put(exp)
-                    # else:
-                    env.unwrapped.render('human')
+                    else:
+                        env.unwrapped.render('human')
                     score += r
                     s = s_prime
                     total_steps += 1
