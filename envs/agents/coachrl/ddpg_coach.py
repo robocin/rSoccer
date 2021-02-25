@@ -242,7 +242,10 @@ def train(actor, exp_queue, finish_event, load):
 
 
 def play(actor, exp_queue, env, test, i, finish_event):
-
+    action_list = ["AAA", "AAZ", "AAG", "AZA", "AZZ", "AZG", "AGA", "AGZ",
+                   "AGG", "ZAA", "ZAZ", "ZAG", "ZZA", "ZZZ", "ZZG", "ZGA",
+                   "ZGZ", "ZGG", "GAA", "GAZ", "GAG", "GZA", "GZZ", "GZG",
+                   "GGA", "GGZ", "GGG"]
     if not test:
         wandb.init(name=f"CoachRL-DDPG-{i}", project="RC-Reinforcement")
     try:
@@ -251,7 +254,7 @@ def play(actor, exp_queue, env, test, i, finish_event):
             env = FrameStack(ori_env, 60)
             ou_noise = OUNoise()
             total_steps = 0
-            actions_dict = {i: 0 for i in range(27)}
+            actions_dict = {x: 0 for x in action_list}
             for n_epi in range(50):
                 s = env.reset()
                 s = s.__array__(dtype=np.float32)
@@ -265,7 +268,7 @@ def play(actor, exp_queue, env, test, i, finish_event):
                     else:
                         a = a[0]
                     action = mapped_action(a)
-                    actions_dict[action] += 1
+                    actions_dict[list(actions_dict.keys())[action]] += 1
                     s_prime, r, done, info = env.step(action)
                     s_prime = s_prime.__array__(dtype=np.float32)
                     done_mask = 0.0 if done else 1.0
@@ -289,8 +292,6 @@ def play(actor, exp_queue, env, test, i, finish_event):
                                'Rewards/goal_score': info['goal_score'],
                                'Rewards/num_penalties': info['penalties'],
                                'Rewards/num_faults': info['faults'],
-                               'Rewards/ball_grad': info['ball_grad'],
-                               'Rewards/ball_frozen': info['ball_frozen']
                                }, step=total_steps)
 
     except KeyboardInterrupt:

@@ -80,8 +80,10 @@ class StochasticAgent:
 
         observation = list()
         teammates = self.get_rotated_obs(frame)
-
-        observation.append(normX(frame.ball.x))
+        if frame.ball.x < -0.61 and abs(frame.ball.y) < 0.45:
+            observation.append(normX(frame.ball.x + 0.2))
+        else:
+            observation.append(normX(frame.ball.x))
         observation.append(normX(frame.ball.y))
         observation.append(normVx(frame.ball.v_x))
         observation.append(normVx(frame.ball.v_y))
