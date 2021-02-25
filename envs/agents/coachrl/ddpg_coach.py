@@ -267,7 +267,7 @@ def play(actor, exp_queue, env, test, i, finish_event):
             env = FrameStack(ori_env, 60)
             ou_noise = OUNoise()
             total_steps = 0
-            for n_epi in range(33):
+            for n_epi in range(20):
                 actions_dict = {x: 0 for x in action_list}
                 s = env.reset()
                 s = s.__array__(dtype=np.float32)
@@ -306,6 +306,7 @@ def play(actor, exp_queue, env, test, i, finish_event):
                                'Rewards/num_penalties': info['penalties'],
                                'Rewards/num_faults': info['faults'],
                                }, step=n_epi)
+            finish_event.set()
 
     except KeyboardInterrupt:
         print("...Agent Finishing...")
