@@ -80,6 +80,7 @@ class VSSMAEnv(VSSBaseEnv):
     def reset(self):
         self.actions = None
         self.reward_shaping_total = None
+        self.previous_ball_potential = None
 
         return super().reset()
 
@@ -278,6 +279,7 @@ class VSSMAEnv(VSSBaseEnv):
             self.rsim.reset(initial_pos_frame)
             self.frame = self.rsim.get_frame()
             self.last_frame = None
+            self.previous_ball_potential = None
 
         done = self.steps * self.time_step >= 300
 

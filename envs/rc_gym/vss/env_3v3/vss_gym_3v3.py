@@ -78,6 +78,7 @@ class VSS3v3Env(VSSBaseEnv):
     def reset(self):
         self.actions = None
         self.reward_shaping_total = None
+        self.previous_ball_potential = None
         for ou in self.ou_actions:
             ou.reset()
 
@@ -248,6 +249,7 @@ class VSS3v3Env(VSSBaseEnv):
             initial_pos_frame: Frame = self._get_initial_positions_frame()
             self.rsim.reset(initial_pos_frame)
             self.frame = self.rsim.get_frame()
+            self.previous_ball_potential = None
             self.last_frame = None
 
         done = self.steps * self.time_step >= 300
