@@ -11,7 +11,7 @@ from typing import Dict, List, Optional
 import gym
 import numpy as np
 from rc_gym.Entities import Frame, Robot
-from rc_gym.Utils import RCRender
+from rc_gym.Utils import RCGymRender
 from rc_gym.Simulators.rsim import RSimSSL
 
 
@@ -97,14 +97,12 @@ class SSLBaseEnv(gym.Env):
 
         '''
         if self.view == None:
-            self.view = RCRender(self.n_robots_blue,
+            self.view = RCGymRender(self.n_robots_blue,
                                  self.n_robots_yellow,
                                  self.field_params,
                                  simulator='ssl')
 
         self.view.render_frame(self.frame)
-        if mode == 'human':
-            time.sleep(0.01)
 
     def close(self):
         self.rsim.stop()

@@ -11,3 +11,7 @@ register(id='VSSMA-v0',
 register(id='VSSMAOpp-v0',
          entry_point='rc_gym.vss.env_ma:VSSMAOpp',
          )
+
+register(id='SSLTest-v0',
+         entry_point='rc_gym.ssl:SSLTestEnv',
+         )
