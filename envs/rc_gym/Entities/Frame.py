@@ -2,16 +2,15 @@ import numpy as np
 from typing import Dict
 from rc_gym.Entities.Ball import Ball
 from rc_gym.Entities.Robot import Robot
-from dataclasses import dataclass
 
 class Frame:
     """Units: seconds, m, m/s, degrees, degrees/s. Reference is field center."""
     
     def __init__(self):
         """Init Frame object."""
-        self.ball = Ball()
-        self.robots_blue = {}
-        self.robots_yellow = {}
+        self.ball: Ball = Ball()
+        self.robots_blue: Dict[int, Robot] = {}
+        self.robots_yellow: Dict[int, Robot] = {}
 
 class FrameVSS(Frame):
     def parse(self, state, n_robots_blue=3, n_robots_yellow=3):

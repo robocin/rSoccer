@@ -12,7 +12,7 @@ import gym
 import numpy as np
 from rc_gym.Entities import Frame, Robot
 from rc_gym.Utils import RCRender
-from rc_gym.Simulators.rsim_vss import RSimVSS
+from rc_gym.Simulators.rsim import RSimVSS
 
 
 class VSSBaseEnv(gym.Env):
