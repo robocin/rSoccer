@@ -73,7 +73,7 @@ class RSimVSS(RSim):
         super().__init__(field_type=field_type, n_robots_blue=n_robots_blue,
                          n_robots_yellow=n_robots_yellow, time_step_ms=time_step_ms)
 
-        self.linear_speed_range = 1.15  # m/s
+        self.linear_speed_range = 1.2  # m/s
         self.robot_wheel_radius = 0.026
 
     def send_commands(self, commands):
@@ -118,7 +118,8 @@ class RSimSSL(RSim):
         super().__init__(field_type=field_type, n_robots_blue=n_robots_blue,
                          n_robots_yellow=n_robots_yellow, time_step_ms=time_step_ms)
 
-        self.linear_speed_range = 1.15  # m/s
+        self.linear_speed_range = 1  # m/s
+        self.angular_speed_range = 10  # rad/s
 
     def send_commands(self, commands):
         sim_commands = np.zeros(
@@ -132,7 +133,8 @@ class RSimSSL(RSim):
             # convert from linear speed to angular speed
             sim_commands[rbt_id][0] = cmd.v_x
             sim_commands[rbt_id][1] = cmd.v_y
-            sim_commands[rbt_id][2] = cmd.v_theta
+            # TODO checar se a velocidade é rad ou deg/s
+            sim_commands[rbt_id][2] = cmd.v_theta * self.angular_speed_range
             sim_commands[rbt_id][3] = cmd.kick_v_x
             sim_commands[rbt_id][4] = cmd.kick_v_z
             sim_commands[rbt_id][5] = cmd.dribbler
