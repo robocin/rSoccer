@@ -62,7 +62,7 @@ class RCGymRender:
         screen_height = 650
 
         # Window margin
-        margin = 0.03
+        margin = 0.1 if simulator == "vss" else 0.4
         # Half field width
         h_len = (self.field["field_length"]
                  + 2*self.field["goal_depth"]) / 2
@@ -71,8 +71,8 @@ class RCGymRender:
 
         # Window dimensions in meters
         self.screen_dimensions = {
-            "left": -(h_len + margin*2),
-            "right": (h_len + margin*2),
+            "left": -(h_len + margin),
+            "right": (h_len + margin),
             "bottom": -(h_wid + margin),
             "top": (h_wid + margin)
         }
@@ -81,17 +81,22 @@ class RCGymRender:
         self.screen = rendering.Viewer(screen_width, screen_height)
 
         # Set window bounds, will scale objects accordingly
-        margin = 0.03
         self.screen.set_bounds(**self.screen_dimensions)
 
         # add backgrond
         self._add_background()
 
-        # add field_lines
-        self._add_field_lines_vss()
+        if simulator == "vss":
+            # add field_lines
+            self._add_field_lines_vss()
 
-        # add robots
-        self._add_robots()
+            # add robots
+            self._add_vss_robots()
+        if simulator == "ssl":
+            # add field_lines
+            self._add_field_lines_ssl()
+            # add robots
+            self._add_ssl_robots()
         
         # add ball
         self._add_ball()
@@ -138,6 +143,8 @@ class RCGymRender:
         back_ground.set_color(*BG_GREEN)
         self.screen.add_geom(back_ground)
 
+    #----------VSS-----------#
+    
     def _add_field_lines_vss(self) -> None:
         # Vertical Lines X
         x_border = self.field["field_length"] / 2
@@ -218,7 +225,7 @@ class RCGymRender:
         self.screen.add_geom(goal_line_right)
         self.screen.add_geom(goal_line_left)
 
-    def _add_robots(self) -> None:
+    def _add_vss_robots(self) -> None:
         tag_id_colors: Dict[int, Tuple[float, float, float]] = {
             0 : TAG_GREEN,
             1 : TAG_PURPLE,
@@ -284,6 +291,135 @@ class RCGymRender:
         self.screen.add_geom(robot)
         self.screen.add_geom(team_tag)
         self.screen.add_geom(id_tag)
+
+        # Return the transform class to change robot position
+        return robot_transform
+
+    #----------SSL-----------#
+    
+    def _add_field_lines_ssl(self) -> None:
+        # Vertical Lines X
+        x_border = self.field["field_length"] / 2
+        x_goal = x_border + self.field["goal_depth"]
+        x_penalty = x_border - self.field["penalty_length"]
+        x_center = 0
+
+        # Horizontal Lines Y
+        y_border = self.field["field_width"] / 2
+        y_penalty = self.field["penalty_width"] / 2
+        y_goal = self.field["goal_width"] / 2
+
+        # add field borders
+        field_border_points = [
+            (x_border, y_border),
+            (x_border, -y_border),
+            (-x_border, -y_border),
+            (-x_border, y_border)
+        ]
+        field_border = rendering.PolyLine(field_border_points, close=True)
+        field_border.set_color(*LINES_WHITE)
+
+        # Center line and circle
+        center_line = rendering.Line(
+            (x_center, y_border), (x_center, -y_border))
+        center_line.set_color(*LINES_WHITE)
+        center_circle = rendering.make_circle(0.2, filled=False)
+        center_circle.set_color(*LINES_WHITE)
+
+        # right side penalty box
+        penalty_box_right_points = [
+            (x_border, y_penalty),
+            (x_penalty, y_penalty),
+            (x_penalty, -y_penalty),
+            (x_border, -y_penalty)
+        ]
+        penalty_box_right = rendering.PolyLine(
+            penalty_box_right_points, close=False)
+        penalty_box_right.set_color(*LINES_WHITE)
+
+        # left side penalty box
+        penalty_box_left_points = [
+            (-x_border, y_penalty),
+            (-x_penalty, y_penalty),
+            (-x_penalty, -y_penalty),
+            (-x_border, -y_penalty)
+        ]
+        penalty_box_left = rendering.PolyLine(
+            penalty_box_left_points, close=False)
+        penalty_box_left.set_color(*LINES_WHITE)
+
+        # Right side goal line
+        goal_line_right_points = [
+            (x_border, y_goal),
+            (x_goal, y_goal),
+            (x_goal, -y_goal),
+            (x_border, -y_goal)
+        ]
+        goal_line_right = rendering.PolyLine(
+            goal_line_right_points, close=False)
+        goal_line_right.set_color(*LINES_WHITE)
+
+        # Left side goal line
+        goal_line_left_points = [
+            (-x_border, y_goal),
+            (-x_goal, y_goal),
+            (-x_goal, -y_goal),
+            (-x_border, -y_goal)
+        ]
+        goal_line_left = rendering.PolyLine(goal_line_left_points, close=False)
+        goal_line_left.set_color(*LINES_WHITE)
+
+        self.screen.add_geom(field_border)
+        self.screen.add_geom(center_line)
+        self.screen.add_geom(center_circle)
+        self.screen.add_geom(penalty_box_right)
+        self.screen.add_geom(penalty_box_left)
+        self.screen.add_geom(goal_line_right)
+        self.screen.add_geom(goal_line_left)
+
+    def _add_ssl_robots(self) -> None:
+        
+        # Add blue robots
+        for id in range(self.n_robots_blue):
+            self.blue_robots.append(
+                self._add_ssl_robot(team_color=TAG_BLUE)
+            )
+            
+        # Add yellow robots
+        for id in range(self.n_robots_yellow):
+            self.yellow_robots.append(
+                self._add_ssl_robot(team_color=TAG_YELLOW)
+            )
+
+    def _add_ssl_robot(self, team_color, id_color=0) -> rendering.Transform:
+        robot_transform:rendering.Transform = rendering.Transform()
+        
+        # Robot dimensions
+        robot_radius: float = 0.09
+        distance_center_kicker: float = 0.073
+        kicker_angle = 2 * np.arccos(distance_center_kicker / robot_radius)
+        res = 30
+
+        points = []
+        for i in range(res + 1):
+            ang = (2*np.pi - kicker_angle)*i / res
+            ang += kicker_angle
+            points.append((np.cos(ang)*robot_radius, np.sin(ang)*robot_radius))
+
+        # Robot object
+        robot = rendering.FilledPolygon(points)
+        robot.set_color(*team_color)
+        robot.add_attr(robot_transform)
+        
+        # Robot outline
+        robot_outline = rendering.PolyLine(points, True)
+        robot_outline.set_color(*ROBOT_BLACK)
+        robot_outline.add_attr(robot_transform)
+        robot_outline.set_linewidth(2)
+
+        # Add objects to screen
+        self.screen.add_geom(robot)
+        self.screen.add_geom(robot_outline)
 
         # Return the transform class to change robot position
         return robot_transform
