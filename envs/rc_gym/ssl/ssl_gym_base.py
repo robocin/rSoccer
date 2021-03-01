@@ -16,6 +16,9 @@ from rc_gym.Simulators.rsim import RSimSSL
 
 
 class SSLBaseEnv(gym.Env):
+    metadata = {
+        'render.modes': ['human', 'rgb_array'],
+    }
     NORM_BOUNDS = 1.2
 
     def __init__(self, field_type: int,
@@ -82,7 +85,7 @@ class SSLBaseEnv(gym.Env):
 
         return self._frame_to_observations()
 
-    def render(self, mode: Optional = None) -> None:
+    def render(self, mode: Optional = 'human') -> None:
         '''
         Renders the game depending on 
         ball's and players' positions.
@@ -102,7 +105,7 @@ class SSLBaseEnv(gym.Env):
                                  self.field_params,
                                  simulator='ssl')
 
-        self.view.render_frame(self.frame)
+        return self.view.render_frame(self.frame, return_rgb_array=mode == "rgb_array")
 
     def close(self):
         self.rsim.stop()

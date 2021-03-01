@@ -17,6 +17,9 @@ from rc_gym.Utils import RCGymRender
 
 
 class VSSBaseEnv(gym.Env):
+    metadata = {
+        'render.modes': ['human', 'rgb_array'],
+    }
     NORM_BOUNDS = 1.2
     
     def __init__(self, field_type: int,
@@ -83,7 +86,7 @@ class VSSBaseEnv(gym.Env):
 
         return self._frame_to_observations()
 
-    def render(self, mode: Optional = None) -> None:
+    def render(self, mode: Optional = 'human') -> None:
         '''
         Renders the game depending on 
         ball's and players' positions.
@@ -103,7 +106,8 @@ class VSSBaseEnv(gym.Env):
                                  self.field_params,
                                  simulator='vss')
 
-        self.view.render_frame(self.frame)
+        return self.view.render_frame(self.frame, return_rgb_array=mode == "rgb_array")
+        
 
     def close(self):
         self.rsim.stop()
