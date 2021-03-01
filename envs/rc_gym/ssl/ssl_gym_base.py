@@ -12,7 +12,7 @@ import gym
 import numpy as np
 from rc_gym.Entities import Frame, Robot
 from rc_gym.Utils import RCRender
-from rc_gym.Simulators.rsim_ssl import RSimSSL
+from rc_gym.Simulators.rsim import RSimSSL
 
 
 class SSLBaseEnv(gym.Env):
