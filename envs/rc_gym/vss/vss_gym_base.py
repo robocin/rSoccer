@@ -16,18 +16,31 @@ from rc_gym.Simulators.rsim import RSimVSS
 
 
 class VSSBaseEnv(gym.Env):
+    NORM_BOUNDS = 1.2
+    
     def __init__(self, field_type: int,
                  n_robots_blue: int, n_robots_yellow: int, time_step: float):
+        # Initialize Simulator
         self.time_step = time_step
         self.rsim = RSimVSS(field_type=field_type,
                                       n_robots_blue=n_robots_blue,
                                       n_robots_yellow=n_robots_yellow,
                                       time_step_ms=int(self.time_step*1000))
-        self.field_type: int = field_type
         self.n_robots_blue: int = n_robots_blue
         self.n_robots_yellow: int = n_robots_yellow
-        self.field_params: Dict[str,
-                                np.float64] = self.rsim.get_field_params()
+
+        # Get field dimensions
+        self.field_type: int = field_type
+        self.field_params: Dict[str, np.float64] = self.rsim.get_field_params()
+        self.norm_max_pos = max(self.field_params['field_width'] / 2,
+                                (self.field_params['field_length'] / 2)
+                                 + self.field_params['penalty_length']
+                                )
+        self.norm_max_v = self.rsim.linear_speed_range
+        # 0.0425 = robot radius (0.0375) + wheel thicknees (0.05)
+        self.norm_max_w = np.rad2deg(self.rsim.linear_speed_range / 0.0425)
+        
+        # Initiate 
         self.frame: Frame = None
         self.last_frame: Frame = None
         self.view = None
@@ -109,3 +122,24 @@ class VSSBaseEnv(gym.Env):
     def _get_initial_positions_frame(self) -> Frame:
         '''returns frame with robots initial positions'''
         raise NotImplementedError
+
+    def norm_pos(self, pos):
+        return np.clip(
+            pos / self.norm_max_pos,
+            -self.NORM_BOUNDS,
+            self.NORM_BOUNDS
+        )
+
+    def norm_v(self, v):
+        return np.clip(
+            v / self.norm_max_v,
+            -self.NORM_BOUNDS,
+            self.NORM_BOUNDS
+        )
+
+    def norm_w(self, w):
+        return np.clip(
+            w / self.norm_max_w,
+            -self.NORM_BOUNDS,
+            self.NORM_BOUNDS
+        )

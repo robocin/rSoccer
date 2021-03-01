@@ -6,7 +6,6 @@ from typing import Dict
 import gym
 import numpy as np
 from rc_gym.Entities import Frame, Robot
-from rc_gym.Utils import normVt, normVx, normX
 from rc_gym.vss.vss_gym_base import VSSBaseEnv
 
 
@@ -56,19 +55,10 @@ class VSS3v3Env(VSSBaseEnv):
         super().__init__(field_type=0, n_robots_blue=3, n_robots_yellow=3,
                          time_step=0.032)
 
-        low_obs_bound = [-1.2, -1.2, -1.25, -1.25]
-        low_obs_bound += [-1.2, -1.2, -1, -1, -1.25, -1.25, -1.2]*3
-        low_obs_bound += [-1.2, -1.2, -1.25, -1.25, -1.2]*3
-        high_obs_bound = [1.2, 1.2, 1.25, 1.25]
-        high_obs_bound += [1.2, 1.2, 1, 1, 1.25, 1.25, 1.2]*3
-        high_obs_bound += [1.2, 1.2, 1.25, 1.25, 1.2]*3
-        low_obs_bound = np.array(low_obs_bound, dtype=np.float32)
-        high_obs_bound = np.array(high_obs_bound, dtype=np.float32)
-
         self.action_space = gym.spaces.Box(low=-1, high=1,
                                            shape=(2, ), dtype=np.float32)
-        self.observation_space = gym.spaces.Box(low=low_obs_bound,
-                                                high=high_obs_bound,
+        self.observation_space = gym.spaces.Box(low=-self.NORM_BOUNDS,
+                                                high=self.NORM_BOUNDS,
                                                 shape=(40, ), dtype=np.float32)
 
         # Initialize Class Atributes
@@ -101,30 +91,30 @@ class VSS3v3Env(VSSBaseEnv):
 
         observation = []
 
-        observation.append(normX(self.frame.ball.x))
-        observation.append(normX(self.frame.ball.y))
-        observation.append(normVx(self.frame.ball.v_x))
-        observation.append(normVx(self.frame.ball.v_y))
+        observation.append(self.norm_pos(self.frame.ball.x))
+        observation.append(self.norm_pos(self.frame.ball.y))
+        observation.append(self.norm_v(self.frame.ball.v_x))
+        observation.append(self.norm_v(self.frame.ball.v_y))
 
         for i in range(self.n_robots_blue):
-            observation.append(normX(self.frame.robots_blue[i].x))
-            observation.append(normX(self.frame.robots_blue[i].y))
+            observation.append(self.norm_pos(self.frame.robots_blue[i].x))
+            observation.append(self.norm_pos(self.frame.robots_blue[i].y))
             observation.append(
                 np.sin(np.deg2rad(self.frame.robots_blue[i].theta))
             )
             observation.append(
                 np.cos(np.deg2rad(self.frame.robots_blue[i].theta))
             )
-            observation.append(normVx(self.frame.robots_blue[i].v_x))
-            observation.append(normVx(self.frame.robots_blue[i].v_y))
-            observation.append(normVt(self.frame.robots_blue[i].v_theta))
+            observation.append(self.norm_v(self.frame.robots_blue[i].v_x))
+            observation.append(self.norm_v(self.frame.robots_blue[i].v_y))
+            observation.append(self.norm_w(self.frame.robots_blue[i].v_theta))
 
         for i in range(self.n_robots_yellow):
-            observation.append(normX(self.frame.robots_yellow[i].x))
-            observation.append(normX(self.frame.robots_yellow[i].y))
-            observation.append(normVx(self.frame.robots_yellow[i].v_x))
-            observation.append(normVx(self.frame.robots_yellow[i].v_y))
-            observation.append(normVt(self.frame.robots_yellow[i].v_theta))
+            observation.append(self.norm_pos(self.frame.robots_yellow[i].x))
+            observation.append(self.norm_pos(self.frame.robots_yellow[i].y))
+            observation.append(self.norm_v(self.frame.robots_yellow[i].v_x))
+            observation.append(self.norm_v(self.frame.robots_yellow[i].v_y))
+            observation.append(self.norm_w(self.frame.robots_yellow[i].v_theta))
 
         return np.array(observation)
 

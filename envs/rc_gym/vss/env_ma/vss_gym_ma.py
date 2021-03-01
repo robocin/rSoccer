@@ -7,7 +7,6 @@ import gym
 import numpy as np
 import torch
 from rc_gym.Entities import Frame, Robot
-from rc_gym.Utils import normVt, normVx, normX
 from rc_gym.vss.env_ma.opponent.model import DDPGActor
 from rc_gym.vss.vss_gym_base import VSSBaseEnv
 
@@ -61,14 +60,14 @@ class VSSMAEnv(VSSBaseEnv):
         super().__init__(field_type=0, n_robots_blue=3, n_robots_yellow=3,
                          time_step=0.032)
 
-        obs_bound = [1.2, 1.2, 1.25, 1.25]
-        obs_bound += [1.2, 1.2, 1, 1, 1.25, 1.25, 1.2]*3
-        obs_bound += [1.2, 1.2, 1.25, 1.25, 1.2]*3
-        obs_bound = np.array(obs_bound, dtype=np.float32)
         self.n_robots_control = n_robots_control
-        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(2, ))
-        self.observation_space = gym.spaces.Box(low=-obs_bound,
-                                                high=obs_bound)
+        self.action_space = gym.spaces.Box(low=-1,
+                                           high=1,
+                                           shape=(n_robots_control, 2))
+        self.observation_space = gym.spaces.Box(low=-self.NORM_BOUNDS,
+                                                high=self.NORM_BOUNDS,
+                                                shape=(n_robots_control, 40),
+                                                dtype=np.float32)
 
         # Initialize Class Atributes
         self.previous_ball_potential = None
@@ -92,17 +91,17 @@ class VSSMAEnv(VSSBaseEnv):
         robots_dict = dict()
         for i in range(self.n_robots_blue):
             robots_dict[i] = list()
-            robots_dict[i].append(normX(self.frame.robots_blue[i].x))
-            robots_dict[i].append(normX(self.frame.robots_blue[i].y))
+            robots_dict[i].append(self.norm_pos(self.frame.robots_blue[i].x))
+            robots_dict[i].append(self.norm_pos(self.frame.robots_blue[i].y))
             robots_dict[i].append(
                 np.sin(np.deg2rad(self.frame.robots_blue[i].theta))
             )
             robots_dict[i].append(
                 np.cos(np.deg2rad(self.frame.robots_blue[i].theta))
             )
-            robots_dict[i].append(normVx(self.frame.robots_blue[i].v_x))
-            robots_dict[i].append(normVx(self.frame.robots_blue[i].v_y))
-            robots_dict[i].append(normVt(self.frame.robots_blue[i].v_theta))
+            robots_dict[i].append(self.norm_v(self.frame.robots_blue[i].v_x))
+            robots_dict[i].append(self.norm_v(self.frame.robots_blue[i].v_y))
+            robots_dict[i].append(self.norm_w(self.frame.robots_blue[i].v_theta))
 
         rotaded_obs = list()
         for i in range(self.n_robots_control):
@@ -124,19 +123,19 @@ class VSSMAEnv(VSSBaseEnv):
         for idx in range(self.n_robots_control):
             observation = []
 
-            observation.append(normX(self.frame.ball.x))
-            observation.append(normX(self.frame.ball.y))
-            observation.append(normVx(self.frame.ball.v_x))
-            observation.append(normVx(self.frame.ball.v_y))
+            observation.append(self.norm_pos(self.frame.ball.x))
+            observation.append(self.norm_pos(self.frame.ball.y))
+            observation.append(self.norm_v(self.frame.ball.v_x))
+            observation.append(self.norm_v(self.frame.ball.v_y))
 
             observation += robots[idx]
 
             for i in range(self.n_robots_yellow):
-                observation.append(normX(self.frame.robots_yellow[i].x))
-                observation.append(normX(self.frame.robots_yellow[i].y))
-                observation.append(normVx(self.frame.robots_yellow[i].v_x))
-                observation.append(normVx(self.frame.robots_yellow[i].v_y))
-                observation.append(normVt(self.frame.robots_yellow[i].v_theta))
+                observation.append(self.norm_pos(self.frame.robots_yellow[i].x))
+                observation.append(self.norm_pos(self.frame.robots_yellow[i].y))
+                observation.append(self.norm_v(self.frame.robots_yellow[i].v_x))
+                observation.append(self.norm_v(self.frame.robots_yellow[i].v_y))
+                observation.append(self.norm_w(self.frame.robots_yellow[i].v_theta))
 
             observations.append(np.array(observation, dtype=np.float))
 
@@ -156,13 +155,13 @@ class VSSMAEnv(VSSBaseEnv):
 
         for i in range(self.n_robots_control, self.n_robots_blue):
             actions = self.action_space.sample()
-            v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions)
+            v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions[0])
             commands.append(Robot(yellow=False, id=i, v_wheel1=v_wheel1,
                                   v_wheel2=v_wheel2))
 
         for i in range(self.n_robots_yellow):
             actions = self.action_space.sample()
-            v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions)
+            v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions[0])
             commands.append(Robot(yellow=True, id=i, v_wheel1=v_wheel1,
                                   v_wheel2=v_wheel2))
 
@@ -348,16 +347,16 @@ class VSSMAOpp(VSSMAEnv):
 
     def _opp_obs(self):
         observation = []
-        observation.append(normX(-self.frame.ball.x))
-        observation.append(normX(self.frame.ball.y))
-        observation.append(normVx(-self.frame.ball.v_x))
-        observation.append(normVx(self.frame.ball.v_y))
+        observation.append(self.norm_pos(-self.frame.ball.x))
+        observation.append(self.norm_pos(self.frame.ball.y))
+        observation.append(self.norm_v(-self.frame.ball.v_x))
+        observation.append(self.norm_v(self.frame.ball.v_y))
 
         #  we reflect the side that the opp is attacking,
         #  so that he will attack towards the goal where the goalkeeper is
         for i in range(self.n_robots_yellow):
-            observation.append(normX(-self.frame.robots_yellow[i].x))
-            observation.append(normX(self.frame.robots_yellow[i].y))
+            observation.append(self.norm_pos(-self.frame.robots_yellow[i].x))
+            observation.append(self.norm_pos(self.frame.robots_yellow[i].y))
 
             observation.append(
                 np.sin(np.deg2rad(self.frame.robots_yellow[i].theta))
@@ -365,17 +364,17 @@ class VSSMAOpp(VSSMAEnv):
             observation.append(
                 -np.cos(np.deg2rad(self.frame.robots_yellow[i].theta))
             )
-            observation.append(normVx(-self.frame.robots_yellow[i].v_x))
-            observation.append(normVx(self.frame.robots_yellow[i].v_y))
+            observation.append(self.norm_v(-self.frame.robots_yellow[i].v_x))
+            observation.append(self.norm_v(self.frame.robots_yellow[i].v_y))
 
-            observation.append(normVt(-self.frame.robots_yellow[i].v_theta))
+            observation.append(self.norm_w(-self.frame.robots_yellow[i].v_theta))
 
         for i in range(self.n_robots_blue):
-            observation.append(normX(-self.frame.robots_blue[i].x))
-            observation.append(normX(self.frame.robots_blue[i].y))
-            observation.append(normVx(-self.frame.robots_blue[i].v_x))
-            observation.append(normVx(self.frame.robots_blue[i].v_y))
-            observation.append(normVt(-self.frame.robots_blue[i].v_theta))
+            observation.append(self.norm_pos(-self.frame.robots_blue[i].x))
+            observation.append(self.norm_pos(self.frame.robots_blue[i].y))
+            observation.append(self.norm_v(-self.frame.robots_blue[i].v_x))
+            observation.append(self.norm_v(self.frame.robots_blue[i].v_y))
+            observation.append(self.norm_w(-self.frame.robots_blue[i].v_theta))
 
         return np.array(observation)
 
