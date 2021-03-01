@@ -25,7 +25,9 @@ class RCGymRender:
     def __init__(self, n_robots_blue: int,
                  n_robots_yellow: int,
                  field_params: dict,
-                 simulator: str = 'vss') -> None:
+                 simulator: str = 'vss',
+                 width: int = 750,
+                 height: int = 650) -> None:
         '''
         Creates our View object.
 
@@ -58,8 +60,8 @@ class RCGymRender:
         self.yellow_robots: List[rendering.Transform] = []
 
         # Window dimensions in pixels
-        screen_width = 750
-        screen_height = 650
+        screen_width = width
+        screen_height = height
 
         # Window margin
         margin = 0.1 if simulator == "vss" else 0.4
@@ -106,7 +108,7 @@ class RCGymRender:
         del(self.screen)
         self.screen = None
 
-    def render_frame(self, frame: Frame) -> None:
+    def render_frame(self, frame: Frame, return_rgb_array: bool = False) -> None:
         '''
         Draws the field, ball and players.
 
@@ -130,7 +132,7 @@ class RCGymRender:
             self.yellow_robots[i].set_translation(yellow.x, yellow.y)
             self.yellow_robots[i].set_rotation(np.deg2rad(yellow.theta))
 
-        return self.screen.render()
+        return self.screen.render(return_rgb_array=return_rgb_array)
 
     def _add_background(self) -> None:
         back_ground = rendering.FilledPolygon([
@@ -415,7 +417,6 @@ class RCGymRender:
         robot_outline = rendering.PolyLine(points, True)
         robot_outline.set_color(*ROBOT_BLACK)
         robot_outline.add_attr(robot_transform)
-        robot_outline.set_linewidth(2)
 
         # Add objects to screen
         self.screen.add_geom(robot)
