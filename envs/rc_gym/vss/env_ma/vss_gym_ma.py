@@ -193,7 +193,7 @@ class VSSMAEnv(VSSBaseEnv):
         if self.previous_ball_potential is not None:
             diff = ball_potential - self.previous_ball_potential
             grad_ball_potential = np.clip(diff * 3 / self.time_step,
-                                          -1.0, 1.0)
+                                          -5.0, 5.0)
 
         self.previous_ball_potential = ball_potential
 
@@ -216,7 +216,7 @@ class VSSMAEnv(VSSBaseEnv):
 
         move_reward = np.dot(robot_ball, robot_vel)
 
-        move_reward = np.clip(move_reward / 0.4, -1.0, 1.0)
+        move_reward = np.clip(move_reward / 0.4, -5.0, 5.0)
         return move_reward
 
     def _energy_penalty(self, robot_idx: int):
