@@ -291,17 +291,17 @@ class rSimVSSGK(VSSBaseEnv):
         reward = 0
         if distance_gk_ball < 8 and not self.isInside:
             # print("Menor que 8")
-            self.previous_ball_direction.append(self.frame.ball.v_x / \
-                                                abs(self.frame.ball.v_x))
-            self.previous_ball_direction.append(self.frame.ball.v_y / \
-                                                abs(self.frame.ball.v_y))
+            self.previous_ball_direction.append((self.frame.ball.v_x + 0.000001) / \
+                                                (abs(self.frame.ball.v_x)+ 0.000001))
+            self.previous_ball_direction.append((self.frame.ball.v_y + 0.000001) / \
+                                                (abs(self.frame.ball.v_y) + 0.000001))
             self.isInside = True
         elif self.isInside:
             # print("Maior que 8")
-            direction_ball_vx = self.frame.ball.v_x / \
-                                abs(self.frame.ball.v_x)
-            direction_ball_vy = self.frame.ball.v_y / \
-                                abs(self.frame.ball.v_x)
+            direction_ball_vx = (self.frame.ball.v_x + 0.000001) / \
+                                (abs(self.frame.ball.v_x) + 0.000001)
+            direction_ball_vy = (self.frame.ball.v_y + 0.000001) / \
+                                (abs(self.frame.ball.v_x) + 0.000001)
 
             if (self.previous_ball_direction[0] != direction_ball_vx or \
                 self.previous_ball_direction[1] != direction_ball_vy) and \
@@ -355,36 +355,51 @@ class rSimVSSGK(VSSBaseEnv):
         move_y_reward = 0
         dist_robot_own_goal_bar = 0
         ball_defense_reward = 0
-        
+        ball_leave_area_reward = 0
+
         w_defense = 1.3
         w_move = 0.2
         w_ball_pot = 0.1
         w_move_y  = 0.3
-        # Revisar
-        # w_time = 0.1
         w_distance = 0.1
+        w_blva = 1.5
 
         if self.reward_shaping_total is None:
             self.reward_shaping_total = {'goal_score': 0, 'move': 0,
                                          'ball_grad': 0, 'energy': 0,
                                          'goals_blue': 0, 'goals_yellow': 0,
-                                         'defense': 0 }
-        # Check if a goal has ocurred
-        if self.last_frame is not None:
+                                         'defense': 0,'ball_leave_area': 0,
+                                         'move_y': 0, 'distance_own_goal_bar': 0 }
+
+        # print(self.frame.robots_blue[0].x, self.frame.robots_blue[0].y)
+        if self.frame.robots_blue[0].x > -0.55 or self.frame.robots_blue[0].y > 0.4 \
+            or self.frame.robots_blue[0].y < -0.4: 
+            # robot leave the gk field
+            reward = -5
+            done = True
+            self.isInside = False
+            self.ballInsideArea = False
+
+
+        elif self.last_frame is not None:
             self.previous_ball_potential = None
-            # print('ball:', self.frame.ball.x)
-            # time.sleep(10)
-            if self.frame.ball.x > (self.field_params['field_length'] / 2):
-                goal_score = 1
-                self.reward_shaping_total['goals_blue'] += 1
-                self.reward_shaping_total['goal_score'] += 1
+            if self.frame.ball.x < -0.6:
+                self.ballInsideArea = True
+
+            if self.ballInsideArea and self.frame.ball.x > -0.6 or self.frame.robots_blue[0].y > 0.35 \
+               or self.frame.robots_blue[0].y < -0.35:
+                ball_leave_area_reward = 1 
+                self.ballInsideArea = False
+                done = True
+
             if self.frame.ball.x < -(self.field_params['field_length'] / 2):
                 self.reward_shaping_total['goals_yellow'] += 1
                 self.reward_shaping_total['goal_score'] -= 1
                 distance_gk_ball = distance([self.frame.robots_blue[0].x, \
                                     self.frame.robots_blue[0].y], \
                                     [self.frame.ball.x, self.frame.ball.y]) * 10
-                goal_score = -1.5 - distance_gk_ball
+                goal_score = -2 - distance_gk_ball
+                self.ballInsideArea = False
 
             # If goal scored reward = 1 favoured, and -1 if against
             if goal_score != 0:
@@ -421,7 +436,8 @@ class rSimVSSGK(VSSBaseEnv):
                 reward = w_move * move_reward + \
                          w_move_y * move_y_reward + \
                          w_distance * dist_robot_own_goal_bar + \
-                         ball_defense_reward * w_defense
+                         w_defense * ball_defense_reward + \
+                         w_blva * ball_leave_area_reward
 
                 # w_ball_pot * ball_potential + \
                 # w_time * time_reward + \
@@ -429,12 +445,13 @@ class rSimVSSGK(VSSBaseEnv):
                 # + w_collision * collisions
 
                 self.reward_shaping_total['move'] += w_move * move_reward
+                self.reward_shaping_total['move_y'] += w_move_y * move_y_reward
                 self.reward_shaping_total['ball_grad'] += w_ball_pot * ball_potential
+                self.reward_shaping_total['distance_own_goal_bar'] += w_distance * dist_robot_own_goal_bar
                 self.reward_shaping_total['defense'] += ball_defense_reward * w_defense
-            print(self.frame.ball.y)
+                self.reward_shaping_total['ball_leave_area'] += w_blva * ball_leave_area_reward
             self.last_frame = self.frame
-
-        done = self.frame.time >= 30 or goal_score != 0
+        done = self.frame.time >= 30 or goal_score != 0 or done
 
         return reward, done
 

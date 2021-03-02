@@ -161,6 +161,7 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
                                   info['goal_score'],
                                   matches_played)
                 writer.add_scalar("rw/move", info['move'], matches_played)
+                writer.add_scalar("rw/move_y", info['move_y'], matches_played)
                 writer.add_scalar(
                     "rw/ball_grad", info['ball_grad'], matches_played)
                 # writer.add_scalar("rw/energy", info['energy'], matches_played)
@@ -172,6 +173,12 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
                                   matches_played)
                 writer.add_scalar("rw/defense",
                                   info['defense'],
+                                  matches_played)
+                writer.add_scalar("rw/distance_own_goal_bar",
+                                  info['distance_own_goal_bar'],
+                                  matches_played)
+                writer.add_scalar("rw/ball_leave_area",
+                                  info['ball_leave_area'],
                                   matches_played)
                 
 
