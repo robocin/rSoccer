@@ -108,6 +108,7 @@ class rSimVSSGK(VSSBaseEnv):
         self.attacker = None
         self.previous_ball_direction = []
         self.isInside = False
+        self.ballInsideArea = False
         self.load_atk()
         print('Environment initialized')
     
@@ -262,13 +263,14 @@ class rSimVSSGK(VSSBaseEnv):
 
             move_reward = np.dot(robot_ball, robot_vel)
 
-            move_reward = np.clip(move_reward / 0.4, -1.0, 1.0)
+            move_reward = np.clip(move_reward / 0.4, -5.0, 5.0)
         else:
             move_reward = 0
         return move_reward
 
     def __move_reward_y(self):
-        ball = np.array([self.frame.ball.y])
+        
+        ball = np.array([np.clip(self.frame.ball.y, -0.35, 0.35)])
         robot = np.array([self.frame.robots_blue[0].y])
         robot_vel = np.array([self.frame.robots_blue[0].v_y])
         robot_ball = ball - robot
@@ -276,7 +278,7 @@ class rSimVSSGK(VSSBaseEnv):
 
         move_reward = np.dot(robot_ball, robot_vel)
 
-        move_reward = np.clip(move_reward / 0.4, -1.0, 1.0)
+        move_reward = np.clip(move_reward / 0.4, -5.0, 5.0)
         # print("move reward y:", move_reward)
         return move_reward
 
@@ -304,7 +306,7 @@ class rSimVSSGK(VSSBaseEnv):
             if (self.previous_ball_direction[0] != direction_ball_vx or \
                 self.previous_ball_direction[1] != direction_ball_vy) and \
                 self.frame.ball.x > -field_half_length+0.1:
-                print("GANHEI RECOMPENSA")
+                # print("GANHEI RECOMPENSA")
                 # ganha recompensa
                 self.isInside = False
                 self.previous_ball_direction.clear()
@@ -338,7 +340,7 @@ class rSimVSSGK(VSSBaseEnv):
         if self.previous_ball_potential is not None:
             diff = ball_potential - self.previous_ball_potential
             grad_ball_potential = np.clip(diff * 3 / self.time_step,
-                                          -1.0, 1.0)
+                                          -5.0, 5.0)
 
         self.previous_ball_potential = ball_potential
 
@@ -348,14 +350,14 @@ class rSimVSSGK(VSSBaseEnv):
         done = False
         reward = 0
         goal_score = 0
-        dist_future_rew = 0
+        move_reward = 0
         ball_potential = 0
         move_y_reward = 0
         dist_robot_own_goal_bar = 0
         ball_defense_reward = 0
         
         w_defense = 1.3
-        w_future = 0.3
+        w_move = 0.2
         w_ball_pot = 0.1
         w_move_y  = 0.3
         # Revisar
@@ -390,7 +392,7 @@ class rSimVSSGK(VSSBaseEnv):
 
             else:
 
-                dist_future_rew = self.__move_reward()
+                move_reward = self.__move_reward()
                 move_y_reward = self.__move_reward_y()
 
                 ball_defense_reward = self.__defended_ball() 
@@ -416,7 +418,7 @@ class rSimVSSGK(VSSBaseEnv):
 
                 """
 
-                reward = w_future * dist_future_rew + \
+                reward = w_move * move_reward + \
                          w_move_y * move_y_reward + \
                          w_distance * dist_robot_own_goal_bar + \
                          ball_defense_reward * w_defense
@@ -426,10 +428,10 @@ class rSimVSSGK(VSSBaseEnv):
 
                 # + w_collision * collisions
 
-                self.reward_shaping_total['move'] += w_future * dist_future_rew
+                self.reward_shaping_total['move'] += w_move * move_reward
                 self.reward_shaping_total['ball_grad'] += w_ball_pot * ball_potential
                 self.reward_shaping_total['defense'] += ball_defense_reward * w_defense
-
+            print(self.frame.ball.y)
             self.last_frame = self.frame
 
         done = self.frame.time >= 30 or goal_score != 0
