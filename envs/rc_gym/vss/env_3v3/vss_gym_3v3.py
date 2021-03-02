@@ -115,7 +115,9 @@ class VSS3v3Env(VSSBaseEnv):
             observation.append(self.norm_pos(self.frame.robots_yellow[i].y))
             observation.append(self.norm_v(self.frame.robots_yellow[i].v_x))
             observation.append(self.norm_v(self.frame.robots_yellow[i].v_y))
-            observation.append(self.norm_w(self.frame.robots_yellow[i].v_theta))
+            observation.append(
+                self.norm_w(self.frame.robots_yellow[i].v_theta)
+            )
 
         return np.array(observation)
 
@@ -283,35 +285,29 @@ class VSS3v3Env(VSSBaseEnv):
 
         for i in range(self.n_robots_yellow):
             pos_frame.robots_yellow[i] = Robot(x=x(), y=y(), theta=theta())
-            agents.append(pos_frame.robots_blue[i])
+            agents.append(pos_frame.robots_yellow[i])
 
-        def same_position_ref(x, y, x_ref, y_ref, radius):
-            if x >= x_ref - radius and x <= x_ref + radius and \
-                    y >= y_ref - radius and y <= y_ref + radius:
+        def same_position_ref(obj, ref, radius):
+            if obj.x >= ref.x - radius and obj.x <= ref.x + radius and \
+                    obj.y >= ref.y - radius and obj.y <= ref.y + radius:
                 return True
             return False
 
-        radius_ball = 0.2
-        radius_robot = 0.2
-        same_pos = True
+        radius_ball = 0.04
+        radius_robot = 0.07
 
-        while same_pos:
-            for i in range(len(agents)):
-                same_pos = False
-                while same_position_ref(agents[i].x, agents[i].y, pos_frame.ball.x, pos_frame.ball.y, radius_ball):
+        for i in range(len(agents)):
+            while same_position_ref(agents[i], pos_frame.ball, radius_ball):
+                agents[i] = Robot(x=x(), y=y(), theta=theta())
+            for j in range(i):
+                while same_position_ref(agents[i], agents[j], radius_robot):
                     agents[i] = Robot(x=x(), y=y(), theta=theta())
-                    same_pos = True
-                for j in range(i + 1, len(agents)):
-                    while same_position_ref(agents[i].x, agents[i].y, agents[j].x, agents[j].y, radius_robot):
-                        agents[i] = Robot(x=x(), y=y(), theta=theta())
-                        same_pos = True
 
-        pos_frame.robots_blue[0] = agents[0]
-        pos_frame.robots_blue[1] = agents[1]
-        pos_frame.robots_blue[2] = agents[2]
-        pos_frame.robots_yellow[0] = agents[3]
-        pos_frame.robots_yellow[1] = agents[4]
-        pos_frame.robots_yellow[2] = agents[5]
+        for i in range(self.n_robots_blue):
+            pos_frame.robots_blue[i] = agents[i]
+
+        for i in range(self.n_robots_yellow):
+            pos_frame.robots_yellow[i] = agents[i+self.n_robots_blue]
 
         return pos_frame
 
