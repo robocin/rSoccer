@@ -405,7 +405,7 @@ class RCGymRender:
         points = []
         for i in range(res + 1):
             ang = (2*np.pi - kicker_angle)*i / res
-            ang += kicker_angle
+            ang += kicker_angle/2
             points.append((np.cos(ang)*robot_radius, np.sin(ang)*robot_radius))
 
         # Robot object
