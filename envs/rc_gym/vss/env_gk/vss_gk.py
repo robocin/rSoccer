@@ -357,12 +357,12 @@ class rSimVSSGK(VSSBaseEnv):
         ball_defense_reward = 0
         ball_leave_area_reward = 0
 
-        w_defense = 1.3
+        w_defense = 1.8
         w_move = 0.2
         w_ball_pot = 0.1
         w_move_y  = 0.3
         w_distance = 0.1
-        w_blva = 1.5
+        w_blva = 2.0
 
         if self.reward_shaping_total is None:
             self.reward_shaping_total = {'goal_score': 0, 'move': 0,
@@ -383,11 +383,12 @@ class rSimVSSGK(VSSBaseEnv):
 
         elif self.last_frame is not None:
             self.previous_ball_potential = None
-            if self.frame.ball.x < -0.6:
+            if (not self.ballInsideArea) and self.frame.ball.x < -0.6 and (self.frame.ball.y < 0.35 \
+               and self.frame.ball.y > -0.35):
                 self.ballInsideArea = True
 
-            if self.ballInsideArea and self.frame.ball.x > -0.6 or self.frame.robots_blue[0].y > 0.35 \
-               or self.frame.robots_blue[0].y < -0.35:
+            if self.ballInsideArea and (self.frame.ball.x > -0.6 or self.frame.ball.y > 0.35 \
+               or self.frame.ball.y < -0.35):
                 ball_leave_area_reward = 1 
                 self.ballInsideArea = False
                 done = True
@@ -398,7 +399,7 @@ class rSimVSSGK(VSSBaseEnv):
                 distance_gk_ball = distance([self.frame.robots_blue[0].x, \
                                     self.frame.robots_blue[0].y], \
                                     [self.frame.ball.x, self.frame.ball.y]) * 10
-                goal_score = -2 - distance_gk_ball
+                goal_score = -2 
                 self.ballInsideArea = False
 
             # If goal scored reward = 1 favoured, and -1 if against
@@ -432,9 +433,9 @@ class rSimVSSGK(VSSBaseEnv):
                     Gol = Reward (?)
 
                 """
-
-                reward = w_move * move_reward + \
-                         w_move_y * move_y_reward + \
+                # w_move * move_reward + \
+                 
+                reward = w_move_y * move_y_reward + \
                          w_distance * dist_robot_own_goal_bar + \
                          w_defense * ball_defense_reward + \
                          w_blva * ball_leave_area_reward
