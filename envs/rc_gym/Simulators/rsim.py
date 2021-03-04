@@ -153,11 +153,9 @@ class RSimSSL(RSim):
                 rbt_id = self.n_robots_blue + cmd.id
             else:
                 rbt_id = cmd.id
-            # convert from linear speed to angular speed
             v_x, v_y = self._convert_speed(cmd.v_x, cmd.v_y)
             sim_commands[rbt_id][0] = v_x
             sim_commands[rbt_id][1] = v_y
-            # TODO checar se a velocidade é rad ou deg/s
             sim_commands[rbt_id][2] = cmd.v_theta * self.angular_speed_range
             sim_commands[rbt_id][3] = cmd.kick_v_x
             sim_commands[rbt_id][4] = cmd.kick_v_z
@@ -174,6 +172,7 @@ class RSimSSL(RSim):
         return frame
 
     def _convert_speed(self, v_x, v_y):
+        """converstion made to limit maximum speed in all directions"""
         v_norm = np.linalg.norm([v_x,v_y])
         c = v_norm < self.linear_speed_range or self.linear_speed_range / v_norm
         return v_x*c, v_y*c
