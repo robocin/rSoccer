@@ -15,29 +15,69 @@ from rc_gym.Utils import distance, normVt, normVx, normX, to_pi_range
 class rSimVSSGK(VSSBaseEnv):
     """
     Description:
-        This environment controls a single robot soccer goalkeeper in VSS League 3v3 match
+        This environment controls a single robot football goalkeeper against an attacker in the VSS League 3v3 match
+        robots_blue[0]      -> Goalkeeper
+        robots_yellow[0]    -> Attacker
     Observation:
         Type: Box(41)
-        Num                 Observation units in meters
-        0                   Ball X
-        1                   Ball Y
-        2                   Ball Vx
-        3                   Ball Vy
-        4 + (7 * i)         id i Blue Robot X
-        
-        46                  Episode time
+        Goalkeeper:
+            Num                 Observation normalized
+            0                   Ball X
+            1                   Ball Y
+            2                   Ball Vx
+            3                   Ball Vy
+            4 + (7 * i)         id i Blue Robot X
+            5 + (7 * i)         id i Blue Robot Y
+            6 + (7 * i)         id i Blue Robot sin(theta)
+            7 + (7 * i)         id i Blue Robot cos(theta)
+            8 + (7 * i)         id i Blue Robot Vx
+            9 + (7 * i)         id i Blue Robot Vy
+            10 + (7 * i)        id i Blue Robot v_theta
+            25 + (5 * i)        id i Yellow Robot X
+            26 + (5 * i)        id i Yellow Robot Y
+            27 + (5 * i)        id i Yellow Robot Vx
+            28 + (5 * i)        id i Yellow Robot Vy
+            29 + (5 * i)        id i Yellow Robot v_theta
+            46                  Episode time
+        Attacker:
+            Num                 Observation normalized
+            0                   Ball X
+            1                   Ball Y
+            2                   Ball Vx
+            3                   Ball Vy
+            4 + (7 * i)         id i Yellow Robot -X
+            5 + (7 * i)         id i Yellow Robot Y
+            6 + (7 * i)         id i Yellow Robot sin(theta)
+            7 + (7 * i)         id i Yellow Robot -cos(theta)
+            8 + (7 * i)         id i Yellow Robot -Vx
+            9 + (7 * i)         id i Yellow Robot Vy
+            10 + (7 * i)        id i Yellow Robot -v_theta
+            25 + (5 * i)        id i Blue Robot -X
+            26 + (5 * i)        id i Blue Robot Y
+            27 + (5 * i)        id i Blue Robot -Vx
+            28 + (5 * i)        id i Blue Robot Vy
+            29 + (5 * i)        id i Blue Robot -v_theta
     Actions:
         Type: Box(2, )
         Num     Action
         0       id 0 Blue Robot Wheel 1 Speed (%)
         1       id 0 Blue Robot Wheel 2 Speed (%)
     Reward:
-        1 if time > 30000
-        -1 if Yellow Team Goal
+        Sum Of Rewards:
+            Defense
+            Ball leaves the goalkeeper's area
+            Move to Ball_Y
+            Distance From The Goalkeeper to Your Goal Bar
+        Penalized By:
+            Goalkeeper leaves the goalkeeper's area
     Starting State:
-        TODO
+        Random Ball Position 
+        Random Attacker Position
+        Random Goalkeeper Position Inside the Goalkeeper's Area
     Episode Termination:
-        Match time
+        Attacker Goal
+        Goalkeeper leaves the goalkeeper's area
+        Ball leaves the goalkeeper's area
     """
 
     atk_target_rho = 0
@@ -111,7 +151,6 @@ class rSimVSSGK(VSSBaseEnv):
         for i in range(self.n_robots_yellow):
             observation.append(normX(-self.frame.robots_yellow[i].x))
             observation.append(normX(self.frame.robots_yellow[i].y))
-
             observation.append(
                 np.sin(np.deg2rad(self.frame.robots_yellow[i].theta))
             )
@@ -120,7 +159,6 @@ class rSimVSSGK(VSSBaseEnv):
             )
             observation.append(normVx(-self.frame.robots_yellow[i].v_x))
             observation.append(normVx(self.frame.robots_yellow[i].v_y))
-
             observation.append(normVt(-self.frame.robots_yellow[i].v_theta))
 
         for i in range(self.n_robots_blue):
@@ -228,7 +266,11 @@ class rSimVSSGK(VSSBaseEnv):
         return move_reward
 
     def __move_reward_y(self):
-        
+        '''Calculate Move to ball_Y reward
+
+        Cosine between the robot vel_Y vector and the vector robot_Y -> ball_Y.
+        This indicates rather the robot is moving towards the ball_Y or not.
+        '''
         ball = np.array([np.clip(self.frame.ball.y, -0.35, 0.35)])
         robot = np.array([self.frame.robots_blue[0].y])
         robot_vel = np.array([self.frame.robots_blue[0].v_y])
@@ -238,25 +280,29 @@ class rSimVSSGK(VSSBaseEnv):
         move_reward = np.dot(robot_ball, robot_vel)
 
         move_reward = np.clip(move_reward / 0.4, -5.0, 5.0)
-        # print("move reward y:", move_reward)
         return move_reward
 
     def __defended_ball(self):
+        '''Calculate Defended Ball Reward 
+        
+        Create a zone between the goalkeeper and if the ball enters this zone
+        keep the ball speed vector norm to know the direction it entered, 
+        and if the ball leaves the area in a different direction it means 
+        that the goalkeeper defended the ball.
+        '''
         distance_gk_ball = distance([self.frame.robots_blue[0].x, \
                                     self.frame.robots_blue[0].y], \
                                     [self.frame.ball.x, self.frame.ball.y]) * 100 
         field_half_length = self.field_params['field_length'] / 2
 
-        reward = 0
+        defense_reward = 0
         if distance_gk_ball < 8 and not self.isInside:
-            # print("Menor que 8")
             self.previous_ball_direction.append((self.frame.ball.v_x + 0.000001) / \
                                                 (abs(self.frame.ball.v_x)+ 0.000001))
             self.previous_ball_direction.append((self.frame.ball.v_y + 0.000001) / \
                                                 (abs(self.frame.ball.v_y) + 0.000001))
             self.isInside = True
         elif self.isInside:
-            # print("Maior que 8")
             direction_ball_vx = (self.frame.ball.v_x + 0.000001) / \
                                 (abs(self.frame.ball.v_x) + 0.000001)
             direction_ball_vy = (self.frame.ball.v_y + 0.000001) / \
@@ -265,13 +311,11 @@ class rSimVSSGK(VSSBaseEnv):
             if (self.previous_ball_direction[0] != direction_ball_vx or \
                 self.previous_ball_direction[1] != direction_ball_vy) and \
                 self.frame.ball.x > -field_half_length+0.1:
-                # print("GANHEI RECOMPENSA")
-                # ganha recompensa
                 self.isInside = False
                 self.previous_ball_direction.clear()
-                reward = 1
+                defense_reward = 1
         
-        return reward
+        return defense_reward
             
 
     def __ball_grad(self):
@@ -330,74 +374,50 @@ class rSimVSSGK(VSSBaseEnv):
                                          'defense': 0,'ball_leave_area': 0,
                                          'move_y': 0, 'distance_own_goal_bar': 0 }
 
-        # print(self.frame.robots_blue[0].x, self.frame.robots_blue[0].y)
+        # This case the Goalkeeper leaves the gk area
         if self.frame.robots_blue[0].x > -0.63 or self.frame.robots_blue[0].y > 0.4 \
             or self.frame.robots_blue[0].y < -0.4: 
-            # robot leave the gk field
             reward = -5
             done = True
             self.isInside = False
             self.ballInsideArea = False
 
-
         elif self.last_frame is not None:
             self.previous_ball_potential = None
+            
+            # If the ball entered in the gk area
             if (not self.ballInsideArea) and self.frame.ball.x < -0.6 and (self.frame.ball.y < 0.35 \
                and self.frame.ball.y > -0.35):
                 self.ballInsideArea = True
 
+            # If the ball entered in the gk area and leaves it
             if self.ballInsideArea and (self.frame.ball.x > -0.6 or self.frame.ball.y > 0.35 \
                or self.frame.ball.y < -0.35):
                 ball_leave_area_reward = 1 
                 self.ballInsideArea = False
                 done = True
 
+            # If the enemy scored a goal
             if self.frame.ball.x < -(self.field_params['field_length'] / 2):
                 self.reward_shaping_total['goals_yellow'] += 1
                 self.reward_shaping_total['goal_score'] -= 1
-                distance_gk_ball = distance([self.frame.robots_blue[0].x, \
-                                    self.frame.robots_blue[0].y], \
-                                    [self.frame.ball.x, self.frame.ball.y]) * 10
                 goal_score = -2 
                 self.ballInsideArea = False
 
-            # If goal scored reward = 1 favoured, and -1 if against
             if goal_score != 0:
                 reward = goal_score
 
             else:
-
                 move_reward = self.__move_reward()
                 move_y_reward = self.__move_reward_y()
-
                 ball_defense_reward = self.__defended_ball() 
-
                 dist_robot_own_goal_bar = -self.field_params['field_length'] / \
                     2 + 0.15 - self.frame.robots_blue[0].x
 
-                # time_ingame = self.frame.time
-
-                # time_reward = 10 if time_ingame > 10 else 0
-
-                # ball_potential = self.__ball_grad()
-                """
-                
-                Goleiro:
-                    Manter-se na área de defesa (entre a bola e o gol) mesmo com a bola em ataque
-                    >Em caso de gol sofrido, se ele estiver fora da área defensiva receberá recompensa negativa (✅)
-
-                    Evitar um gol sofrido resulta em recompensa positiva
-                    > (30 segundos sem tomar gol, a partir de 30, a reward vai aumentando com o tempo) (✅)
-                    
-                    Gol = Reward (?)
-
-                """
-                 
                 reward = w_move_y * move_y_reward + \
                          w_distance * dist_robot_own_goal_bar + \
                          w_defense * ball_defense_reward + \
                          w_blva * ball_leave_area_reward
-
 
                 self.reward_shaping_total['move'] += w_move * move_reward
                 self.reward_shaping_total['move_y'] += w_move_y * move_y_reward
