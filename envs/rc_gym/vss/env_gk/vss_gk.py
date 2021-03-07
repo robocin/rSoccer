@@ -15,57 +15,17 @@ from rc_gym.Utils import distance, normVt, normVx, normX, to_pi_range
 class rSimVSSGK(VSSBaseEnv):
     """
     Description:
-        This environment controls a single robot soccer in VSS League 3v3 match
+        This environment controls a single robot soccer goalkeeper in VSS League 3v3 match
     Observation:
-        Type: Box(47)
-        Num     Observation units in meters
-        0       Ball X
-        1       Ball Y
-        2       Ball Vx
-        3       Ball Vy
-        4       id 0 Blue Robot X
-        5       id 0 Blue Robot Y
-        6       id 0 Blue Robot Dir
-        7       id 0 Blue Robot Vx
-        8       id 0 Blue Robot Vy
-        9       id 0 Blue Robot VDir_sin
-        10      id 0 Blue Robot VDir_cos
-        11      id 1 Blue Robot X
-        12      id 1 Blue Robot Y
-        13      id 1 Blue Robot Dir
-        14      id 1 Blue Robot Vx
-        15      id 1 Blue Robot Vy
-        16      id 1 Blue Robot VDir_sin
-        17      id 1 Blue Robot VDir_cos
-        18      id 2 Blue Robot X
-        19      id 2 Blue Robot Y
-        20      id 2 Blue Robot Dir
-        21      id 2 Blue Robot Vx
-        22      id 2 Blue Robot Vy
-        23      id 2 Blue Robot VDir_sin
-        24      id 2 Blue Robot VDir_cos
-        25      id 0 Yellow Robot X
-        26      id 0 Yellow Robot Y
-        27      id 0 Yellow Robot Dir
-        28      id 0 Yellow Robot Vx
-        29      id 0 Yellow Robot Vy
-        30      id 0 Yellow Robot VDir_sin
-        31      id 0 Yellow Robot VDir_cos
-        32      id 1 Yellow Robot X
-        33      id 1 Yellow Robot Y
-        34      id 1 Yellow Robot Dir
-        35      id 1 Yellow Robot Vx
-        36      id 1 Yellow Robot Vy
-        37      id 1 Yellow Robot VDir_sin
-        38      id 1 Yellow Robot VDir_cos
-        39      id 2 Yellow Robot X
-        40      id 2 Yellow Robot Y
-        41      id 2 Yellow Robot Dir
-        42      id 2 Yellow Robot Vx
-        43      id 2 Yellow Robot Vy
-        44      id 2 Yellow Robot VDir_sin
-        45      id 2 Yellow Robot VDir_cos
-        46      Episode time
+        Type: Box(41)
+        Num                 Observation units in meters
+        0                   Ball X
+        1                   Ball Y
+        2                   Ball Vx
+        3                   Ball Vy
+        4 + (7 * i)         id i Blue Robot X
+        
+        46                  Episode time
     Actions:
         Type: Box(2, )
         Num     Action
@@ -96,7 +56,6 @@ class rSimVSSGK(VSSBaseEnv):
         bounds_high = np.array([1]*41)
         bounds_low = np.array([-1]*40 + [0])
 
-        # MUDAR ????
         self.observation_space = gym.spaces.Box(low=bounds_low,
                                                 high=bounds_high,
                                                 shape=(41,),
@@ -372,7 +331,7 @@ class rSimVSSGK(VSSBaseEnv):
                                          'move_y': 0, 'distance_own_goal_bar': 0 }
 
         # print(self.frame.robots_blue[0].x, self.frame.robots_blue[0].y)
-        if self.frame.robots_blue[0].x > -0.55 or self.frame.robots_blue[0].y > 0.4 \
+        if self.frame.robots_blue[0].x > -0.63 or self.frame.robots_blue[0].y > 0.4 \
             or self.frame.robots_blue[0].y < -0.4: 
             # robot leave the gk field
             reward = -5
@@ -433,17 +392,12 @@ class rSimVSSGK(VSSBaseEnv):
                     Gol = Reward (?)
 
                 """
-                # w_move * move_reward + \
                  
                 reward = w_move_y * move_y_reward + \
                          w_distance * dist_robot_own_goal_bar + \
                          w_defense * ball_defense_reward + \
                          w_blva * ball_leave_area_reward
 
-                # w_ball_pot * ball_potential + \
-                # w_time * time_reward + \
-
-                # + w_collision * collisions
 
                 self.reward_shaping_total['move'] += w_move * move_reward
                 self.reward_shaping_total['move_y'] += w_move_y * move_y_reward
