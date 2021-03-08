@@ -19,7 +19,7 @@ class rSimVSSGK(VSSBaseEnv):
         robots_blue[0]      -> Goalkeeper
         robots_yellow[0]    -> Attacker
     Observation:
-        Type: Box(41)
+        Type: Box(40)
         Goalkeeper:
             Num                 Observation normalized
             0                   Ball X
@@ -38,7 +38,6 @@ class rSimVSSGK(VSSBaseEnv):
             27 + (5 * i)        id i Yellow Robot Vx
             28 + (5 * i)        id i Yellow Robot Vy
             29 + (5 * i)        id i Yellow Robot v_theta
-            46                  Episode time
         Attacker:
             Num                 Observation normalized
             0                   Ball X
@@ -92,13 +91,9 @@ class rSimVSSGK(VSSBaseEnv):
         self.action_space = gym.spaces.Box(
             low=-1, high=1, shape=(2, ), dtype=np.float32)
 
-        # Define observation space bound
-        bounds_high = np.array([1]*41)
-        bounds_low = np.array([-1]*40 + [0])
-
-        self.observation_space = gym.spaces.Box(low=bounds_low,
-                                                high=bounds_high,
-                                                shape=(41,),
+        self.observation_space = gym.spaces.Box(low=-1,
+                                                high=1,
+                                                shape=(40,),
                                                 dtype=np.float32)
 
         self.last_frame = None
@@ -198,8 +193,6 @@ class rSimVSSGK(VSSBaseEnv):
             observation.append(normVx(self.frame.robots_yellow[i].v_x))
             observation.append(normVx(self.frame.robots_yellow[i].v_y))
             observation.append(normVt(self.frame.robots_yellow[i].v_theta))
-
-        observation.append(self.frame.time/(5*60*1000))
 
         return np.array(observation)
 
@@ -426,7 +419,7 @@ class rSimVSSGK(VSSBaseEnv):
                 self.reward_shaping_total['defense'] += ball_defense_reward * w_defense
                 self.reward_shaping_total['ball_leave_area'] += w_blva * ball_leave_area_reward
             self.last_frame = self.frame
-        done = self.frame.time >= 30 or goal_score != 0 or done
+        done = self.steps * self.time_step >= 30 or goal_score != 0 or done
 
         return reward, done
 
