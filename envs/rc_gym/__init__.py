@@ -13,5 +13,5 @@ register(id='VSSMAOpp-v0',
          )
 
 register(id='VSSGk-v0',
-         entry_point='rc_gym.vss:rSimVSSGK'
+         entry_point='rc_gym.vss.env_gk:rSimVSSGK'
          )

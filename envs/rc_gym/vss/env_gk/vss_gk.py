@@ -9,7 +9,6 @@ import torch
 from rc_gym.Entities import Frame, Robot
 from rc_gym.vss.vss_gym_base import VSSBaseEnv
 from rc_gym.vss.env_gk.attacker.models import DDPGActor, GaussianPolicy
-from rc_gym.Utils import distance, normVt, normVx, normX, to_pi_range
 
 
 class rSimVSSGK(VSSBaseEnv):
@@ -119,49 +118,35 @@ class rSimVSSGK(VSSBaseEnv):
         atk_checkpoint = torch.load(atk_path, map_location=device)
         self.attacker.load_state_dict(atk_checkpoint['state_dict_act'])
         self.attacker.eval()
-    
-    def update_atk_targets(self, atk_action):
-
-        angular_speed_desired = atk_action[0] * 7
-        linear_speed_desired = atk_action[1] * 90
-        self.atk_target_rho = linear_speed_desired / 1.5
-        self.atk_target_theta = to_pi_range(self.atk_target_theta 
-                                            + angular_speed_desired / -7.5)
-        self.atk_target_x = (self.frame.robots_yellow[0].x + self.atk_target_rho 
-                                * math.cos(self.atk_target_theta)
-                            )
-        self.atk_target_y = (self.frame.robots_yellow[0].y + self.atk_target_rho 
-                                * math.sin(self.atk_target_theta)
-                            )
 
     def _atk_obs(self):
         observation = []
-        observation.append(normX(-self.frame.ball.x))
-        observation.append(normX(self.frame.ball.y))
-        observation.append(normVx(-self.frame.ball.v_x))
-        observation.append(normVx(self.frame.ball.v_y))
+        observation.append(self.norm_pos(-self.frame.ball.x))
+        observation.append(self.norm_pos(self.frame.ball.y))
+        observation.append(self.norm_v(-self.frame.ball.v_x))
+        observation.append(self.norm_v(self.frame.ball.v_y))
         
         #  we reflect the side that the attacker is attacking,
         #  so that he will attack towards the goal where the goalkeeper is
         for i in range(self.n_robots_yellow):
-            observation.append(normX(-self.frame.robots_yellow[i].x))
-            observation.append(normX(self.frame.robots_yellow[i].y))
+            observation.append(self.norm_pos(-self.frame.robots_yellow[i].x))
+            observation.append(self.norm_pos(self.frame.robots_yellow[i].y))
             observation.append(
                 np.sin(np.deg2rad(self.frame.robots_yellow[i].theta))
             )
             observation.append(
                 -np.cos(np.deg2rad(self.frame.robots_yellow[i].theta))
             )
-            observation.append(normVx(-self.frame.robots_yellow[i].v_x))
-            observation.append(normVx(self.frame.robots_yellow[i].v_y))
-            observation.append(normVt(-self.frame.robots_yellow[i].v_theta))
+            observation.append(self.norm_v(-self.frame.robots_yellow[i].v_x))
+            observation.append(self.norm_v(self.frame.robots_yellow[i].v_y))
+            observation.append(self.norm_w(-self.frame.robots_yellow[i].v_theta))
 
         for i in range(self.n_robots_blue):
-            observation.append(normX(-self.frame.robots_blue[i].x))
-            observation.append(normX(self.frame.robots_blue[i].y))
-            observation.append(normVx(-self.frame.robots_blue[i].v_x))
-            observation.append(normVx(self.frame.robots_blue[i].v_y))
-            observation.append(normVt(-self.frame.robots_blue[i].v_theta))
+            observation.append(self.norm_pos(-self.frame.robots_blue[i].x))
+            observation.append(self.norm_pos(self.frame.robots_blue[i].y))
+            observation.append(self.norm_v(-self.frame.robots_blue[i].v_x))
+            observation.append(self.norm_v(self.frame.robots_blue[i].v_y))
+            observation.append(self.norm_w(-self.frame.robots_blue[i].v_theta))
 
         return np.array(observation)
 
@@ -169,30 +154,30 @@ class rSimVSSGK(VSSBaseEnv):
     def _frame_to_observations(self):
         observation = []
 
-        observation.append(normX(self.frame.ball.x))
-        observation.append(normX(self.frame.ball.y))
-        observation.append(normVx(self.frame.ball.v_x))
-        observation.append(normVx(self.frame.ball.v_y))
+        observation.append(self.norm_pos(self.frame.ball.x))
+        observation.append(self.norm_pos(self.frame.ball.y))
+        observation.append(self.norm_v(self.frame.ball.v_x))
+        observation.append(self.norm_v(self.frame.ball.v_y))
 
         for i in range(self.n_robots_blue):
-            observation.append(normX(self.frame.robots_blue[i].x))
-            observation.append(normX(self.frame.robots_blue[i].y))
+            observation.append(self.norm_pos(self.frame.robots_blue[i].x))
+            observation.append(self.norm_pos(self.frame.robots_blue[i].y))
             observation.append(
                 np.sin(np.deg2rad(self.frame.robots_blue[i].theta))
             )
             observation.append(
                 np.cos(np.deg2rad(self.frame.robots_blue[i].theta))
             )
-            observation.append(normVx(self.frame.robots_blue[i].v_x))
-            observation.append(normVx(self.frame.robots_blue[i].v_y))
-            observation.append(normVt(self.frame.robots_blue[i].v_theta))
+            observation.append(self.norm_v(self.frame.robots_blue[i].v_x))
+            observation.append(self.norm_v(self.frame.robots_blue[i].v_y))
+            observation.append(self.norm_w(self.frame.robots_blue[i].v_theta))
 
         for i in range(self.n_robots_yellow):
-            observation.append(normX(self.frame.robots_yellow[i].x))
-            observation.append(normX(self.frame.robots_yellow[i].y))
-            observation.append(normVx(self.frame.robots_yellow[i].v_x))
-            observation.append(normVx(self.frame.robots_yellow[i].v_y))
-            observation.append(normVt(self.frame.robots_yellow[i].v_theta))
+            observation.append(self.norm_pos(self.frame.robots_yellow[i].x))
+            observation.append(self.norm_pos(self.frame.robots_yellow[i].y))
+            observation.append(self.norm_v(self.frame.robots_yellow[i].v_x))
+            observation.append(self.norm_v(self.frame.robots_yellow[i].v_y))
+            observation.append(self.norm_w(self.frame.robots_yellow[i].v_theta))
 
         return np.array(observation)
 
@@ -205,27 +190,31 @@ class rSimVSSGK(VSSBaseEnv):
                               v_wheel2=v_wheel2))
 
         # Send random commands to the other robots
-        commands.append(Robot(yellow=False, id=1, v_wheel1=random.uniform(-1, 1),
+        commands.append(Robot(yellow=False, id=1,
+                              v_wheel1=random.uniform(-1, 1),
                               v_wheel2=random.uniform(-1, 1)))
-        commands.append(Robot(yellow=False, id=2, v_wheel1=random.uniform(-1, 1),
+        commands.append(Robot(yellow=False, id=2,
+                              v_wheel1=random.uniform(-1, 1),
                               v_wheel2=random.uniform(-1, 1)))
 
         atk_action = self.attacker.get_action(self._atk_obs())
         # we invert the speed on the wheels because of the attacker's reflection on the Y axis.
         commands.append(Robot(yellow=True, id=0, v_wheel1=atk_action[1],
                               v_wheel2=atk_action[0]))
-        commands.append(Robot(yellow=True, id=1, v_wheel1=random.uniform(-1, 1),
+        commands.append(Robot(yellow=True, id=1,
+                              v_wheel1=random.uniform(-1, 1),
                               v_wheel2=random.uniform(-1, 1)))
-        commands.append(Robot(yellow=True, id=2, v_wheel1=random.uniform(-1, 1),
+        commands.append(Robot(yellow=True, id=2,
+                              v_wheel1=random.uniform(-1, 1),
                               v_wheel2=random.uniform(-1, 1)))
         return commands
 
 
     def _calculate_future_point(self, pos, vel):
         if vel[0] > 0:
-            dist = distance(
-                (self.field_params['field_length'] / 2, 0), (pos[0], pos[1]))
-
+            goal_center = np.array([self.field_params['field_length'] / 2, 0])
+            pos = np.array(pos)
+            dist = np.linalg.norm(goal_center - pos)
             time_to_goal = dist/np.sqrt(vel[0]**2 + vel[1]**2)
             future_x = pos[0] + vel[0]*time_to_goal
             future_y = pos[1] + vel[1]*time_to_goal
@@ -283,9 +272,10 @@ class rSimVSSGK(VSSBaseEnv):
         and if the ball leaves the area in a different direction it means 
         that the goalkeeper defended the ball.
         '''
-        distance_gk_ball = distance([self.frame.robots_blue[0].x, \
-                                    self.frame.robots_blue[0].y], \
-                                    [self.frame.ball.x, self.frame.ball.y]) * 100 
+        pos = np.array([self.frame.robots_blue[0].x,
+                        self.frame.robots_blue[0].y])
+        ball = np.array([self.frame.ball.x, self.frame.ball.y])
+        distance_gk_ball = np.linalg.norm(pos - ball) * 100 
         field_half_length = self.field_params['field_length'] / 2
 
         defense_reward = 0
