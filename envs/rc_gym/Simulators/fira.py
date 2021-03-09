@@ -4,7 +4,7 @@ from typing import Dict, List
 import numpy as np
 from rc_gym.Entities import Robot
 from rc_gym.Entities.Frame import FramePB
-from rc_gym.Simulators.rsim_base import RSim
+from rc_gym.Simulators.rsim import RSim
 
 import rc_gym.Simulators.pb_fira.packet_pb2 as packet_pb2
 from rc_gym.Simulators.pb_fira.state_pb2 import *

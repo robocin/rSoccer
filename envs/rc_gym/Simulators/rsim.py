@@ -1,4 +1,6 @@
 import numpy as np
+import robosim
+
 from typing import Dict, List
 from rc_gym.Entities import Frame, FrameVSS, FrameSSL
 
@@ -86,6 +88,7 @@ class RSim:
     ):
         raise NotImplementedError
 
+
 class RSimVSS(RSim):
     def __init__(self, field_type: int, n_robots_blue: int,
                  n_robots_yellow: int, time_step_ms: int):
@@ -129,7 +132,8 @@ class RSimVSS(RSim):
             blue_robots_pos=blue_robots_pos,
             yellow_robots_pos=yellow_robots_pos,
             time_step_ms=time_step_ms
-            )
+        )
+
 
 class RSimSSL(RSim):
     def __init__(self, field_type: int, n_robots_blue: int,
@@ -157,7 +161,7 @@ class RSimSSL(RSim):
             sim_commands[rbt_id][3] = cmd.kick_v_x
             sim_commands[rbt_id][4] = cmd.kick_v_z
             sim_commands[rbt_id][5] = cmd.dribbler
-            
+
         self.simulator.step(sim_commands)
 
     def get_frame(self) -> FrameSSL:
@@ -180,4 +184,4 @@ class RSimSSL(RSim):
             blue_robots_pos=blue_robots_pos,
             yellow_robots_pos=yellow_robots_pos,
             time_step_ms=time_step_ms
-            )
+        )
