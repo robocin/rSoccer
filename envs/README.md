@@ -7,8 +7,13 @@ $ pip install -e .
 ```
 # Available Envs
 - **VSS3v3-v0**
+- **VSS3v3FIRA-v0**
+    - Needs to run with FIRASIm
 - **VSSMA-v0**
 - **VSSMAOpp-v0**
+    - Needs a attacker model trained on VSS3v3-v0
+- **VSSGk-v0**
+    - Needs a attacker model trained on VSS3v3-v0
 
 # Example code
 ```python
