@@ -23,7 +23,7 @@ $ pip install -e .
 import gym
 import rc_gym
 
-# Using penalty env
+# Using VSS 3v3 env
 env = gym.make('VSS3v3-v0')
 
 env.reset()
@@ -31,6 +31,7 @@ env.reset()
 for i in range(1):
     done = False
     while not done:
+        # Step using random actions
         action = env.action_space.sample()
         next_state, reward, done, _ = env.step(action)
     print(reward)
