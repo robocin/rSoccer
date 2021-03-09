@@ -29,3 +29,13 @@ register(id='SSLGoToBall-v1',
          entry_point='rc_gym.ssl.ssl_go_to_ball:SSLGoToBallEnv',
          kwargs={'field_type' : 1, 'n_robots_yellow' : 6}
          )
+
+register(id='SSLGoToBallIR-v0',
+         entry_point='rc_gym.ssl.ssl_go_to_ball:SSLGoToBallIREnv',
+         kwargs={'field_type' : 1, 'n_robots_yellow' : 0}
+         )
+
+register(id='SSLGoToBallIR-v1',
+         entry_point='rc_gym.ssl.ssl_go_to_ball:SSLGoToBallIREnv',
+         kwargs={'field_type' : 1, 'n_robots_yellow' : 6}
+         )
