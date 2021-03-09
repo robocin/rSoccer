@@ -6,14 +6,17 @@
 $ pip install -e .
 ```
 # Available Envs
+## VSS
 - **VSS3v3-v0**
-- **VSS3v3FIRA-v0**
-    - Needs to run with FIRASIm
+- **VSS3v3FIRA-v0** [Needs to run with FIRASIm]
 - **VSSMA-v0**
-- **VSSMAOpp-v0**
-    - Needs a attacker model trained on VSS3v3-v0
-- **VSSGk-v0**
-    - Needs a attacker model trained on VSS3v3-v0
+- **VSSMAOpp-v0** [Needs a attacker model trained on VSS3v3-v0]
+- **VSSGk-v0** [Needs a attacker model trained on VSS3v3-v0]
+## SSL
+- **SSLGoToBall-v0**
+- **SSLGoToBall-v1**
+- **SSLGoToBallIR-v0**
+- **SSLGoToBallIR-v1**
 
 # Example code
 ```python

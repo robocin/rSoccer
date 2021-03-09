@@ -9,13 +9,14 @@ from rc_gym.Entities import Frame, Robot
 from rc_gym.ssl.ssl_gym_base import SSLBaseEnv
 
 
-class SSLGoToBallEnv(SSLBaseEnv):
+class SSLGoToBallIREnv(SSLBaseEnv):
     """The SSL robot needs to reach the ball 
 
 
         Description:
             One blue robot and a ball are randomly placed on a div B field,
-            the episode ends when the robots is closer than 0.2m from the ball
+            the episode ends when the robots infrared is activated, the ir
+            is activated when the ball touches the robot kicker
         Observation:
             Type: Box(4 + 7*n_robots_blue + 5*n_robots_yellow)
             Normalized Bounds to [-1.2, 1.2]
@@ -97,13 +98,8 @@ class SSLGoToBallEnv(SSLBaseEnv):
         ball = self.frame.ball
         robot = self.frame.robots_blue[0]
         
-        dist_robot_ball = np.linalg.norm(
-            np.array([ball.x, ball.y]) 
-            - np.array([robot.x, robot.y])
-        )
-        
-        # Check if robot is less than 0.2m from ball
-        if dist_robot_ball < 0.2:
+        # Check if robot infrared is activated
+        if robot.infrared:
             reward = 1
 
         done = reward or self.steps * self.time_step >= 30
