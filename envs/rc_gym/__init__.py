@@ -17,5 +17,5 @@ register(id='VSSGk-v0',
          )
 
 register(id='VSS3v3FIRA-v0',
-         entry_point='rc_gym.vss:VSS3v3FIRAEnv'
+         entry_point='rc_gym.vss.env_3v3:VSS3v3FIRAEnv'
          )
