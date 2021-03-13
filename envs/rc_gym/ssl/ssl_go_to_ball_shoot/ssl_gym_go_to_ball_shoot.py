@@ -1,6 +1,5 @@
 import math
 import random
-from rc_gym.Utils.Utils import OrnsteinUhlenbeckAction
 from typing import Dict
 
 import gym
@@ -92,7 +91,7 @@ class SSLGoToBallShootEnv(SSLBaseEnv):
         
         commands.append(Robot(yellow=False, id=0, v_x=actions[0],
                               v_y=actions[1], v_theta=actions[2],
-                              kick_v_x=actions[3], 
+                              kick_v_x=1. if actions[3] > 0 else 0., 
                               dribbler=True if actions[4] > 0 else False))
 
         return commands
@@ -104,11 +103,11 @@ class SSLGoToBallShootEnv(SSLBaseEnv):
         
         if ball.x < 0 or abs(ball.y) > self.field_params['field_width'] / 2:
             done = True
-        elif ball.x > self.field_params['field_length']:
+        elif ball.x > self.field_params['field_length'] / 2:
             done = True
-            reward = 1 if abs(ball.y) < self.field_params['goal_width'] else False
+            reward = 1 if abs(ball.y) < self.field_params['goal_width'] / 2 else 0
 
-        done = reward or self.steps * self.time_step >= 60
+        done = done or self.steps * self.time_step >= 60
 
         return reward, done
     
