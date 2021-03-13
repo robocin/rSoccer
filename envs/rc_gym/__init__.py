@@ -39,3 +39,8 @@ register(id='SSLGoToBallIR-v1',
          entry_point='rc_gym.ssl.ssl_go_to_ball:SSLGoToBallIREnv',
          kwargs={'field_type' : 1, 'n_robots_yellow' : 6}
          )
+
+register(id='SSLGoToBallShoot-v0',
+         entry_point='rc_gym.ssl.ssl_go_to_ball_shoot:SSLGoToBallShootEnv',
+         kwargs={'field_type' : 1}
+         )
