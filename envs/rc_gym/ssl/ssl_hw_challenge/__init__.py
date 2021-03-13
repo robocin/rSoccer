@@ -1,1 +1,1 @@
-from rc_gym.ssl.ssl_hw_challenge.static_defenders import SSLHWStaticDefenders
+from rc_gym.ssl.ssl_hw_challenge.static_defenders import SSLHWStaticDefendersEnv
