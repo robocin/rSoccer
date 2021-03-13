@@ -143,6 +143,8 @@ class RSimSSL(RSim):
 
         self.linear_speed_range = 1  # m/s
         self.angular_speed_range = 10  # rad/s
+        self.kick_v_x_speed_range = 5 # m/s
+        self.kick_v_z_speed_range = 5 # m/s
 
     def send_commands(self, commands):
         sim_commands = np.zeros(
@@ -157,8 +159,8 @@ class RSimSSL(RSim):
             sim_commands[rbt_id][0] = v_x
             sim_commands[rbt_id][1] = v_y
             sim_commands[rbt_id][2] = cmd.v_theta * self.angular_speed_range
-            sim_commands[rbt_id][3] = cmd.kick_v_x
-            sim_commands[rbt_id][4] = cmd.kick_v_z
+            sim_commands[rbt_id][3] = cmd.kick_v_x * self.kick_v_x_speed_range
+            sim_commands[rbt_id][4] = cmd.kick_v_z * self.kick_v_z_speed_range
             sim_commands[rbt_id][5] = cmd.dribbler
 
         self.simulator.step(sim_commands)
