@@ -8,13 +8,14 @@ from rc_gym.Entities import Frame, Robot, Ball
 from rc_gym.ssl.ssl_gym_base import SSLBaseEnv
 
 
-class SSLHWStaticDefenders(SSLBaseEnv):
-    """The SSL robot needs to make a goal
+class SSLHWStaticDefendersEnv(SSLBaseEnv):
+    """The SSL robot needs to make a goal on a field with static defenders
 
 
         Description:
-            One blue robot and a ball are placed on fixed position on a half 
-            div B field, the robot is rewarded if it makes a goal
+            The controlled robot is started on the field center and needs to
+            score on the positive side field, where there are 6 static defenders
+            while obeying div B rules
         Observation:
             Type: Box(4 + 7*n_robots_blue + 5*n_robots_yellow)
             Normalized Bounds to [-1.2, 1.2]
@@ -34,9 +35,10 @@ class SSLHWStaticDefenders(SSLBaseEnv):
         Reward:
             1 if goal
         Starting State:
-            Robot and ball on half opponent field size in different y.
+            Robot on field center, ball and defenders randomly positioned on
+            positive field side
         Episode Termination:
-            Goal, ball leaves bounds or 60 seconds
+            Goal, 25 seconds, or rule infraction
     """
 
     def __init__(self, field_type=2):

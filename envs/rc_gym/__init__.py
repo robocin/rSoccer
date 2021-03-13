@@ -65,6 +65,6 @@ register(id='SSLGoToBallShoot-v3',
          )
 
 register(id='SSLHWStaticDefenders-v0',
-         entry_point='rc_gym.ssl.ssl_hw_challenge.static_defenders:SSLHWStaticDefenders',
+         entry_point='rc_gym.ssl.ssl_hw_challenge.static_defenders:SSLHWStaticDefendersEnv',
          kwargs={'field_type' : 2}
          )
