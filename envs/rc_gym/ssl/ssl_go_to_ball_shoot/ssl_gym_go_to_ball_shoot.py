@@ -112,7 +112,7 @@ class SSLGoToBallShootEnv(SSLBaseEnv):
         return reward, done
     
     def _get_initial_positions_frame(self):
-        '''Returns the position of each robot and ball for the inicial frame'''
+        '''Returns the position of each robot and ball for the initial frame'''
         x = self.field_params['field_length'] / 4
         y = self.field_params['field_width'] / 8
 
