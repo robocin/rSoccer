@@ -23,7 +23,7 @@ class SSLGoToBallShootEnv(SSLBaseEnv):
             4->10    id 0 Blue [X, Y, sin(theta), cos(theta), v_x, v_y, v_theta]
             +5*i     id i Yellow Robot [X, Y, v_x, v_y, v_theta]
         Actions:
-            Type: Box(3, )
+            Type: Box(5, )
             Num     Action
             0       id 0 Blue Global X Direction Speed  (%)
             1       id 0 Blue Global Y Direction Speed  (%)
@@ -39,10 +39,11 @@ class SSLGoToBallShootEnv(SSLBaseEnv):
             Goal, ball leaves bounds or 60 seconds
     """
 
-    def __init__(self, field_type=1):
+    def __init__(self, field_type=1, random_init=False, enter_goal_area=False):
         super().__init__(field_type=field_type, n_robots_blue=1, 
                          n_robots_yellow=0, time_step=0.032)
-
+        self.random_init = random_init
+        self.enter_goal_area= enter_goal_area
         self.action_space = gym.spaces.Box(low=-1, high=1,
                                            shape=(5, ), dtype=np.float32)
         
@@ -99,13 +100,32 @@ class SSLGoToBallShootEnv(SSLBaseEnv):
     def _calculate_reward_and_done(self):
         reward = 0
         done = False
-        ball = self.frame.ball
         
-        if ball.x < 0 or abs(ball.y) > self.field_params['field_width'] / 2:
+        # Field parameters
+        half_len = self.field_params['field_length'] / 2
+        half_wid = self.field_params['field_width'] / 2
+        pen_len = self.field_params['penalty_length']
+        half_pen_wid = self.field_params['penalty_width'] / 2
+        half_goal_wid = self.field_params['goal_width'] / 2
+        
+        ball = self.frame.ball
+        robot = self.frame.robots_blue[0]
+        
+        def robot_in_gk_area(rbt):
+            return rbt.x > half_len - pen_len and abs(rbt.y) < half_pen_wid
+        
+        # Check if robot exited field right side limits
+        if robot.x < 0 or abs(robot.y) > half_wid:
             done = True
-        elif ball.x > self.field_params['field_length'] / 2:
+        # If flag is set, end episode if robot enter gk area
+        elif not self.enter_goal_area and robot_in_gk_area(robot):
             done = True
-            reward = 1 if abs(ball.y) < self.field_params['goal_width'] / 2 else 0
+        # Check ball for ending conditions
+        elif ball.x < 0 or abs(ball.y) > half_wid:
+            done = True
+        elif ball.x > half_len:
+            done = True
+            reward = 1 if abs(ball.y) < half_goal_wid else 0
 
         done = done or self.steps * self.time_step >= 60
 
@@ -113,13 +133,22 @@ class SSLGoToBallShootEnv(SSLBaseEnv):
     
     def _get_initial_positions_frame(self):
         '''Returns the position of each robot and ball for the initial frame'''
-        x = self.field_params['field_length'] / 4
-        y = self.field_params['field_width'] / 8
+        if self.random_init:
+            half_len = self.field_params['field_length'] / 2
+            half_wid = self.field_params['field_width'] / 2
+            penalty_len = self.field_params['penalty_length']
+            def x(): return random.uniform(0.3, half_len - penalty_len - 0.3)
+            def y(): return random.uniform(-half_wid + 0.1, half_wid - 0.1)
+            def theta(): return random.uniform(-180, 180)
+        else:
+            def x(): return self.field_params['field_length'] / 4
+            def y(): return self.field_params['field_width'] / 8
+            def theta(): return 0
 
         pos_frame: Frame = Frame()
 
-        pos_frame.ball = Ball(x=x, y=y)
+        pos_frame.ball = Ball(x=x(), y=y())
 
-        pos_frame.robots_blue[0] = Robot(x=x, y=-y, theta=0)
+        pos_frame.robots_blue[0] = Robot(x=x(), y=-y(), theta=theta())
 
         return pos_frame
