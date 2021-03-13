@@ -22,44 +22,44 @@ register(id='VSS3v3FIRA-v0',
 
 register(id='SSLGoToBall-v0',
          entry_point='rc_gym.ssl.ssl_go_to_ball:SSLGoToBallEnv',
-         kwargs={'field_type' : 1, 'n_robots_yellow' : 0}
+         kwargs={'field_type' : 2, 'n_robots_yellow' : 0}
          )
 
 register(id='SSLGoToBall-v1',
          entry_point='rc_gym.ssl.ssl_go_to_ball:SSLGoToBallEnv',
-         kwargs={'field_type' : 1, 'n_robots_yellow' : 6}
+         kwargs={'field_type' : 2, 'n_robots_yellow' : 6}
          )
 
 register(id='SSLGoToBallIR-v0',
          entry_point='rc_gym.ssl.ssl_go_to_ball:SSLGoToBallIREnv',
-         kwargs={'field_type' : 1, 'n_robots_yellow' : 0}
+         kwargs={'field_type' : 2, 'n_robots_yellow' : 0}
          )
 
 register(id='SSLGoToBallIR-v1',
          entry_point='rc_gym.ssl.ssl_go_to_ball:SSLGoToBallIREnv',
-         kwargs={'field_type' : 1, 'n_robots_yellow' : 6}
+         kwargs={'field_type' : 2, 'n_robots_yellow' : 6}
          )
 
 register(id='SSLGoToBallShoot-v0',
          entry_point='rc_gym.ssl.ssl_go_to_ball_shoot:SSLGoToBallShootEnv',
-         kwargs={'field_type' : 1, 'random_init' : False, 
+         kwargs={'field_type' : 2, 'random_init' : False, 
                  'enter_goal_area' : False}
          )
 
 register(id='SSLGoToBallShoot-v1',
          entry_point='rc_gym.ssl.ssl_go_to_ball_shoot:SSLGoToBallShootEnv',
-         kwargs={'field_type' : 1, 'random_init' : True, 
+         kwargs={'field_type' : 2, 'random_init' : True, 
                  'enter_goal_area' : False}
          )
 
 register(id='SSLGoToBallShoot-v2',
          entry_point='rc_gym.ssl.ssl_go_to_ball_shoot:SSLGoToBallShootEnv',
-         kwargs={'field_type' : 1, 'random_init' : False, 
+         kwargs={'field_type' : 2, 'random_init' : False, 
                  'enter_goal_area' : True}
          )
 
 register(id='SSLGoToBallShoot-v3',
          entry_point='rc_gym.ssl.ssl_go_to_ball_shoot:SSLGoToBallShootEnv',
-         kwargs={'field_type' : 1, 'random_init' : True, 
+         kwargs={'field_type' : 2, 'random_init' : True, 
                  'enter_goal_area' : True}
          )
