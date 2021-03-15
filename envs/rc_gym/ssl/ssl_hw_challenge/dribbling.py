@@ -115,6 +115,11 @@ class SSLHWDribblingEnv(SSLBaseEnv):
         last_ball = None or self.last_frame.ball
         robot = self.frame.robots_blue[0]
         
+        # End episode in case of collision
+        for rbt in self.frame.robots_yellow.values():
+            if abs(rbt.v_x) > 0.003 or abs(rbt.v_y) > 0.003:
+                done = True
+        
         def robot_out_of_bounds(rbt):
             if rbt.x < self.node_3 - self.field_margin or rbt.x > self.field_margin:
                 return True
