@@ -43,13 +43,11 @@ class SSLHWDribblingEnv(SSLBaseEnv):
             reverse a checkpoint
     """
 
-    def __init__(self, field_type=2):
-        super().__init__(field_type=field_type, n_robots_blue=1, 
-                         n_robots_yellow=0, time_step=0.032)
-        self.random_init = random_init
-        self.enter_goal_area= enter_goal_area
+    def __init__(self):
+        super().__init__(field_type=2, n_robots_blue=1, 
+                         n_robots_yellow=4, time_step=0.032)
         self.action_space = gym.spaces.Box(low=-1, high=1,
-                                           shape=(5, ), dtype=np.float32)
+                                           shape=(4, ), dtype=np.float32)
         
         n_obs = 4 + 7*self.n_robots_blue + 5*self.n_robots_yellow
         self.observation_space = gym.spaces.Box(low=-self.NORM_BOUNDS,
@@ -58,12 +56,12 @@ class SSLHWDribblingEnv(SSLBaseEnv):
                                                 dtype=np.float32)
         
         self.checkpoints_count = 0
-        # Checkpoint dimensions
-        # Checkpoints dimensions
-        gate_0 = 0.5    # Distance between initial position and first obstacle
-        gate_1 = 0.25
-        gate_2 = 0.3
-        gate_3 = 0.4
+        # Checkpoints nodes positions
+        self.node_0 = -0.5 
+        self.node_1 = -1.
+        self.node_2 = -1.4
+        self.node_3 = -1.90
+        self.field_margin = 1
         
         
         print('Environment initialized')
@@ -105,8 +103,7 @@ class SSLHWDribblingEnv(SSLBaseEnv):
 
         commands.append(Robot(yellow=False, id=0, v_x=actions[0],
                               v_y=actions[1], v_theta=actions[2],
-                              kick_v_x=1. if actions[3] > 0 else 0., 
-                              dribbler=True if actions[4] > 0 else False))
+                              dribbler=True if actions[3] > 0 else False))
 
         return commands
 
@@ -114,28 +111,39 @@ class SSLHWDribblingEnv(SSLBaseEnv):
         reward = 0
         done = False
         
-        # Checkpoints dimensions
-        gate_0 = 0.5    # Distance between initial position and first obstacle
-        gate_1 = 0.25
-        gate_2 = 0.3
-        gate_3 = 0.4
-        gates_sum = gate_0 + gate_1 + gate_2 + gate_3
-        field_margin = 1
-        
         ball = self.frame.ball
+        last_ball = None or self.last_frame.ball
         robot = self.frame.robots_blue[0]
         
         def robot_out_of_bounds(rbt):
-            return rbt.x > half_len - pen_len and abs(rbt.y) < half_pen_wid
+            if rbt.x < self.node_3 - self.field_margin or rbt.x > self.field_margin:
+                return True
+            if abs(rbt.y) > self.field_margin:
+                return True
+            return False
         
         if robot_out_of_bounds(robot):
             done = True
-        # TODO
-        # else self.last_frame is not None:
-        #     if self.checkpoints_count == 0:
-        #     elif self.checkpoints_count == 1:
-        #     elif self.checkpoints_count == 2:
-        #     elif self.checkpoints_count == 3:
+        elif last_ball:
+            if self.checkpoints_count == 0:
+                if ball.x < self.node_0 and ball.x > self.node_1:
+                    if last_ball.y >= 0 and ball.y < 0:
+                        reward = 1
+                        self.checkpoints_count += 1
+            elif self.checkpoints_count == 1:
+                if ball.x < self.node_1 and ball.x > self.node_2:
+                    if last_ball.y < 0 and ball.y >= 0:
+                        reward = 1
+                        self.checkpoints_count += 1
+            elif self.checkpoints_count >= 2:
+                if ball.x < self.node_2 and ball.x > self.node_3:
+                    if last_ball.y >= 0 and ball.y < 0:
+                        reward = 1
+                        self.checkpoints_count += 1
+                        if self.checkpoints_count == 5:
+                            done = True
+                    elif last_ball.y < 0 and ball.y >= 0:
+                        done = True
 
         done = done or self.steps * self.time_step >= 120
 
@@ -147,8 +155,13 @@ class SSLHWDribblingEnv(SSLBaseEnv):
 
         pos_frame: Frame = Frame()
 
-        pos_frame.ball = Ball(x=0., y=0.)
+        pos_frame.ball = Ball(x=-0.1, y=0.)
 
-        pos_frame.robots_blue[0] = Robot(x=0., y=0., theta=0.)
+        pos_frame.robots_blue[0] = Robot(x=0., y=0., theta=180.)
+        
+        pos_frame.robots_yellow[0] = Robot(x=self.node_0, y=0., theta=180.)
+        pos_frame.robots_yellow[1] = Robot(x=self.node_1, y=0., theta=180.)
+        pos_frame.robots_yellow[2] = Robot(x=self.node_2, y=0., theta=180.)
+        pos_frame.robots_yellow[3] = Robot(x=self.node_3, y=0., theta=180.)
 
         return pos_frame
