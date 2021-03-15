@@ -17,12 +17,12 @@ class SSLHWStaticDefendersEnv(SSLBaseEnv):
             score on the positive side field, where there are 6 static defenders
             while obeying div B rules
         Observation:
-            Type: Box(4 + 7*n_robots_blue + 5*n_robots_yellow)
+            Type: Box(4 + 7*n_robots_blue + 2*n_robots_yellow)
             Normalized Bounds to [-1.2, 1.2]
             Num      Observation normalized  
             0->3     Ball [X, Y, V_x, V_y]
             4->10    id 0 Blue [X, Y, sin(theta), cos(theta), v_x, v_y, v_theta]
-            +5*i     id i Yellow Robot [X, Y, v_x, v_y, v_theta]
+            +2*i     id i Yellow Robot [X, Y]
         Actions:
             Type: Box(5, )
             Num     Action
@@ -40,7 +40,6 @@ class SSLHWStaticDefendersEnv(SSLBaseEnv):
         Episode Termination:
             Goal, 25 seconds, or rule infraction
     """
-
     def __init__(self, field_type=2):
         super().__init__(field_type=field_type, n_robots_blue=1, 
                          n_robots_yellow=6, time_step=0.032)
@@ -81,9 +80,6 @@ class SSLHWStaticDefendersEnv(SSLBaseEnv):
         for i in range(self.n_robots_yellow):
             observation.append(self.norm_pos(self.frame.robots_yellow[i].x))
             observation.append(self.norm_pos(self.frame.robots_yellow[i].y))
-            observation.append(self.norm_v(self.frame.robots_yellow[i].v_x))
-            observation.append(self.norm_v(self.frame.robots_yellow[i].v_y))
-            observation.append(self.norm_w(self.frame.robots_yellow[i].v_theta))
 
         return np.array(observation, dtype=np.float32)
 
