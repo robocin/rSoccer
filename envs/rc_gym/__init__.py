@@ -68,3 +68,7 @@ register(id='SSLHWStaticDefenders-v0',
          entry_point='rc_gym.ssl.ssl_hw_challenge.static_defenders:SSLHWStaticDefendersEnv',
          kwargs={'field_type' : 2}
          )
+
+register(id='SSLHWDribbling-v0',
+         entry_point='rc_gym.ssl.ssl_hw_challenge.dribbling:SSLHWDribblingEnv',
+         )
