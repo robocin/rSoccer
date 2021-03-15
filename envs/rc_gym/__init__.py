@@ -72,3 +72,13 @@ register(id='SSLHWStaticDefenders-v0',
 register(id='SSLHWDribbling-v0',
          entry_point='rc_gym.ssl.ssl_hw_challenge.dribbling:SSLHWDribblingEnv',
          )
+
+register(id='SSLContestedPossessionEnv-v0',
+         entry_point='rc_gym.ssl.ssl_hw_challenge.contested_possession:SSLContestedPossessionEnv',
+         kwargs={'random_init' : False}
+         )
+
+register(id='SSLContestedPossessionEnv-v1',
+         entry_point='rc_gym.ssl.ssl_hw_challenge.contested_possession:SSLContestedPossessionEnv',
+         kwargs={'random_init' : True}
+         )
