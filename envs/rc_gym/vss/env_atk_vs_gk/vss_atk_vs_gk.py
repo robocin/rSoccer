@@ -310,7 +310,10 @@ class VSSAtkVsGkEnv(VSSBaseEnv):
         return reward, done
 
     def _get_initial_positions_frame(self):
-        '''Returns the position of each robot and ball for the inicial frame'''
+        """
+        Goalie starts at the center of the goal, Attaker and ball randomly.
+        Other robots also starts at random positions.
+        """        
         field_half_length = self.field_params['field_length'] / 2
         field_half_width = self.field_params['field_width'] / 2
 
@@ -333,8 +336,11 @@ class VSSAtkVsGkEnv(VSSBaseEnv):
         for i in range(self.n_robots_blue):
             pos_frame.robots_blue[i] = Robot(x=x(), y=y(), theta=theta())
             agents.append(pos_frame.robots_blue[i])
-
-        for i in range(self.n_robots_yellow):
+        
+        pos_frame.robots_yellow[0] = Robot(x= field_half_length - 0.05,
+                                           y=0.,
+                                           theta=0)
+        for i in range(1, self.n_robots_yellow):
             pos_frame.robots_yellow[i] = Robot(x=x(), y=y(), theta=theta())
             agents.append(pos_frame.robots_yellow[i])
 
