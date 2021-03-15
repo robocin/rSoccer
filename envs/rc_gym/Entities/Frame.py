@@ -22,7 +22,6 @@ class FrameVSS(Frame):
         self.ball.z = state[2]
         self.ball.v_x = state[3]
         self.ball.v_y = state[4]
-        self.ball.x
 
         for i in range(n_robots_blue):
             robot = Robot()
@@ -55,7 +54,6 @@ class FrameSSL(Frame):
         self.ball.z = state[2]
         self.ball.v_x = state[3]
         self.ball.v_y = state[4]
-        self.ball.x
 
         for i in range(n_robots_blue):
             robot = Robot()
