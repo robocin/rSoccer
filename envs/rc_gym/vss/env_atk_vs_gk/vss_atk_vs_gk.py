@@ -100,7 +100,11 @@ class VSSAtkVsGkEnv(VSSBaseEnv):
         self.goalkeeper = DDPGActor(40, 2)
         print(gk_path)
         gk_checkpoint = torch.load(gk_path, map_location=device)
-        self.goalkeeper.load_state_dict(gk_checkpoint['state_dict_act'])
+        # print("-------> type: ", type(gk_checkpoint))
+        if 'state_dict_act' in gk_checkpoint: 
+            self.goalkeeper.load_state_dict(gk_checkpoint['state_dict_act'])
+        else:
+            self.goalkeeper.load_state_dict(gk_checkpoint)
         self.goalkeeper.eval()
 
     def _gk_obs(self):
@@ -340,6 +344,7 @@ class VSSAtkVsGkEnv(VSSBaseEnv):
         pos_frame.robots_yellow[0] = Robot(x= field_half_length - 0.05,
                                            y=0.,
                                            theta=0)
+        agents.append(pos_frame.robots_yellow[0])
         for i in range(1, self.n_robots_yellow):
             pos_frame.robots_yellow[i] = Robot(x=x(), y=y(), theta=theta())
             agents.append(pos_frame.robots_yellow[i])
