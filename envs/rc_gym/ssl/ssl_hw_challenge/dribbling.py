@@ -39,13 +39,13 @@ class SSLHWDribblingEnv(SSLBaseEnv):
             Robot starts with the ball and obstacles are spaced with 
             pre defined values.
         Episode Termination:
-            Course completed, 2 minutes, robot exits course limits or robot 
+            Course completed, 2 minutes (4800 steps), robot exits course limits or robot 
             reverse a checkpoint
     """
 
     def __init__(self):
         super().__init__(field_type=2, n_robots_blue=1, 
-                         n_robots_yellow=4, time_step=0.032)
+                         n_robots_yellow=4, time_step=0.025)
         self.action_space = gym.spaces.Box(low=-1, high=1,
                                            shape=(4, ), dtype=np.float32)
         
@@ -150,7 +150,7 @@ class SSLHWDribblingEnv(SSLBaseEnv):
                     elif last_ball.y < 0 and ball.y >= 0:
                         done = True
 
-        done = done or self.steps * self.time_step >= 120
+        done = done
 
         return reward, done
     

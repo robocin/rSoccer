@@ -34,12 +34,12 @@ class SSLGoToBallEnv(SSLBaseEnv):
         Starting State:
             Randomized Robots and Ball initial Position
         Episode Termination:
-            Ball is reached or 30 seconds
+            Ball is reached or 30 seconds (1200 steps)
     """
 
     def __init__(self, field_type=1, n_robots_yellow=0):
         super().__init__(field_type=field_type, n_robots_blue=1, 
-                         n_robots_yellow=n_robots_yellow, time_step=0.032)
+                         n_robots_yellow=n_robots_yellow, time_step=0.025)
 
         self.action_space = gym.spaces.Box(low=-1, high=1,
                                            shape=(3, ), dtype=np.float32)
@@ -106,7 +106,7 @@ class SSLGoToBallEnv(SSLBaseEnv):
         if dist_robot_ball < 0.2:
             reward = 1
 
-        done = reward or self.steps * self.time_step >= 30
+        done = reward
 
         return reward, done
     
