@@ -19,3 +19,7 @@ register(id='VSSGk-v0',
 register(id='VSS3v3FIRA-v0',
          entry_point='rc_gym.vss.env_3v3:VSS3v3FIRAEnv'
          )
+
+register(id='VSSAtkVsGk-v0',
+         entry_point='rc_gym.vss.env_atk_vs_gk:VSSAtkVsGkEnv'
+         )
