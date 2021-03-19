@@ -38,11 +38,11 @@ class SSLHWStaticDefendersEnv(SSLBaseEnv):
             Robot on field center, ball and defenders randomly positioned on
             positive field side
         Episode Termination:
-            Goal, 25 seconds, or rule infraction
+            Goal, 25 seconds (1000 steps), or rule infraction
     """
     def __init__(self, field_type=2):
         super().__init__(field_type=field_type, n_robots_blue=1, 
-                         n_robots_yellow=6, time_step=0.032)
+                         n_robots_yellow=6, time_step=0.025)
 
         self.action_space = gym.spaces.Box(low=-1, high=1,
                                            shape=(5, ), dtype=np.float32)
@@ -124,7 +124,7 @@ class SSLHWStaticDefendersEnv(SSLBaseEnv):
             done = True
             reward = 1 if abs(ball.y) < half_goal_wid else 0
 
-        done = done or self.steps * self.time_step >= 25
+        done = done
 
         return reward, done
     

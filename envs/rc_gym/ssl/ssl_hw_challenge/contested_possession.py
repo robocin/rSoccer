@@ -37,11 +37,11 @@ class SSLContestedPossessionEnv(SSLBaseEnv):
         Starting State:
             Enemy robot with ball possession facing away from goal
         Episode Termination:
-            Goal, 30 seconds, or rule infraction
+            Goal, 30 seconds (1200 steps), or rule infraction
     """
     def __init__(self, random_init=False):
         super().__init__(field_type=2, n_robots_blue=1, 
-                         n_robots_yellow=1, time_step=0.032)
+                         n_robots_yellow=1, time_step=0.025)
         self.random_init = random_init
         self.action_space = gym.spaces.Box(low=-1, high=1,
                                            shape=(5, ), dtype=np.float32)
@@ -128,7 +128,7 @@ class SSLContestedPossessionEnv(SSLBaseEnv):
             done = True
             reward = 1 if abs(ball.y) < half_goal_wid else 0
 
-        done = done or self.steps * self.time_step >= 60
+        done = done
 
         return reward, done
     

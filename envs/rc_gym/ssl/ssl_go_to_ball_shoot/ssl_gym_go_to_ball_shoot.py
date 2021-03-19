@@ -36,12 +36,12 @@ class SSLGoToBallShootEnv(SSLBaseEnv):
         Starting State:
             Robot and ball on half opponent field size in different y.
         Episode Termination:
-            Goal, ball leaves bounds or 60 seconds
+            Goal, ball leaves bounds or 60 seconds (2400 steps)
     """
 
     def __init__(self, field_type=1, random_init=False, enter_goal_area=False):
         super().__init__(field_type=field_type, n_robots_blue=1, 
-                         n_robots_yellow=0, time_step=0.032)
+                         n_robots_yellow=0, time_step=0.025)
         self.random_init = random_init
         self.enter_goal_area= enter_goal_area
         self.action_space = gym.spaces.Box(low=-1, high=1,
@@ -127,7 +127,7 @@ class SSLGoToBallShootEnv(SSLBaseEnv):
             done = True
             reward = 1 if abs(ball.y) < half_goal_wid else 0
 
-        done = done or self.steps * self.time_step >= 60
+        done = done
 
         return reward, done
     
