@@ -154,22 +154,12 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
                 then = time.time()
                 writer.add_scalar("rw/total", epi_reward, matches_played)
                 writer.add_scalar("rw/steps_ep", steps, matches_played)
-                writer.add_scalar("rw/goal_score",
-                                  info['goal_score'],
-                                  matches_played)
-                writer.add_scalar("rw/move", info['move'], matches_played)
-                writer.add_scalar(
-                    "rw/ball_grad", info['ball_grad'], matches_played)
-                writer.add_scalar("rw/energy", info['energy'], matches_played)
-                writer.add_scalar("rw/goals_blue",
-                                  info['goals_blue'],
-                                  matches_played)
-                writer.add_scalar("rw/goals_yellow",
-                                  info['goals_yellow'],
-                                  matches_played)
+                for label in info:
+                    writer.add_scalar(f"rw/{label}", info[label],matches_played)
+
                 print(f'<======Match {matches_played}======>')
-                print(f'-------Reward:', epi_reward)
-                print(f'-------FPS:', fps)
+                print(f'-------Reward:', f"{ epi_reward: 0.3f}")
+                print(f'-------FPS:', f"{int(fps):4d}")
                 print(f'<==================================>\n')
                 epi_reward = 0
                 steps = 0
