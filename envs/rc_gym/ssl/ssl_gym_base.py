@@ -10,7 +10,7 @@ from typing import Dict, List, Optional
 
 import gym
 import numpy as np
-from rc_gym.Entities import Frame, Robot
+from rc_gym.Entities import Frame, Robot, Field
 from rc_gym.Utils import RCGymRender
 from rc_gym.Simulators.rsim import RSimSSL
 
@@ -34,11 +34,10 @@ class SSLBaseEnv(gym.Env):
         
         # Get field dimensions
         self.field_type: int = field_type
-        self.field_params: Dict[str,
-                                np.float64] = self.rsim.get_field_params()
-        self.norm_max_pos = max(self.field_params['field_width'] / 2,
-                                (self.field_params['field_length'] / 2)
-                                 + self.field_params['penalty_length']
+        self.field: Field = self.rsim.get_field_params()
+        print(self.field)
+        self.norm_max_pos = max(self.field.width / 2, (self.field.length / 2) 
+                                + self.field.penalty_length
                                 )
         self.norm_max_v = self.rsim.linear_speed_range
         self.norm_max_w = np.rad2deg(self.rsim.angular_speed_range)
@@ -102,7 +101,7 @@ class SSLBaseEnv(gym.Env):
         if self.view == None:
             self.view = RCGymRender(self.n_robots_blue,
                                  self.n_robots_yellow,
-                                 self.field_params,
+                                 self.field,
                                  simulator='ssl')
 
         return self.view.render_frame(self.frame, return_rgb_array=mode == "rgb_array")

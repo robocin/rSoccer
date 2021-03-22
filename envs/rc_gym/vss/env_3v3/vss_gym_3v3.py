@@ -150,9 +150,9 @@ class VSS3v3Env(VSSBaseEnv):
         Difference of potential of the ball in time_step seconds.
         '''
         # Calculate ball potential
-        length_cm = self.field_params['field_length'] * 100
-        half_lenght = (self.field_params['field_length'] / 2.0)\
-            + self.field_params['goal_depth']
+        length_cm = self.field.length * 100
+        half_lenght = (self.field.length / 2.0)\
+            + self.field.goal_depth
 
         # distance to defence
         dx_d = (half_lenght + self.frame.ball.x) * 100
@@ -217,12 +217,12 @@ class VSS3v3Env(VSSBaseEnv):
                                          'goals_blue': 0, 'goals_yellow': 0}
 
         # Check if goal ocurred
-        if self.frame.ball.x > (self.field_params['field_length'] / 2):
+        if self.frame.ball.x > (self.field.length / 2):
             self.reward_shaping_total['goal_score'] += 1
             self.reward_shaping_total['goals_blue'] += 1
             reward = 10
             goal = True
-        elif self.frame.ball.x < -(self.field_params['field_length'] / 2):
+        elif self.frame.ball.x < -(self.field.length / 2):
             self.reward_shaping_total['goal_score'] -= 1
             self.reward_shaping_total['goals_yellow'] += 1
             reward = -10
@@ -260,8 +260,8 @@ class VSS3v3Env(VSSBaseEnv):
 
     def _get_initial_positions_frame(self):
         '''Returns the position of each robot and ball for the initial frame'''
-        field_half_length = self.field_params['field_length'] / 2
-        field_half_width = self.field_params['field_width'] / 2
+        field_half_length = self.field.length / 2
+        field_half_width = self.field.width / 2
 
         def x(): return random.uniform(-field_half_length + 0.1,
                                        field_half_length - 0.1)

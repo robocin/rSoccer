@@ -98,11 +98,11 @@ class SSLContestedPossessionEnv(SSLBaseEnv):
         done = False
         
         # Field parameters
-        half_len = self.field_params['field_length'] / 2
-        half_wid = self.field_params['field_width'] / 2
-        pen_len = self.field_params['penalty_length']
-        half_pen_wid = self.field_params['penalty_width'] / 2
-        half_goal_wid = self.field_params['goal_width'] / 2
+        half_len = self.field.length / 2
+        half_wid = self.field.width / 2
+        pen_len = self.field.penalty_length
+        half_pen_wid = self.field.penalty_width / 2
+        half_goal_wid = self.field.goal_width / 2
         
         ball = self.frame.ball
         robot = self.frame.robots_blue[0]
@@ -134,10 +134,10 @@ class SSLContestedPossessionEnv(SSLBaseEnv):
     
     def _get_initial_positions_frame(self):
         '''Returns the position of each robot and ball for the initial frame'''
-        half_len = self.field_params['field_length'] / 2
-        half_wid = self.field_params['field_width'] / 2
-        pen_len = self.field_params['penalty_length']
-        half_pen_wid = self.field_params['penalty_width'] / 2
+        half_len = self.field.length / 2
+        half_wid = self.field.width / 2
+        pen_len = self.field.penalty_length
+        half_pen_wid = self.field.penalty_width / 2
         pos_frame: Frame = Frame()
         def x(): return random.uniform(pen_len, half_len - pen_len)
         def y(): return random.uniform(-half_pen_wid, half_pen_wid)
