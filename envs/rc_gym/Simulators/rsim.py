@@ -147,23 +147,34 @@ class RSimSSL(RSim):
         self.kick_v_z_speed_range = 5 # m/s
 
     def send_commands(self, commands):
-        sim_commands = np.zeros(
-            (self.n_robots_blue + self.n_robots_yellow, 6), dtype=np.float64)
+        sim_cmds = np.zeros(
+            (self.n_robots_blue + self.n_robots_yellow, 8), dtype=np.float64)
 
         for cmd in commands:
             if cmd.yellow:
                 rbt_id = self.n_robots_blue + cmd.id
             else:
                 rbt_id = cmd.id
-            v_x, v_y = self._convert_speed(cmd.v_x, cmd.v_y)
-            sim_commands[rbt_id][0] = v_x
-            sim_commands[rbt_id][1] = v_y
-            sim_commands[rbt_id][2] = cmd.v_theta * self.angular_speed_range
-            sim_commands[rbt_id][3] = cmd.kick_v_x * self.kick_v_x_speed_range
-            sim_commands[rbt_id][4] = cmd.kick_v_z * self.kick_v_z_speed_range
-            sim_commands[rbt_id][5] = cmd.dribbler
-
-        self.simulator.step(sim_commands)
+            
+            if cmd.wheel_speed:
+                sim_cmds[rbt_id][0] = cmd.wheel_speed
+                sim_cmds[rbt_id][1] = cmd.v_wheel0
+                sim_cmds[rbt_id][2] = cmd.v_wheel1
+                sim_cmds[rbt_id][3] = cmd.v_wheel2
+                sim_cmds[rbt_id][4] = cmd.v_wheel3
+                sim_cmds[rbt_id][5] = cmd.kick_v_x * self.kick_v_x_speed_range
+                sim_cmds[rbt_id][6] = cmd.kick_v_z * self.kick_v_z_speed_range
+                sim_cmds[rbt_id][7] = cmd.dribbler
+            else:
+                sim_cmds[rbt_id][0] = cmd.wheel_speed
+                sim_cmds[rbt_id][1] = cmd.v_x
+                sim_cmds[rbt_id][2] = cmd.v_y
+                sim_cmds[rbt_id][3] = cmd.v_theta
+                sim_cmds[rbt_id][4] = cmd.kick_v_x * self.kick_v_x_speed_range
+                sim_cmds[rbt_id][5] = cmd.kick_v_z * self.kick_v_z_speed_range
+                sim_cmds[rbt_id][6] = cmd.dribbler
+            
+        self.simulator.step(sim_cmds)
 
     def get_frame(self) -> FrameSSL:
         state = self.simulator.get_state()
@@ -173,7 +184,7 @@ class RSimSSL(RSim):
 
         return frame
 
-    def _convert_speed(self, v_x, v_y):
+    def _convert_speed(self, v_x, v_y, is_global):
         """converstion made to limit maximum speed in all directions"""
         v_norm = np.linalg.norm([v_x,v_y])
         c = v_norm < self.linear_speed_range or self.linear_speed_range / v_norm
