@@ -1,7 +1,7 @@
 import os
 
 import numpy as np
-from rc_gym.Entities import Frame
+from rc_gym.Entities import Frame, Field
 from gym.envs.classic_control import rendering
 from typing import Dict, List, Tuple
 
@@ -24,7 +24,7 @@ class RCGymRender:
 
     def __init__(self, n_robots_blue: int,
                  n_robots_yellow: int,
-                 field_params: dict,
+                 field_params: Field,
                  simulator: str = 'vss',
                  width: int = 750,
                  height: int = 650) -> None:
@@ -39,10 +39,8 @@ class RCGymRender:
         n_robots_yellow : int
             Number of yellow robots
 
-        field_params : dict
-            field_width, field_length,
-            penalty_width, penalty_length,
-            goal_width
+        field_params : Field
+            field parameters
 
         simulator : str
 
@@ -64,12 +62,11 @@ class RCGymRender:
         screen_height = height
 
         # Window margin
-        margin = 0.1 if simulator == "vss" else 0.4
+        margin = 0.1 if simulator == "vss" else 0.3
         # Half field width
-        h_len = (self.field["field_length"]
-                 + 2*self.field["goal_depth"]) / 2
+        h_len = (self.field.length + 2*self.field.goal_depth) / 2
         # Half field height
-        h_wid = (self.field["field_width"]) / 2
+        h_wid = self.field.width / 2
 
         # Window dimensions in meters
         self.screen_dimensions = {
@@ -149,15 +146,15 @@ class RCGymRender:
     
     def _add_field_lines_vss(self) -> None:
         # Vertical Lines X
-        x_border = self.field["field_length"] / 2
-        x_goal = x_border + self.field["goal_depth"]
-        x_penalty = x_border - self.field["penalty_length"]
+        x_border = self.field.length / 2
+        x_goal = x_border + self.field.goal_depth
+        x_penalty = x_border - self.field.penalty_length
         x_center = 0
 
         # Horizontal Lines Y
-        y_border = self.field["field_width"] / 2
-        y_penalty = self.field["penalty_width"] / 2
-        y_goal = self.field["goal_width"] / 2
+        y_border = self.field.width / 2
+        y_penalty = self.field.penalty_width / 2
+        y_goal = self.field.goal_width / 2
 
         # add field borders
         field_border_points = [
@@ -250,8 +247,8 @@ class RCGymRender:
         robot_transform:rendering.Transform = rendering.Transform()
         
         # Robot dimensions
-        robot_x: float = 0.075
-        robot_y: float = 0.075
+        robot_x: float = self.field.robot_radius
+        robot_y: float = self.field.robot_radius
         # Tag dimensions
         tag_x: float = 0.030
         tag_y: float = 0.065
@@ -301,15 +298,15 @@ class RCGymRender:
     
     def _add_field_lines_ssl(self) -> None:
         # Vertical Lines X
-        x_border = self.field["field_length"] / 2
-        x_goal = x_border + self.field["goal_depth"]
-        x_penalty = x_border - self.field["penalty_length"]
+        x_border = self.field.length / 2
+        x_goal = x_border + self.field.goal_depth
+        x_penalty = x_border - self.field.penalty_length
         x_center = 0
 
         # Horizontal Lines Y
-        y_border = self.field["field_width"] / 2
-        y_penalty = self.field["penalty_width"] / 2
-        y_goal = self.field["goal_width"] / 2
+        y_border = self.field.width / 2
+        y_penalty = self.field.penalty_width / 2
+        y_goal = self.field.goal_width / 2
 
         # add field borders
         field_border_points = [
@@ -397,8 +394,8 @@ class RCGymRender:
         robot_transform:rendering.Transform = rendering.Transform()
         
         # Robot dimensions
-        robot_radius: float = 0.09
-        distance_center_kicker: float = 0.073
+        robot_radius: float = self.field.rbt_radius
+        distance_center_kicker: float = self.field.rbt_distance_center_kicker
         kicker_angle = 2 * np.arccos(distance_center_kicker / robot_radius)
         res = 30
 
@@ -426,7 +423,7 @@ class RCGymRender:
         return robot_transform
 
     def _add_ball(self):
-        ball_radius: float = 0.0215
+        ball_radius: float = self.field.ball_radius
         ball_transform:rendering.Transform = rendering.Transform()
         
         ball: rendering.Geom = rendering.make_circle(ball_radius, filled=True)

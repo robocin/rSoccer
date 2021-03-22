@@ -36,10 +36,10 @@ class VSSBaseEnv(gym.Env):
 
         # Get field dimensions
         self.field_type: int = field_type
-        self.field_params: Dict[str, np.float64] = self.rsim.get_field_params()
-        self.norm_max_pos = max(self.field_params['field_width'] / 2,
-                                (self.field_params['field_length'] / 2)
-                                 + self.field_params['penalty_length']
+        self.field: Dict[str, np.float64] = self.rsim.get_field_params()
+        self.norm_max_pos = max(self.field.width / 2,
+                                (self.field.length / 2)
+                                 + self.field.penalty_length
                                 )
         self.norm_max_v = self.rsim.linear_speed_range
         # 0.0425 = robot radius (0.0375) + wheel thicknees (0.05)
@@ -104,7 +104,7 @@ class VSSBaseEnv(gym.Env):
         if self.view == None:
             self.view = RCGymRender(self.n_robots_blue,
                                  self.n_robots_yellow,
-                                 self.field_params,
+                                 self.field,
                                  simulator='vss')
 
         return self.view.render_frame(self.frame, return_rgb_array=mode == "rgb_array")

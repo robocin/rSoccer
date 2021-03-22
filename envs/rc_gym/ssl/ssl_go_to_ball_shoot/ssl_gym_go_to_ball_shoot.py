@@ -102,11 +102,11 @@ class SSLGoToBallShootEnv(SSLBaseEnv):
         done = False
         
         # Field parameters
-        half_len = self.field_params['field_length'] / 2
-        half_wid = self.field_params['field_width'] / 2
-        pen_len = self.field_params['penalty_length']
-        half_pen_wid = self.field_params['penalty_width'] / 2
-        half_goal_wid = self.field_params['goal_width'] / 2
+        half_len = self.field.length / 2
+        half_wid = self.field.width / 2
+        pen_len = self.field.penalty_length
+        half_pen_wid = self.field.penalty_width / 2
+        half_goal_wid = self.field.goal_width / 2
         
         ball = self.frame.ball
         robot = self.frame.robots_blue[0]
@@ -134,15 +134,15 @@ class SSLGoToBallShootEnv(SSLBaseEnv):
     def _get_initial_positions_frame(self):
         '''Returns the position of each robot and ball for the initial frame'''
         if self.random_init:
-            half_len = self.field_params['field_length'] / 2
-            half_wid = self.field_params['field_width'] / 2
-            penalty_len = self.field_params['penalty_length']
+            half_len = self.field.length / 2
+            half_wid = self.field.width / 2
+            penalty_len = self.field.penalty_length
             def x(): return random.uniform(0.3, half_len - penalty_len - 0.3)
             def y(): return random.uniform(-half_wid + 0.1, half_wid - 0.1)
             def theta(): return random.uniform(-180, 180)
         else:
-            def x(): return self.field_params['field_length'] / 4
-            def y(): return self.field_params['field_width'] / 8
+            def x(): return self.field.length / 4
+            def y(): return self.field.width / 8
             def theta(): return 0
 
         pos_frame: Frame = Frame()
