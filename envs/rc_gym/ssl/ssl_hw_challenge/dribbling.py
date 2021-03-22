@@ -24,7 +24,7 @@ class SSLHWDribblingEnv(SSLBaseEnv):
             Num      Observation normalized  
             0->3     Ball [X, Y, V_x, V_y]
             4->10    id 0 Blue [X, Y, sin(theta), cos(theta), v_x, v_y, v_theta]
-            +5*i     id i Yellow Robot [X, Y]
+            +2*i     id i Yellow Robot [X, Y]
         Actions:
             Type: Box(4,)
             Num     Action
@@ -49,7 +49,7 @@ class SSLHWDribblingEnv(SSLBaseEnv):
         self.action_space = gym.spaces.Box(low=-1, high=1,
                                            shape=(4, ), dtype=np.float32)
         
-        n_obs = 4 + 7*self.n_robots_blue + 5*self.n_robots_yellow
+        n_obs = 4 + 7*self.n_robots_blue + 2*self.n_robots_yellow
         self.observation_space = gym.spaces.Box(low=-self.NORM_BOUNDS,
                                                 high=self.NORM_BOUNDS,
                                                 shape=(n_obs, ),

@@ -16,7 +16,7 @@ class Robot:
     dribbler: bool = False
     infrared: bool = False
     wheel_speed: bool = False
+    v_wheel0: float = 0
     v_wheel1: float = 0
     v_wheel2: float = 0
     v_wheel3: float = 0
-    v_wheel4: float = 0
