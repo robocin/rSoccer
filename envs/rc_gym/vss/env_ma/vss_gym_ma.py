@@ -58,7 +58,7 @@ class VSSMAEnv(VSSBaseEnv):
 
     def __init__(self, n_robots_control=3):
         super().__init__(field_type=0, n_robots_blue=3, n_robots_yellow=3,
-                         time_step=0.032)
+                         time_step=0.025)
 
         self.n_robots_control = n_robots_control
         self.action_space = gym.spaces.Box(low=-1,
@@ -138,7 +138,7 @@ class VSSMAEnv(VSSBaseEnv):
                 observation.append(self.norm_v(self.frame.robots_yellow[i].v_y))
                 observation.append(self.norm_w(self.frame.robots_yellow[i].v_theta))
 
-            observations.append(np.array(observation, dtype=np.float))
+            observations.append(np.array(observation, dtype=np.float32))
 
         observations = np.array(observations, dtype=np.ndarray)
         return observations
@@ -281,9 +281,7 @@ class VSSMAEnv(VSSBaseEnv):
             self.last_frame = None
             self.previous_ball_potential = None
 
-        done = self.steps * self.time_step >= 300
-
-        return reward, done
+        return reward, False
 
     def _get_initial_positions_frame(self):
         '''Returns the position of each robot and ball for the initial frame'''
@@ -378,7 +376,7 @@ class VSSMAOpp(VSSMAEnv):
             observation.append(self.norm_v(self.frame.robots_blue[i].v_y))
             observation.append(self.norm_w(-self.frame.robots_blue[i].v_theta))
 
-        return np.array(observation)
+        return np.array(observation, dtype=np.float32)
 
     def _get_commands(self, actions):
         commands = []

@@ -18,13 +18,10 @@ class RSim:
 
         # Positions needed just to initialize the simulator
         ball_pos = [0, 0, 0, 0]
-        blue_robots_pos = [
-            [-0.2 * i, 0, 0] for i in range(1, n_robots_blue + 1)
-        ]
-        yellow_robots_pos = [
-            [0.2 * i, 0, 0] for i in range(1, n_robots_yellow + 1)
-        ]
-
+        blue_robots_pos = [[-0.2 * i, 0, 0]
+                           for i in range(1, n_robots_blue + 1)]
+        yellow_robots_pos = [[0.2 * i, 0, 0]
+                             for i in range(1, n_robots_yellow + 1)]
         self.simulator = self._init_simulator(
             field_type=field_type,
             n_robots_blue=n_robots_blue,
@@ -32,7 +29,7 @@ class RSim:
             ball_pos=ball_pos,
             blue_robots_pos=blue_robots_pos,
             yellow_robots_pos=yellow_robots_pos,
-            time_step_ms=time_step_ms,
+            time_step_ms=time_step_ms
         )
 
     def reset(self, frame: Frame):

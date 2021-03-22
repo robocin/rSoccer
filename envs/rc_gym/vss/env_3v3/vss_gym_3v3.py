@@ -53,7 +53,7 @@ class VSS3v3Env(VSSBaseEnv):
 
     def __init__(self):
         super().__init__(field_type=0, n_robots_blue=3, n_robots_yellow=3,
-                         time_step=0.032)
+                         time_step=0.025)
 
         self.action_space = gym.spaces.Box(low=-1, high=1,
                                            shape=(2, ), dtype=np.float32)
@@ -119,7 +119,7 @@ class VSS3v3Env(VSSBaseEnv):
                 self.norm_w(self.frame.robots_yellow[i].v_theta)
             )
 
-        return np.array(observation)
+        return np.array(observation, dtype=np.float32)
 
     def _get_commands(self, actions):
         commands = []
@@ -254,9 +254,7 @@ class VSS3v3Env(VSSBaseEnv):
             self.previous_ball_potential = None
             self.last_frame = None
 
-        done = self.steps * self.time_step >= 300
-
-        return reward, done
+        return reward, False
 
     def _get_initial_positions_frame(self):
         '''Returns the position of each robot and ball for the initial frame'''

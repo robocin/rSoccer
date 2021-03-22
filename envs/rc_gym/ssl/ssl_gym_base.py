@@ -35,7 +35,6 @@ class SSLBaseEnv(gym.Env):
         # Get field dimensions
         self.field_type: int = field_type
         self.field: Field = self.rsim.get_field_params()
-        print(self.field)
         self.norm_max_pos = max(self.field.width / 2, (self.field.length / 2) 
                                 + self.field.penalty_length
                                 )
