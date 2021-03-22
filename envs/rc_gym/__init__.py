@@ -1,15 +1,18 @@
 from gym.envs.registration import register
 
 register(id='VSS3v3-v0',
-         entry_point='rc_gym.vss.env_3v3:VSS3v3Env'
+         entry_point='rc_gym.vss.env_3v3:VSS3v3Env',
+         max_episode_steps=12000
          )
 
 register(id='VSSMA-v0',
          entry_point='rc_gym.vss.env_ma:VSSMAEnv',
+         max_episode_steps=12000
          )
 
 register(id='VSSMAOpp-v0',
          entry_point='rc_gym.vss.env_ma:VSSMAOpp',
+         max_episode_steps=12000
          )
 
 register(id='VSSGk-v0',

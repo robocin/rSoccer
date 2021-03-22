@@ -247,8 +247,8 @@ class RCGymRender:
         robot_transform:rendering.Transform = rendering.Transform()
         
         # Robot dimensions
-        robot_x: float = self.field.robot_radius
-        robot_y: float = self.field.robot_radius
+        robot_x: float = self.field.rbt_radius * 2
+        robot_y: float = self.field.rbt_radius * 2
         # Tag dimensions
         tag_x: float = 0.030
         tag_y: float = 0.065
