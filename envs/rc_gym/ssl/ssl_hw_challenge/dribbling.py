@@ -117,7 +117,7 @@ class SSLHWDribblingEnv(SSLBaseEnv):
         
         # End episode in case of collision
         for rbt in self.frame.robots_yellow.values():
-            if abs(rbt.v_x) > 0.003 or abs(rbt.v_y) > 0.003:
+            if abs(rbt.v_x) > 0.02 or abs(rbt.v_y) > 0.02:
                 done = True
         
         def robot_out_of_bounds(rbt):
