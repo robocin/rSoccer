@@ -15,7 +15,7 @@ class Frame:
 
 
 class FrameVSS(Frame):
-    def parse(self, state, n_robots_blue=3, n_robots_yellow=3):
+    def parse(self, state, n_blues=3, n_yellows=3):
         """It parses the state received from grSim in a common state for environment"""
         self.ball.x = state[0]
         self.ball.y = state[1]
@@ -23,31 +23,33 @@ class FrameVSS(Frame):
         self.ball.v_x = state[3]
         self.ball.v_y = state[4]
 
-        for i in range(n_robots_blue):
+        rbt_obs = 6
+        
+        for i in range(n_blues):
             robot = Robot()
             robot.id = i
-            robot.x = state[5 + (6 * i) + 0]
-            robot.y = state[5 + (6 * i) + 1]
-            robot.theta = state[5 + (6 * i) + 2]
-            robot.v_x = state[5 + (6 * i) + 3]
-            robot.v_y = state[5 + (6 * i) + 4]
-            robot.v_theta = state[5 + (6 * i) + 5]
+            robot.x = state[5 + (rbt_obs*i) + 0]
+            robot.y = state[5 + (rbt_obs*i) + 1]
+            robot.theta = state[5 + (rbt_obs*i) + 2]
+            robot.v_x = state[5 + (rbt_obs*i) + 3]
+            robot.v_y = state[5 + (rbt_obs*i) + 4]
+            robot.v_theta = state[5 + (rbt_obs*i) + 5]
             self.robots_blue[robot.id] = robot
 
-        for i in range(n_robots_yellow):
+        for i in range(n_yellows):
             robot = Robot()
             robot.id = i
-            robot.x = state[5 + n_robots_blue * 6 + (6 * i) + 0]
-            robot.y = state[5 + n_robots_blue * 6 + (6 * i) + 1]
-            robot.theta = state[5 + n_robots_blue * 6 + (6 * i) + 2]
-            robot.v_x = state[5 + n_robots_blue * 6 + (6 * i) + 3]
-            robot.v_y = state[5 + n_robots_blue * 6 + (6 * i) + 4]
-            robot.v_theta = state[5 + n_robots_blue * 6 + (6 * i) + 5]
+            robot.x = state[5 + n_blues*rbt_obs + (rbt_obs*i) + 0]
+            robot.y = state[5 + n_blues*rbt_obs + (rbt_obs*i) + 1]
+            robot.theta = state[5 + n_blues*rbt_obs + (rbt_obs*i) + 2]
+            robot.v_x = state[5 + n_blues*rbt_obs + (rbt_obs*i) + 3]
+            robot.v_y = state[5 + n_blues*rbt_obs + (rbt_obs*i) + 4]
+            robot.v_theta = state[5 + n_blues*rbt_obs + (rbt_obs*i) + 5]
             self.robots_yellow[robot.id] = robot
 
 
 class FrameSSL(Frame):
-    def parse(self, state, n_robots_blue=3, n_robots_yellow=3):
+    def parse(self, state, n_blues=3, n_yellows=3):
         """It parses the state received from grSim in a common state for environment"""
         self.ball.x = state[0]
         self.ball.y = state[1]
@@ -55,28 +57,38 @@ class FrameSSL(Frame):
         self.ball.v_x = state[3]
         self.ball.v_y = state[4]
 
-        for i in range(n_robots_blue):
+        rbt_obs = 11
+        
+        for i in range(n_blues):
             robot = Robot()
             robot.id = i
-            robot.x = state[5 + (7 * i) + 0]
-            robot.y = state[5 + (7 * i) + 1]
-            robot.theta = state[5 + (7 * i) + 2]
-            robot.v_x = state[5 + (7 * i) + 3]
-            robot.v_y = state[5 + (7 * i) + 4]
-            robot.v_theta = state[5 + (7 * i) + 5]
-            robot.infrared = bool(state[5 + (7 * i) + 6])
+            robot.x = state[5 + (rbt_obs*i) + 0]
+            robot.y = state[5 + (rbt_obs*i) + 1]
+            robot.theta = state[5 + (rbt_obs*i) + 2]
+            robot.v_x = state[5 + (rbt_obs*i) + 3]
+            robot.v_y = state[5 + (rbt_obs*i) + 4]
+            robot.v_theta = state[5 + (rbt_obs*i) + 5]
+            robot.infrared = bool(state[5 + (rbt_obs*i) + 6])
+            robot.v_wheel0 = state[5 + (rbt_obs*i) + 7]
+            robot.v_wheel1 = state[5 + (rbt_obs*i) + 8]
+            robot.v_wheel2 = state[5 + (rbt_obs*i) + 9]
+            robot.v_wheel3 = state[5 + (rbt_obs*i) + 10]
             self.robots_blue[robot.id] = robot
 
-        for i in range(n_robots_yellow):
+        for i in range(n_yellows):
             robot = Robot()
             robot.id = i
-            robot.x = state[5 + n_robots_blue * 7 + (7 * i) + 0]
-            robot.y = state[5 + n_robots_blue * 7 + (7 * i) + 1]
-            robot.theta = state[5 + n_robots_blue * 7 + (7 * i) + 2]
-            robot.v_x = state[5 + n_robots_blue * 7 + (7 * i) + 3]
-            robot.v_y = state[5 + n_robots_blue * 7 + (7 * i) + 4]
-            robot.v_theta = state[5 + n_robots_blue * 7 + (7 * i) + 5]
-            robot.infrared = bool(state[5 + n_robots_blue * 7 + (7 * i) + 6])
+            robot.x = state[5 + n_blues*rbt_obs + (rbt_obs*i) + 0]
+            robot.y = state[5 + n_blues*rbt_obs + (rbt_obs*i) + 1]
+            robot.theta = state[5 + n_blues*rbt_obs + (rbt_obs*i) + 2]
+            robot.v_x = state[5 + n_blues*rbt_obs + (rbt_obs*i) + 3]
+            robot.v_y = state[5 + n_blues*rbt_obs + (rbt_obs*i) + 4]
+            robot.v_theta = state[5 + n_blues*rbt_obs + (rbt_obs*i) + 5]
+            robot.infrared = bool(state[5 + n_blues*rbt_obs + (rbt_obs*i) + 6])
+            robot.v_wheel0 = state[5 + n_blues*rbt_obs + (rbt_obs*i) + 7]
+            robot.v_wheel1 = state[5 + n_blues*rbt_obs + (rbt_obs*i) + 8]
+            robot.v_wheel2 = state[5 + n_blues*rbt_obs + (rbt_obs*i) + 9]
+            robot.v_wheel3 = state[5 + n_blues*rbt_obs + (rbt_obs*i) + 10]
             self.robots_yellow[robot.id] = robot
 
 
