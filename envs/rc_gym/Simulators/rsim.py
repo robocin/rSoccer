@@ -31,6 +31,7 @@ class RSim:
             yellow_robots_pos=yellow_robots_pos,
             time_step_ms=time_step_ms
         )
+        self.field = self.get_field_params()
 
     def reset(self, frame: Frame):
         placement_pos = self._placement_dict_from_frame(frame)
@@ -93,7 +94,6 @@ class RSimVSS(RSim):
                          n_robots_yellow=n_robots_yellow, time_step_ms=time_step_ms)
 
         self.linear_speed_range = 1.2  # m/s
-        self.robot_wheel_radius = 0.026
 
     def send_commands(self, commands):
         sim_commands = np.zeros(
@@ -105,8 +105,8 @@ class RSimVSS(RSim):
             else:
                 rbt_id = cmd.id
             # convert from linear speed to angular speed
-            sim_commands[rbt_id][0] = cmd.v_wheel1 / self.robot_wheel_radius
-            sim_commands[rbt_id][1] = cmd.v_wheel2 / self.robot_wheel_radius
+            sim_commands[rbt_id][0] = cmd.v_wheel0 / self.field.rbt_wheel_radius
+            sim_commands[rbt_id][1] = cmd.v_wheel1 / self.field.rbt_wheel_radius
         self.simulator.step(sim_commands)
 
     def get_frame(self) -> FrameVSS:
