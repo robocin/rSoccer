@@ -53,7 +53,7 @@ class VSS3v3FIRAEnv(VSSBaseFIRAEnv):
 
     def __init__(self):
         super().__init__(field_type=0, n_robots_blue=3, n_robots_yellow=3,
-                         time_step=0.032)
+                         time_step=0.025)
 
         low_obs_bound = [-1.2, -1.2, -1.25, -1.25]
         low_obs_bound += [-1.2, -1.2, -1, -1, -1.25, -1.25, -1.2]*3
@@ -261,7 +261,7 @@ class VSS3v3FIRAEnv(VSSBaseFIRAEnv):
             self.frame = self.rsim.get_frame()
             self.last_frame = None
 
-        done = self.steps * self.time_step >= 300
+        done = self.steps
 
         return reward, done
 

@@ -16,11 +16,13 @@ register(id='VSSMAOpp-v0',
          )
 
 register(id='VSSGk-v0',
-         entry_point='rc_gym.vss.env_gk:rSimVSSGK'
+         entry_point='rc_gym.vss.env_gk:rSimVSSGK',
+         max_episode_steps=1200
          )
 
 register(id='VSS3v3FIRA-v0',
-         entry_point='rc_gym.vss.env_3v3:VSS3v3FIRAEnv'
+         entry_point='rc_gym.vss.env_3v3:VSS3v3FIRAEnv',
+         max_episode_steps=12000
          )
 
 register(id='SSLGoToBall-v0',
