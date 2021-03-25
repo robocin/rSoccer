@@ -22,6 +22,6 @@ class Robot:
     v_wheel2: float = 0
     v_wheel3: float = 0
     
-    def to_local(rbt_angle):
-        v_x, v_y = v_x*np.cos(rbt_angle) + v_y*np.sin(rbt_angle), \
-            -v_x*np.sin(rbt_angle) + v_y*np.cos(rbt_angle)
+    def to_local(self, rbt_angle):
+        self.v_x, self.v_y = self.v_x*np.cos(rbt_angle) + self.v_y*np.sin(rbt_angle), \
+            -self.v_x*np.sin(rbt_angle) + self.v_y*np.cos(rbt_angle)

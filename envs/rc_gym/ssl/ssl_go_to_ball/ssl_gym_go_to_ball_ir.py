@@ -87,9 +87,10 @@ class SSLGoToBallIREnv(SSLBaseEnv):
     def _get_commands(self, actions):
         commands = []
 
-        commands.append(Robot(yellow=False, id=0, v_x=actions[0],
-                              v_y=actions[1], v_theta=actions[2]).to_local(
-                                  self.frame.robots_blue[0].theta))
+        cmd = Robot(yellow=False, id=0, v_x=actions[0],
+                              v_y=actions[1], v_theta=actions[2])
+        cmd.to_local(self.frame.robots_blue[0].theta)
+        commands.append(cmd)
 
         return commands
 

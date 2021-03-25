@@ -202,7 +202,7 @@ class VSS3v3Env(VSSBaseEnv):
         en_penalty_1 = abs(self.sent_commands[0].v_wheel0)
         en_penalty_2 = abs(self.sent_commands[0].v_wheel1)
         energy_penalty = - (en_penalty_1 + en_penalty_2)
-        energy_penalty /= self.field.robot_wheel_radius
+        energy_penalty /= self.field.rbt_wheel_radius
         return energy_penalty
 
     def _calculate_reward_and_done(self):
@@ -291,8 +291,8 @@ class VSS3v3Env(VSSBaseEnv):
                 return True
             return False
 
-        radius_ball = 0.04
-        radius_robot = 0.07
+        radius_ball = self.field.ball_radius
+        radius_robot = self.field.rbt_radius
 
         for i in range(len(agents)):
             while same_position_ref(agents[i], pos_frame.ball, radius_ball):
