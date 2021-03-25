@@ -167,7 +167,7 @@ class RSimSSL(RSim):
                 sim_cmds[rbt_id][0] = cmd.wheel_speed
                 sim_cmds[rbt_id][1] = v_x
                 sim_cmds[rbt_id][2] = v_y
-                sim_cmds[rbt_id][3] = cmd.v_theta
+                sim_cmds[rbt_id][3] = cmd.v_theta * self.angular_speed_range
                 sim_cmds[rbt_id][5] = cmd.kick_v_x * self.kick_v_x_speed_range
                 sim_cmds[rbt_id][6] = cmd.kick_v_z * self.kick_v_z_speed_range
                 sim_cmds[rbt_id][7] = cmd.dribbler
