@@ -17,6 +17,14 @@ $ pip install -e .
 - **SSLGoToBall-v1**
 - **SSLGoToBallIR-v0**
 - **SSLGoToBallIR-v1**
+- **SSLGoToBallShoot-v0**
+- **SSLGoToBallShoot-v1**
+- **SSLGoToBallShoot-v2**
+- **SSLGoToBallShoot-v3**
+- **SSLHWStaticDefenders-v0**
+- **SSLHWDribbling-v0**
+- **SSLContestedPossessionEnv-v0**
+- **SSLContestedPossessionEnv-v1**
 
 # Example code
 ```python
