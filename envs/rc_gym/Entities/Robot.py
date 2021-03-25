@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import numpy as np
 
 @dataclass()
 class Robot:
@@ -20,3 +21,7 @@ class Robot:
     v_wheel1: float = 0
     v_wheel2: float = 0
     v_wheel3: float = 0
+    
+    def to_local(rbt_angle):
+        v_x, v_y = v_x*np.cos(rbt_angle) + v_y*np.sin(rbt_angle), \
+            -v_x*np.sin(rbt_angle) + v_y*np.cos(rbt_angle)
