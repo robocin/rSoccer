@@ -3,7 +3,7 @@ import gym
 
 # Base on baselines implementation
 class OrnsteinUhlenbeckAction(object):
-    def __init__(self, action_space, theta=.17, dt=0.032, x0=None):
+    def __init__(self, action_space, theta=.17, dt=0.025, x0=None):
         self.theta = theta
         self.mu = (action_space.high + action_space.low) / 2
         self.sigma = (action_space.high - self.mu) / 2

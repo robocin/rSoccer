@@ -85,7 +85,7 @@ class rSimVSSGK(VSSBaseEnv):
 
     def __init__(self):
         super().__init__(field_type=0, n_robots_blue=3, n_robots_yellow=3,
-                         time_step=0.032)
+                         time_step=0.025)
 
         self.action_space = gym.spaces.Box(
             low=-1, high=1, shape=(2, ), dtype=np.float32)
@@ -150,7 +150,6 @@ class rSimVSSGK(VSSBaseEnv):
 
         return np.array(observation)
 
-
     def _frame_to_observations(self):
         observation = []
 
@@ -209,7 +208,6 @@ class rSimVSSGK(VSSBaseEnv):
                               v_wheel2=random.uniform(-1, 1)))
         return commands
 
-
     def _calculate_future_point(self, pos, vel):
         if vel[0] > 0:
             goal_center = np.array([self.field_params['field_length'] / 2, 0])
@@ -222,7 +220,6 @@ class rSimVSSGK(VSSBaseEnv):
             return future_x, future_y
         else:
             return None
-
 
     def __move_reward(self):
         '''Calculate Move to ball reward
@@ -299,7 +296,6 @@ class rSimVSSGK(VSSBaseEnv):
                 defense_reward = 1
         
         return defense_reward
-            
 
     def __ball_grad(self):
         '''Calculate ball potential gradient
@@ -409,7 +405,7 @@ class rSimVSSGK(VSSBaseEnv):
                 self.reward_shaping_total['defense'] += ball_defense_reward * w_defense
                 self.reward_shaping_total['ball_leave_area'] += w_blva * ball_leave_area_reward
             self.last_frame = self.frame
-        done = self.steps * self.time_step >= 30 or goal_score != 0 or done
+        done = goal_score != 0 or done
 
         return reward, done
 
