@@ -45,6 +45,7 @@ class FrameVSS(Frame):
             robot.v_x = state[5 + n_blues*rbt_obs + (rbt_obs*i) + 3]
             robot.v_y = state[5 + n_blues*rbt_obs + (rbt_obs*i) + 4]
             robot.v_theta = state[5 + n_blues*rbt_obs + (rbt_obs*i) + 5]
+            
             self.robots_yellow[robot.id] = robot
 
 

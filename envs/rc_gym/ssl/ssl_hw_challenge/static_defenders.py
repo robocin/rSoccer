@@ -86,12 +86,12 @@ class SSLHWStaticDefendersEnv(SSLBaseEnv):
     def _get_commands(self, actions):
         commands = []
 
-        
-        commands.append(Robot(yellow=False, id=0, v_x=actions[0],
+        cmd = Robot(yellow=False, id=0, v_x=actions[0],
                               v_y=actions[1], v_theta=actions[2],
                               kick_v_x=1. if actions[3] > 0 else 0., 
-                              dribbler=True if actions[4] > 0 else False).\
-                                  to_local(self.frame.robots_blue[0].theta))
+                              dribbler=True if actions[4] > 0 else False)
+        cmd.to_local(self.frame.robots_blue[0].theta)
+        commands.append(cmd)
 
         return commands
 
