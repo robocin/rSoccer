@@ -150,21 +150,21 @@ class VSSMAEnv(VSSBaseEnv):
         # Send random commands to the other robots
         for i in range(self.n_robots_control):
             self.actions[i] = actions[i]
-            v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions[i])
-            commands.append(Robot(yellow=False, id=i, v_wheel1=v_wheel1,
-                                  v_wheel2=v_wheel2))
+            v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions[i])
+            commands.append(Robot(yellow=False, id=i, v_wheel0=v_wheel0,
+                                  v_wheel1=v_wheel1))
 
         for i in range(self.n_robots_control, self.n_robots_blue):
             actions = self.action_space.sample()
-            v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions[0])
-            commands.append(Robot(yellow=False, id=i, v_wheel1=v_wheel1,
-                                  v_wheel2=v_wheel2))
+            v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions[0])
+            commands.append(Robot(yellow=False, id=i, v_wheel0=v_wheel0,
+                                  v_wheel1=v_wheel1))
 
         for i in range(self.n_robots_yellow):
             actions = self.action_space.sample()
-            v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions[0])
-            commands.append(Robot(yellow=True, id=i, v_wheel1=v_wheel1,
-                                  v_wheel2=v_wheel2))
+            v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions[0])
+            commands.append(Robot(yellow=True, id=i, v_wheel0=v_wheel0,
+                                  v_wheel1=v_wheel1))
 
         return commands
 
@@ -222,10 +222,10 @@ class VSSMAEnv(VSSBaseEnv):
     def _energy_penalty(self, robot_idx: int):
         '''Calculates the energy penalty'''
 
-        en_penalty_1 = abs(self.sent_commands[robot_idx].v_wheel1)
-        en_penalty_2 = abs(self.sent_commands[robot_idx].v_wheel2)
+        en_penalty_1 = abs(self.sent_commands[robot_idx].v_wheel0)
+        en_penalty_2 = abs(self.sent_commands[robot_idx].v_wheel1)
         energy_penalty = - (en_penalty_1 + en_penalty_2)
-        energy_penalty /= self.rsim.robot_wheel_radius
+        energy_penalty /= self.field.robot_wheel_radius
         return energy_penalty
 
     def _calculate_reward_and_done(self):
@@ -384,24 +384,24 @@ class VSSMAOpp(VSSMAEnv):
 
         for i in range(self.n_robots_control):
             self.actions[i] = actions[i]
-            v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions[i])
-            commands.append(Robot(yellow=False, id=i, v_wheel1=v_wheel1,
-                                  v_wheel2=v_wheel2))
+            v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions[i])
+            commands.append(Robot(yellow=False, id=i, v_wheel0=v_wheel0,
+                                  v_wheel1=v_wheel1))
 
         for i in range(self.n_robots_control, self.n_robots_blue):
             actions = self.action_space.sample()
-            v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions)
-            commands.append(Robot(yellow=False, id=i, v_wheel1=v_wheel1,
-                                  v_wheel2=v_wheel2))
+            v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions)
+            commands.append(Robot(yellow=False, id=i, v_wheel0=v_wheel0,
+                                  v_wheel1=v_wheel1))
 
         atk_action = self.opp.get_action(self._opp_obs())
-        v_wheel1, v_wheel2 = self._actions_to_v_wheels(atk_action)
-        commands.append(Robot(yellow=True, id=0, v_wheel1=v_wheel2,
-                              v_wheel2=v_wheel1))
+        v_wheel0, v_wheel1 = self._actions_to_v_wheels(atk_action)
+        commands.append(Robot(yellow=True, id=0, v_wheel0=v_wheel1,
+                              v_wheel1=v_wheel0))
         for i in range(1, self.n_robots_yellow):
             actions = self.action_space.sample()
-            v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions)
-            commands.append(Robot(yellow=True, id=i, v_wheel1=v_wheel1,
-                                  v_wheel2=v_wheel2))
+            v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions)
+            commands.append(Robot(yellow=True, id=i, v_wheel0=v_wheel0,
+                                  v_wheel1=v_wheel1))
 
         return commands

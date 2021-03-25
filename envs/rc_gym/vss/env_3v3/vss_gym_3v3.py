@@ -126,22 +126,22 @@ class VSS3v3Env(VSSBaseEnv):
         self.actions = {}
 
         self.actions[0] = actions
-        v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions)
-        commands.append(Robot(yellow=False, id=0, v_wheel1=v_wheel1,
-                              v_wheel2=v_wheel2))
+        v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions)
+        commands.append(Robot(yellow=False, id=0, v_wheel0=v_wheel0,
+                              v_wheel1=v_wheel1))
 
         # Send random commands to the other robots
         for i in range(1, self.n_robots_blue):
             actions = self.ou_actions[i].sample()
             self.actions[i] = actions
-            v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions)
-            commands.append(Robot(yellow=False, id=i, v_wheel1=v_wheel1,
-                                  v_wheel2=v_wheel2))
+            v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions)
+            commands.append(Robot(yellow=False, id=i, v_wheel0=v_wheel0,
+                                  v_wheel1=v_wheel1))
         for i in range(self.n_robots_yellow):
             actions = self.ou_actions[self.n_robots_blue+i].sample()
-            v_wheel1, v_wheel2 = self._actions_to_v_wheels(actions)
-            commands.append(Robot(yellow=True, id=i, v_wheel1=v_wheel1,
-                                  v_wheel2=v_wheel2))
+            v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions)
+            commands.append(Robot(yellow=True, id=i, v_wheel0=v_wheel0,
+                                  v_wheel1=v_wheel1))
 
         return commands
 
@@ -199,10 +199,10 @@ class VSS3v3Env(VSSBaseEnv):
     def __energy_penalty(self):
         '''Calculates the energy penalty'''
 
-        en_penalty_1 = abs(self.sent_commands[0].v_wheel1)
-        en_penalty_2 = abs(self.sent_commands[0].v_wheel2)
+        en_penalty_1 = abs(self.sent_commands[0].v_wheel0)
+        en_penalty_2 = abs(self.sent_commands[0].v_wheel1)
         energy_penalty = - (en_penalty_1 + en_penalty_2)
-        energy_penalty /= self.rsim.robot_wheel_radius
+        energy_penalty /= self.field.robot_wheel_radius
         return energy_penalty
 
     def _calculate_reward_and_done(self):
