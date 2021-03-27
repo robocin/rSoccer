@@ -11,7 +11,6 @@ from typing import Dict, List, Optional
 import gym
 import numpy as np
 from rc_gym.Entities import Frame, Robot, Field
-from rc_gym.Utils import RCGymRender
 from rc_gym.Simulators.rsim import RSimSSL
 
 
@@ -98,6 +97,7 @@ class SSLBaseEnv(gym.Env):
 
         '''
         if self.view == None:
+            from rc_gym.Render import RCGymRender
             self.view = RCGymRender(self.n_robots_blue,
                                  self.n_robots_yellow,
                                  self.field,

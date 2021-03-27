@@ -12,7 +12,6 @@ import gym
 import numpy as np
 from rc_gym.Entities import Frame, Robot
 from rc_gym.Simulators.rsim import RSimVSS
-from rc_gym.Utils import RCGymRender
 from rc_gym.Simulators.fira import Fira
 
 
@@ -102,6 +101,7 @@ class VSSBaseEnv(gym.Env):
 
         '''
         if self.view == None:
+            from rc_gym.Render import RCGymRender
             self.view = RCGymRender(self.n_robots_blue,
                                  self.n_robots_yellow,
                                  self.field,
