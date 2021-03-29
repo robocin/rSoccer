@@ -168,6 +168,100 @@ class VSSMAEnv(VSSBaseEnv):
 
         return commands
 
+    def _calculate_reward_and_done(self):
+        reward = {f'robot_{i}': 0 for i in range(self.n_robots_control)}
+        goal = False
+        w_move = 0.2
+        w_ball_grad = 0.8
+        w_energy = 2e-4
+        if self.reward_shaping_total is None:
+            self.reward_shaping_total = {'goal_score': 0, 'ball_grad': 0,
+                                         'goals_blue': 0, 'goals_yellow': 0}
+            for i in range(self.n_robots_control):
+                self.reward_shaping_total[f'robot_{i}'] = {
+                    'move': 0, 'energy': 0}
+
+        # Check if goal ocurred
+        if self.frame.ball.x > (self.field.length / 2):
+            self.reward_shaping_total['goal_score'] += 1
+            self.reward_shaping_total['goals_blue'] += 1
+            for i in range(self.n_robots_control):
+                reward[f'robot_{i}'] = 10
+            goal = True
+        elif self.frame.ball.x < -(self.field.length / 2):
+            self.reward_shaping_total['goal_score'] -= 1
+            self.reward_shaping_total['goals_yellow'] += 1
+            for i in range(self.n_robots_control):
+                reward[f'robot_{i}'] = -10
+            goal = True
+        else:
+
+            if self.last_frame is not None:
+                # Calculate ball potential
+                grad_ball_potential = self._ball_grad()
+                self.reward_shaping_total['ball_grad'] += w_ball_grad * grad_ball_potential  # noqa
+                for idx in range(self.n_robots_control):
+                    # Calculate Move ball
+                    move_reward = self._move_reward(robot_idx=idx)
+                    # Calculate Energy penalty
+                    energy_penalty = self._energy_penalty(robot_idx=idx)
+
+                    rew = w_ball_grad * grad_ball_potential + \
+                        w_move * move_reward + \
+                        w_energy * energy_penalty
+
+                    reward[f'robot_{idx}'] += rew
+                    self.reward_shaping_total[f'robot_{idx}']['move'] += w_move * move_reward  # noqa
+                    self.reward_shaping_total[f'robot_{idx}']['energy'] += w_energy * energy_penalty  # noqa
+
+        return reward, goal
+
+    def _get_initial_positions_frame(self):
+        '''Returns the position of each robot and ball for the initial frame'''
+        field_half_length = self.field.length / 2
+        field_half_width = self.field.width / 2
+
+        def x(): return random.uniform(-field_half_length + 0.1,
+                                       field_half_length - 0.1)
+
+        def y(): return random.uniform(-field_half_width + 0.1,
+                                       field_half_width - 0.1)
+
+        def theta(): return random.uniform(-180, 180)
+
+        pos_frame: Frame = Frame()
+
+        pos_frame.ball.x = x()
+        pos_frame.ball.y = y()
+        pos_frame.ball.v_x = 0.
+        pos_frame.ball.v_y = 0.
+
+        pos_frame.robots_blue[0] = Robot(x=x(), y=y(), theta=theta())
+        pos_frame.robots_blue[1] = Robot(x=x(), y=y(), theta=theta())
+        pos_frame.robots_blue[2] = Robot(x=x(), y=y(), theta=theta())
+
+        pos_frame.robots_yellow[0] = Robot(x=x(), y=y(), theta=theta())
+        pos_frame.robots_yellow[1] = Robot(x=x(), y=y(), theta=theta())
+        pos_frame.robots_yellow[2] = Robot(x=x(), y=y(), theta=theta())
+
+        return pos_frame
+
+    def _actions_to_v_wheels(self, actions):
+        left_wheel_speed = actions[0] * self.rsim.linear_speed_range
+        right_wheel_speed = actions[1] * self.rsim.linear_speed_range
+
+        # Deadzone
+        if -self.v_wheel_deadzone < left_wheel_speed < self.v_wheel_deadzone:
+            left_wheel_speed = 0
+
+        if -self.v_wheel_deadzone < right_wheel_speed < self.v_wheel_deadzone:
+            right_wheel_speed = 0
+
+        left_wheel_speed, right_wheel_speed = np.clip(
+            (left_wheel_speed, right_wheel_speed), -2.6, 2.6)
+
+        return left_wheel_speed, right_wheel_speed
+
     def _ball_grad(self):
         '''Calculate ball potential gradient
         Difference of potential of the ball in time_step seconds.
@@ -227,107 +321,6 @@ class VSSMAEnv(VSSBaseEnv):
         energy_penalty = - (en_penalty_1 + en_penalty_2)
         energy_penalty /= self.field.robot_wheel_radius
         return energy_penalty
-
-    def _calculate_reward_and_done(self):
-        reward = {f'robot_{i}': 0 for i in range(self.n_robots_control)}
-        goal = False
-        w_move = 0.2
-        w_ball_grad = 0.8
-        w_energy = 2e-4
-        if self.reward_shaping_total is None:
-            self.reward_shaping_total = {'goal_score': 0, 'ball_grad': 0,
-                                         'goals_blue': 0, 'goals_yellow': 0}
-            for i in range(self.n_robots_control):
-                self.reward_shaping_total[f'robot_{i}'] = {
-                    'move': 0, 'energy': 0}
-
-        # Check if goal ocurred
-        if self.frame.ball.x > (self.field.length / 2):
-            self.reward_shaping_total['goal_score'] += 1
-            self.reward_shaping_total['goals_blue'] += 1
-            for i in range(self.n_robots_control):
-                reward[f'robot_{i}'] = 10
-            goal = True
-        elif self.frame.ball.x < -(self.field.length / 2):
-            self.reward_shaping_total['goal_score'] -= 1
-            self.reward_shaping_total['goals_yellow'] += 1
-            for i in range(self.n_robots_control):
-                reward[f'robot_{i}'] = -10
-            goal = True
-        else:
-
-            if self.last_frame is not None:
-                # Calculate ball potential
-                grad_ball_potential = self._ball_grad()
-                self.reward_shaping_total['ball_grad'] += w_ball_grad * grad_ball_potential  # noqa
-                for idx in range(self.n_robots_control):
-                    # Calculate Move ball
-                    move_reward = self._move_reward(robot_idx=idx)
-                    # Calculate Energy penalty
-                    energy_penalty = self._energy_penalty(robot_idx=idx)
-
-                    rew = w_ball_grad * grad_ball_potential + \
-                        w_move * move_reward + \
-                        w_energy * energy_penalty
-
-                    reward[f'robot_{idx}'] += rew
-                    self.reward_shaping_total[f'robot_{idx}']['move'] += w_move * move_reward  # noqa
-                    self.reward_shaping_total[f'robot_{idx}']['energy'] += w_energy * energy_penalty  # noqa
-
-        if goal:
-            initial_pos_frame: Frame = self._get_initial_positions_frame()
-            self.rsim.reset(initial_pos_frame)
-            self.frame = self.rsim.get_frame()
-            self.last_frame = None
-            self.previous_ball_potential = None
-
-        return reward, False
-
-    def _get_initial_positions_frame(self):
-        '''Returns the position of each robot and ball for the initial frame'''
-        field_half_length = self.field.length / 2
-        field_half_width = self.field.width / 2
-
-        def x(): return random.uniform(-field_half_length + 0.1,
-                                       field_half_length - 0.1)
-
-        def y(): return random.uniform(-field_half_width + 0.1,
-                                       field_half_width - 0.1)
-
-        def theta(): return random.uniform(-180, 180)
-
-        pos_frame: Frame = Frame()
-
-        pos_frame.ball.x = x()
-        pos_frame.ball.y = y()
-        pos_frame.ball.v_x = 0.
-        pos_frame.ball.v_y = 0.
-
-        pos_frame.robots_blue[0] = Robot(x=x(), y=y(), theta=theta())
-        pos_frame.robots_blue[1] = Robot(x=x(), y=y(), theta=theta())
-        pos_frame.robots_blue[2] = Robot(x=x(), y=y(), theta=theta())
-
-        pos_frame.robots_yellow[0] = Robot(x=x(), y=y(), theta=theta())
-        pos_frame.robots_yellow[1] = Robot(x=x(), y=y(), theta=theta())
-        pos_frame.robots_yellow[2] = Robot(x=x(), y=y(), theta=theta())
-
-        return pos_frame
-
-    def _actions_to_v_wheels(self, actions):
-        left_wheel_speed = actions[0] * self.rsim.linear_speed_range
-        right_wheel_speed = actions[1] * self.rsim.linear_speed_range
-
-        # Deadzone
-        if -self.v_wheel_deadzone < left_wheel_speed < self.v_wheel_deadzone:
-            left_wheel_speed = 0
-
-        if -self.v_wheel_deadzone < right_wheel_speed < self.v_wheel_deadzone:
-            right_wheel_speed = 0
-
-        left_wheel_speed, right_wheel_speed = np.clip(
-            (left_wheel_speed, right_wheel_speed), -2.6, 2.6)
-
-        return left_wheel_speed, right_wheel_speed
 
 
 class VSSMAOpp(VSSMAEnv):
