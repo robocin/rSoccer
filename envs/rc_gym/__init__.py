@@ -1,18 +1,18 @@
 from gym.envs.registration import register
 
-register(id='VSS3v3-v0',
-         entry_point='rc_gym.vss.env_3v3:VSS3v3Env',
-         max_episode_steps=12000
+register(id='VSS-v0',
+         entry_point='rc_gym.vss.env_vss:VSSEnv',
+         max_episode_steps=1200
          )
 
 register(id='VSSMA-v0',
          entry_point='rc_gym.vss.env_ma:VSSMAEnv',
-         max_episode_steps=12000
+         max_episode_steps=1200
          )
 
 register(id='VSSMAOpp-v0',
          entry_point='rc_gym.vss.env_ma:VSSMAOpp',
-         max_episode_steps=12000
+         max_episode_steps=1200
          )
 
 register(id='VSSGk-v0',
@@ -20,9 +20,9 @@ register(id='VSSGk-v0',
          max_episode_steps=1200
          )
 
-register(id='VSS3v3FIRA-v0',
-         entry_point='rc_gym.vss.env_3v3:VSS3v3FIRAEnv',
-         max_episode_steps=12000
+register(id='VSSFIRA-v0',
+         entry_point='rc_gym.vss.env_vss:VSSFIRAEnv',
+         max_episode_steps=1200
          )
 
 register(id='SSLGoToBall-v0',
