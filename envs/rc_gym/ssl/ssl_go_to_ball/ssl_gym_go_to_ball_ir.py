@@ -51,7 +51,13 @@ class SSLGoToBallIREnv(SSLBaseEnv):
                                                 shape=(n_obs, ),
                                                 dtype=np.float32)
 
+        # scale max dist rw to 1 Considering that max possible move rw if ball and robot are in opposite corners of field
         self.ball_dist_scale = np.linalg.norm([self.field.width, self.field.length])
+        
+        # scale max energy rw to 1 Considering that max possible energy if max robot wheel speed sent every step
+        wheel_max_rad_s = 160
+        max_steps = 1200
+        self.energy_scale = ((wheel_max_rad_s * 4) * max_steps)
 
         print('Environment initialized')
 
@@ -108,7 +114,8 @@ class SSLGoToBallIREnv(SSLBaseEnv):
         if self.reward_shaping_total is None:
             self.reward_shaping_total = {
                 'goal': 0,
-                'ball_dist': 0
+                'ball_dist': 0,
+                'energy': 0
             }
         reward = 0
         done = False
@@ -122,10 +129,15 @@ class SSLGoToBallIREnv(SSLBaseEnv):
             done = True
             self.reward_shaping_total['goal'] += 1
         elif self.last_frame is not None:
-            ball_dist_rw = self.__ball_dist_rw() / self.ball_dist_scale
-            self.reward_shaping_total['ball_dist'] += ball_dist_rw
+            # ball_dist_rw = self.__ball_dist_rw() / self.ball_dist_scale
+            # self.reward_shaping_total['ball_dist'] += ball_dist_rw
             
-            reward += ball_dist_rw
+            energy_rw = -self.__energy_pen() / self.energy_scale
+            self.reward_shaping_total['energy'] += energy_rw
+            
+            reward = reward\
+                    + energy_rw
+                    # + ball_dist_rw\
 
         return reward, done
     
@@ -202,3 +214,14 @@ class SSLGoToBallIREnv(SSLBaseEnv):
         ball_dist_rw = last_ball_dist - ball_dist
         
         return ball_dist_rw
+
+    def __energy_pen(self):
+        robot = self.frame.robots_blue[0]
+        
+        # Sum of abs each wheel speed sent
+        energy = abs(robot.v_wheel0)\
+            + abs(robot.v_wheel1)\
+            + abs(robot.v_wheel2)\
+            + abs(robot.v_wheel3)
+            
+        return energy
