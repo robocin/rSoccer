@@ -51,7 +51,17 @@ class SSLGoToBallIREnv(SSLBaseEnv):
                                                 shape=(n_obs, ),
                                                 dtype=np.float32)
 
+        self.ball_dist_scale = np.linalg.norm([self.field.width, self.field.length])
+
         print('Environment initialized')
+
+    def reset(self):
+        self.reward_shaping_total = None
+        return super().reset()
+
+    def step(self, action):
+        observation, reward, done, _ = super().step(action)
+        return observation, reward, done, self.reward_shaping_total
 
     def _frame_to_observations(self):
 
@@ -95,7 +105,13 @@ class SSLGoToBallIREnv(SSLBaseEnv):
         return commands
 
     def _calculate_reward_and_done(self):
+        if self.reward_shaping_total is None:
+            self.reward_shaping_total = {
+                'goal': 0,
+                'ball_dist': 0
+            }
         reward = 0
+        done = False
 
         ball = self.frame.ball
         robot = self.frame.robots_blue[0]
@@ -103,8 +119,13 @@ class SSLGoToBallIREnv(SSLBaseEnv):
         # Check if robot infrared is activated
         if robot.infrared:
             reward = 1
-
-        done = reward
+            done = True
+            self.reward_shaping_total['goal'] += 1
+        elif self.last_frame is not None:
+            ball_dist_rw = self.__ball_dist_rw() / self.ball_dist_scale
+            self.reward_shaping_total['ball_dist'] += ball_dist_rw
+            
+            reward += ball_dist_rw
 
         return reward, done
     
@@ -160,3 +181,24 @@ class SSLGoToBallIREnv(SSLBaseEnv):
             pos_frame.robots_yellow[i] = agents[i+self.n_robots_blue]
 
         return pos_frame
+
+    def __ball_dist_rw(self):
+        assert(self.last_frame is not None)
+        
+        # Calculate previous ball dist
+        last_ball = self.last_frame.ball
+        last_robot = self.last_frame.robots_blue[0]
+        last_ball_pos = np.array([last_ball.x, last_ball.y])
+        last_robot_pos = np.array([last_robot.x, last_robot.y])
+        last_ball_dist = np.linalg.norm(last_robot_pos - last_ball_pos)
+        
+        # Calculate new ball dist
+        ball = self.frame.ball
+        robot = self.frame.robots_blue[0]
+        ball_pos = np.array([ball.x, ball.y])
+        robot_pos = np.array([robot.x, robot.y])
+        ball_dist = np.linalg.norm(robot_pos - ball_pos)
+        
+        ball_dist_rw = last_ball_dist - ball_dist
+        
+        return ball_dist_rw
