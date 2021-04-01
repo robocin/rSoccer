@@ -129,15 +129,15 @@ class SSLGoToBallIREnv(SSLBaseEnv):
             done = True
             self.reward_shaping_total['goal'] += 1
         elif self.last_frame is not None:
-            # ball_dist_rw = self.__ball_dist_rw() / self.ball_dist_scale
-            # self.reward_shaping_total['ball_dist'] += ball_dist_rw
+            ball_dist_rw = self.__ball_dist_rw() / self.ball_dist_scale
+            self.reward_shaping_total['ball_dist'] += ball_dist_rw
             
             energy_rw = -self.__energy_pen() / self.energy_scale
             self.reward_shaping_total['energy'] += energy_rw
             
             reward = reward\
+                    + ball_dist_rw\
                     + energy_rw
-                    # + ball_dist_rw\
 
         return reward, done
     
