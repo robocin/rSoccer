@@ -45,7 +45,8 @@ class SSLGoToBallIREnv(SSLBaseEnv):
         self.action_space = gym.spaces.Box(low=-1, high=1,
                                            shape=(3, ), dtype=np.float32)
         
-        n_obs = 4 + 7*self.n_robots_blue + 2*self.n_robots_yellow
+        # n_obs = 4 + 7*self.n_robots_blue + 2*self.n_robots_yellow
+        n_obs = 4 + 7*self.n_robots_blue + 2*6
         self.observation_space = gym.spaces.Box(low=-self.NORM_BOUNDS,
                                                 high=self.NORM_BOUNDS,
                                                 shape=(n_obs, ),
@@ -95,6 +96,9 @@ class SSLGoToBallIREnv(SSLBaseEnv):
             observation.append(self.norm_pos(self.frame.robots_yellow[i].x))
             observation.append(self.norm_pos(self.frame.robots_yellow[i].y))
 
+        if self.n_robots_yellow == 0:
+            observation += [np.random.uniform(low=-1.0) for i in range(6)]
+            
         return np.array(observation, dtype=np.float32)
 
     def _get_commands(self, actions):
@@ -112,8 +116,8 @@ class SSLGoToBallIREnv(SSLBaseEnv):
             self.reward_shaping_total = {
                 'goal': 0,
                 'ball_dist': 0,
-                'energy': 0,
-                'collision': 0
+                'energy': 0
+                # 'collision': 0
             }
         reward = 0
         done = False
@@ -121,12 +125,12 @@ class SSLGoToBallIREnv(SSLBaseEnv):
         ball = self.frame.ball
         robot = self.frame.robots_blue[0]
         
-        for rbt in self.frame.robots_yellow.values():
-            if abs(rbt.v_x) > 0.05 or abs(rbt.v_y) > 0.05:
-                done = True
-                reward = -1
-                self.reward_shaping_total['collision'] += 1
-                break
+        # for rbt in self.frame.robots_yellow.values():
+        #     if abs(rbt.v_x) > 0.05 or abs(rbt.v_y) > 0.05:
+        #         done = True
+        #         reward = -1
+        #         self.reward_shaping_total['collision'] += 1
+        #         break
 
         # Check if robot infrared is activated
         if not done:
