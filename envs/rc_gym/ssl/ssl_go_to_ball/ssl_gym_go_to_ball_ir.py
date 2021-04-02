@@ -115,7 +115,8 @@ class SSLGoToBallIREnv(SSLBaseEnv):
             self.reward_shaping_total = {
                 'goal': 0,
                 'ball_dist': 0,
-                'energy': 0
+                'energy': 0,
+                'collision': 0
             }
         reward = 0
         done = False
@@ -123,21 +124,29 @@ class SSLGoToBallIREnv(SSLBaseEnv):
         ball = self.frame.ball
         robot = self.frame.robots_blue[0]
         
+        for rbt in self.frame.robots_yellow.values():
+            if abs(rbt.v_x) > 0.05 or abs(rbt.v_y) > 0.05:
+                done = True
+                reward = -1
+                self.reward_shaping_total['collision'] += 1
+                break
+
         # Check if robot infrared is activated
-        if robot.infrared:
-            reward = 1
-            done = True
-            self.reward_shaping_total['goal'] += 1
-        elif self.last_frame is not None:
-            ball_dist_rw = self.__ball_dist_rw() / self.ball_dist_scale
-            self.reward_shaping_total['ball_dist'] += ball_dist_rw
-            
-            energy_rw = -self.__energy_pen() / self.energy_scale
-            self.reward_shaping_total['energy'] += energy_rw
-            
-            reward = reward\
-                    + ball_dist_rw\
-                    + energy_rw
+        if not done:
+            if robot.infrared:
+                reward = 1
+                done = True
+                self.reward_shaping_total['goal'] += 1
+            elif self.last_frame is not None:
+                ball_dist_rw = self.__ball_dist_rw() / self.ball_dist_scale
+                self.reward_shaping_total['ball_dist'] += ball_dist_rw
+                
+                energy_rw = -self.__energy_pen() / self.energy_scale
+                self.reward_shaping_total['energy'] += energy_rw
+                
+                reward = reward\
+                        + ball_dist_rw\
+                        + energy_rw
 
         return reward, done
     
