@@ -59,11 +59,14 @@ class SSLGoToBallIREnv(SSLBaseEnv):
         wheel_max_rad_s = 160
         max_steps = 1200
         self.energy_scale = ((wheel_max_rad_s * 4) * max_steps)
+        
+        self.fake_obs = [np.random.uniform(low=-1.0) for i in range(12)]
 
         print('Environment initialized')
 
     def reset(self):
         self.reward_shaping_total = None
+        self.fake_obs = [np.random.uniform(low=-1.0) for i in range(12)]
         return super().reset()
 
     def step(self, action):
@@ -97,7 +100,7 @@ class SSLGoToBallIREnv(SSLBaseEnv):
             observation.append(self.norm_pos(self.frame.robots_yellow[i].y))
 
         if self.n_robots_yellow == 0:
-            observation += [np.random.uniform(low=-1.0) for i in range(6)]
+            observation += self.fake_obs
             
         return np.array(observation, dtype=np.float32)
 
