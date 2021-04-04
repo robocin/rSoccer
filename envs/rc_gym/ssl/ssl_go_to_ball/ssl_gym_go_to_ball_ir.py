@@ -45,8 +45,7 @@ class SSLGoToBallIREnv(SSLBaseEnv):
         self.action_space = gym.spaces.Box(low=-1, high=1,
                                            shape=(3, ), dtype=np.float32)
         
-        # n_obs = 4 + 7*self.n_robots_blue + 2*self.n_robots_yellow
-        n_obs = 4 + 7*self.n_robots_blue + 2*6
+        n_obs = 4 + 7*self.n_robots_blue + 2*self.n_robots_yellow
         self.observation_space = gym.spaces.Box(low=-self.NORM_BOUNDS,
                                                 high=self.NORM_BOUNDS,
                                                 shape=(n_obs, ),
@@ -60,13 +59,10 @@ class SSLGoToBallIREnv(SSLBaseEnv):
         max_steps = 1200
         self.energy_scale = ((wheel_max_rad_s * 4) * max_steps)
         
-        self.fake_obs = [np.random.uniform(low=-1.0) for i in range(12)]
-
         print('Environment initialized')
 
     def reset(self):
         self.reward_shaping_total = None
-        self.fake_obs = [np.random.uniform(low=-1.0) for i in range(12)]
         return super().reset()
 
     def step(self, action):
@@ -99,8 +95,6 @@ class SSLGoToBallIREnv(SSLBaseEnv):
             observation.append(self.norm_pos(self.frame.robots_yellow[i].x))
             observation.append(self.norm_pos(self.frame.robots_yellow[i].y))
 
-        if self.n_robots_yellow == 0:
-            observation += self.fake_obs
             
         return np.array(observation, dtype=np.float32)
 
@@ -120,7 +114,6 @@ class SSLGoToBallIREnv(SSLBaseEnv):
                 'goal': 0,
                 'ball_dist': 0,
                 'energy': 0
-                # 'collision': 0
             }
         reward = 0
         done = False
@@ -128,13 +121,6 @@ class SSLGoToBallIREnv(SSLBaseEnv):
         ball = self.frame.ball
         robot = self.frame.robots_blue[0]
         
-        # for rbt in self.frame.robots_yellow.values():
-        #     if abs(rbt.v_x) > 0.05 or abs(rbt.v_y) > 0.05:
-        #         done = True
-        #         reward = -1
-        #         self.reward_shaping_total['collision'] += 1
-        #         break
-
         # Check if robot infrared is activated
         if not done:
             if robot.infrared:
