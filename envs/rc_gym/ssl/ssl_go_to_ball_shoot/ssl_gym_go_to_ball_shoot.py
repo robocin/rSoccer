@@ -53,7 +53,24 @@ class SSLGoToBallShootEnv(SSLBaseEnv):
                                                 shape=(n_obs, ),
                                                 dtype=np.float32)
 
+        # scale max dist rw to 1 Considering that max possible move rw if ball and robot are in opposite corners of field
+        self.ball_dist_scale = np.linalg.norm([self.field.width, self.field.length/2])
+        self.ball_grad_scale = np.linalg.norm([self.field.width/2, self.field.length/2])
+        
+        # scale max energy rw to 1 Considering that max possible energy if max robot wheel speed sent every step
+        wheel_max_rad_s = 160
+        max_steps = 1200
+        self.energy_scale = ((wheel_max_rad_s * 4) * max_steps)
+
         print('Environment initialized')
+
+    def reset(self):
+        self.reward_shaping_total = None
+        return super().reset()
+
+    def step(self, action):
+        observation, reward, done, _ = super().step(action)
+        return observation, reward, done, self.reward_shaping_total
 
     def _frame_to_observations(self):
 
@@ -100,6 +117,13 @@ class SSLGoToBallShootEnv(SSLBaseEnv):
         return commands
 
     def _calculate_reward_and_done(self):
+        if self.reward_shaping_total is None:
+            self.reward_shaping_total = {
+                'goal': 0,
+                'ball_dist': 0,
+                'ball_grad': 0,
+                'energy': 0
+            }
         reward = 0
         done = False
         
@@ -128,6 +152,22 @@ class SSLGoToBallShootEnv(SSLBaseEnv):
         elif ball.x > half_len:
             done = True
             reward = 1 if abs(ball.y) < half_goal_wid else 0
+            self.reward_shaping_total['goal'] += reward
+        elif self.last_frame is not None:
+            ball_dist_rw = self.__ball_dist_rw() / self.ball_dist_scale
+            self.reward_shaping_total['ball_dist'] += ball_dist_rw
+            
+            ball_grad_rw = self.__ball_grad_rw() / self.ball_grad_scale
+            self.reward_shaping_total['ball_grad'] += ball_grad_rw
+            
+            energy_rw = -self.__energy_pen() / self.energy_scale
+            self.reward_shaping_total['energy'] += energy_rw
+            
+            reward = reward\
+                    + ball_dist_rw\
+                    + ball_grad_rw\
+                    + energy_rw
+            
 
         done = done
 
@@ -154,3 +194,69 @@ class SSLGoToBallShootEnv(SSLBaseEnv):
         pos_frame.robots_blue[0] = Robot(x=x(), y=-y(), theta=theta())
 
         return pos_frame
+    
+    def __ball_dist_rw(self):
+        assert(self.last_frame is not None)
+        
+        # Calculate previous ball dist
+        last_ball = self.last_frame.ball
+        last_robot = self.last_frame.robots_blue[0]
+        last_ball_pos = np.array([last_ball.x, last_ball.y])
+        last_robot_pos = np.array([last_robot.x, last_robot.y])
+        last_ball_dist = np.linalg.norm(last_robot_pos - last_ball_pos)
+        
+        # Calculate new ball dist
+        ball = self.frame.ball
+        robot = self.frame.robots_blue[0]
+        ball_pos = np.array([ball.x, ball.y])
+        robot_pos = np.array([robot.x, robot.y])
+        ball_dist = np.linalg.norm(robot_pos - ball_pos)
+        
+        ball_dist_rw = last_ball_dist - ball_dist
+        
+        if ball_dist_rw > 1:
+            print("ball_dist -> ", ball_dist_rw)
+            print(self.frame.ball)
+            print(self.frame.robots_blue)
+            print(self.frame.robots_yellow)
+            print("===============================")
+        
+        return np.clip(ball_dist_rw, -1, 1)
+
+    def __ball_grad_rw(self):
+        assert(self.last_frame is not None)
+        
+        # Goal pos
+        goal = np.array([self.field.length/2, 0.])
+        
+        # Calculate previous ball dist
+        last_ball = self.last_frame.ball
+        ball = self.frame.ball
+        last_ball_pos = np.array([last_ball.x, last_ball.y])
+        last_ball_dist = np.linalg.norm(goal - last_ball_pos)
+        
+        # Calculate new ball dist
+        ball_pos = np.array([ball.x, ball.y])
+        ball_dist = np.linalg.norm(goal - ball_pos)
+        
+        ball_dist_rw = last_ball_dist - ball_dist
+        
+        if ball_dist_rw > 1:
+            print("ball_dist -> ", ball_dist_rw)
+            print(self.frame.ball)
+            print(self.frame.robots_blue)
+            print(self.frame.robots_yellow)
+            print("===============================")
+        
+        return np.clip(ball_dist_rw, -1, 1)
+
+    def __energy_pen(self):
+        robot = self.frame.robots_blue[0]
+        
+        # Sum of abs each wheel speed sent
+        energy = abs(robot.v_wheel0)\
+            + abs(robot.v_wheel1)\
+            + abs(robot.v_wheel2)\
+            + abs(robot.v_wheel3)
+            
+        return energy
