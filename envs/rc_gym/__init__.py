@@ -52,28 +52,28 @@ register(id='SSLGoToBallIR-v1',
 register(id='SSLGoToBallShoot-v0',
          entry_point='rc_gym.ssl.ssl_go_to_ball_shoot:SSLGoToBallShootEnv',
          kwargs={'field_type' : 2, 'random_init' : False, 
-                 'enter_goal_area' : False},
+                 'enter_goal_area' : True},
          max_episode_steps=2400
          )
 
 register(id='SSLGoToBallShoot-v1',
          entry_point='rc_gym.ssl.ssl_go_to_ball_shoot:SSLGoToBallShootEnv',
          kwargs={'field_type' : 2, 'random_init' : True, 
-                 'enter_goal_area' : False},
+                 'enter_goal_area' : True},
          max_episode_steps=2400
          )
 
 register(id='SSLGoToBallShoot-v2',
          entry_point='rc_gym.ssl.ssl_go_to_ball_shoot:SSLGoToBallShootEnv',
          kwargs={'field_type' : 2, 'random_init' : False, 
-                 'enter_goal_area' : True},
+                 'enter_goal_area' : False},
          max_episode_steps=2400
          )
 
 register(id='SSLGoToBallShoot-v3',
          entry_point='rc_gym.ssl.ssl_go_to_ball_shoot:SSLGoToBallShootEnv',
          kwargs={'field_type' : 2, 'random_init' : True, 
-                 'enter_goal_area' : True},
+                 'enter_goal_area' : False},
          max_episode_steps=2400
          )
 
