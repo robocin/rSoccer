@@ -183,7 +183,7 @@ if __name__ == "__main__":
         writer_path = model_params["data_path"] + "/logs/" + run_name
         
 
-        queue_size = model_params["batch_size"]
+        queue_size = model_params["EXP_GRAD_RATIO"]
         exp_queue = mp.Queue(maxsize=queue_size)
 
         torch.set_num_threads(20)
