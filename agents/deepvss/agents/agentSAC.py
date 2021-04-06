@@ -8,6 +8,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from tensorboardX import SummaryWriter
+import gym
+import rc_gym
+
 
 from lib import common, sac_model
 
@@ -160,12 +163,16 @@ def play(
     exp_queue,
     agent_env,
     test,
-    writer,
+    writer_path,
     collected_samples,
     finish_event,
 ):
 
     try:
+        writer = SummaryWriter(
+            log_dir=writer_path + "/agents", comment="-agent"
+        )
+        agent_env = gym.make(agent_env)
         agent = sac_model.AgentSAC(
             net,
             device=device,
