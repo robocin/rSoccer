@@ -74,8 +74,6 @@ def calc_loss_sac_critic(
     cuda=False,
     cuda_async=False,
 ):
-    states, actions, rewards, dones, next_states = common.unpack_batch(batch)
-
     (
         state_batch,
         action_batch,
@@ -87,18 +85,18 @@ def calc_loss_sac_critic(
     alpha = model_params["alpha"]
     gamma = model_params["gamma"]
 
-    states_v = torch.tensor(states, dtype=torch.float32)
-    next_states_v = torch.tensor(next_states, dtype=torch.float32)
-    actions_v = torch.tensor(actions, dtype=torch.float32)
-    rewards_v = torch.tensor(rewards, dtype=torch.float32)
-    done_mask = torch.BoolTensor(dones)
+    states_v = torch.tensor(state_batch, dtype=torch.float32)
+    next_states_v = torch.tensor(next_state_batch, dtype=torch.float32)
+    actions_v = torch.tensor(action_batch, dtype=torch.float32)
+    rewards_v = torch.tensor(reward_batch, dtype=torch.float32)
+    done_mask = torch.BoolTensor(mask_batch)
 
     if cuda:
-        states_v = states_v.cuda(non_blocking=cuda_async)
-        next_states_v = next_states_v.cuda(non_blocking=cuda_async)
-        actions_v = actions_v.cuda(non_blocking=cuda_async)
-        rewards_v = rewards_v.cuda(non_blocking=cuda_async)
-        done_mask = done_mask.cuda(non_blocking=cuda_async)
+        state_batch = states_v.cuda(non_blocking=cuda_async)
+        next_state_batch = next_states_v.cuda(non_blocking=cuda_async)
+        action_batch = actions_v.cuda(non_blocking=cuda_async)
+        reward_batch = rewards_v.cuda(non_blocking=cuda_async)
+        mask_batch = done_mask.cuda(non_blocking=cuda_async)
     else:
         state_batch = torch.FloatTensor(state_batch)
         next_state_batch = torch.FloatTensor(next_state_batch)
@@ -106,11 +104,12 @@ def calc_loss_sac_critic(
         reward_batch = torch.FloatTensor(reward_batch).unsqueeze(1)
         mask_batch = torch.BoolTensor(mask_batch)
 
+    reward_batch = reward_batch.unsqueeze_(1)
     with torch.no_grad():
         next_state_action, next_state_log_pi, _ = act_net.sample(
             next_state_batch
         )
-        qf1_next_target, qf2_next_target = tgt_crt_net.target_model(
+        qf1_next_target, qf2_next_target = tgt_crt_net(
             next_state_batch, next_state_action
         )
         min_qf_next_target = (
@@ -135,9 +134,6 @@ def calc_loss_sac_critic(
 
     qf1_pi, qf2_pi = crt_net(state_batch, pi)
     min_qf_pi = torch.min(qf1_pi, qf2_pi)
-
-    # Jπ = 𝔼st∼D,εt∼N[α * logπ(f(εt;st)|st) − Q(st,f(εt;st))]
-    policy_loss = ((alpha * log_pi) - min_qf_pi).mean()
 
     return qf1_loss, qf2_loss, log_pi, min_qf_pi
 
@@ -186,7 +182,7 @@ def play(
         steps = 0
 
         while not finish_event.is_set():
-            action = agent([state], steps)
+            action = agent([state])
             next_state, reward, done, info = agent_env.step(action)
             steps += 1
             epi_reward += reward
@@ -204,21 +200,21 @@ def play(
                 fps = steps / (time.time() - then)
                 then = time.time()
                 writer.add_scalar("rw/total", epi_reward, matches_played)
-                writer.add_scalar("rw/steps_ep", steps, matches_played)
-                writer.add_scalar(
-                    "rw/goal_score", info["goal_score"], matches_played
-                )
-                writer.add_scalar("rw/move", info["move"], matches_played)
-                writer.add_scalar(
-                    "rw/ball_grad", info["ball_grad"], matches_played
-                )
-                writer.add_scalar("rw/energy", info["energy"], matches_played)
-                writer.add_scalar(
-                    "rw/goals_blue", info["goals_blue"], matches_played
-                )
-                writer.add_scalar(
-                    "rw/goals_yellow", info["goals_yellow"], matches_played
-                )
+                # writer.add_scalar("rw/steps_ep", steps, matches_played)
+                # writer.add_scalar(
+                #     "rw/goal_score", info["goal_score"], matches_played
+                # )
+                # writer.add_scalar("rw/move", info["move"], matches_played)
+                # writer.add_scalar(
+                #     "rw/ball_grad", info["ball_grad"], matches_played
+                # )
+                # writer.add_scalar("rw/energy", info["energy"], matches_played)
+                # writer.add_scalar(
+                #     "rw/goals_blue", info["goals_blue"], matches_played
+                # )
+                # writer.add_scalar(
+                #     "rw/goals_yellow", info["goals_yellow"], matches_played
+                # )
                 print(f"<======Match {matches_played}======>")
                 print(f"-------Reward:", epi_reward)
                 print(f"-------FPS:", fps)
@@ -227,7 +223,6 @@ def play(
                 steps = 0
                 matches_played += 1
                 state = agent_env.reset()
-                agent.ou_noise.reset()
 
                 if not test and evaluation:  # evaluation just finished
                     writer.add_scalar("eval/rw", epi_reward, matches_played)
@@ -402,12 +397,17 @@ def train(
                     cuda_async=True,
                 )
 
-                optimizer_crt.zero_grad()
-                qf1_loss.backward()
-                optimizer_crt.step()
 
+                policy_loss = calc_loss_sac_actor(
+                    min_qf_pi, log_pi, model_params
+                )
+                optimizer_act.zero_grad()
+                policy_loss.backward()
+                optimizer_act.step()
+
+                q_loss = qf1_loss + qf2_loss
                 optimizer_crt.zero_grad()
-                qf2_loss.backward()
+                q_loss.backward()
                 optimizer_crt.step()
 
                 if model_params["automatic_entropy_tuning"]:
@@ -426,12 +426,6 @@ def train(
                     alpha_tlogs = torch.tensor(alpha)  # For TensorboardX logs
                 processed_samples += batch_size
 
-                policy_loss = calc_loss_sac_actor(
-                    min_qf_pi, log_pi, model_params
-                )
-                optimizer_act.zero_grad()
-                policy_loss.backward()
-                optimizer_act.step()
             if processed_samples >= next_check_point:
                 next_check_point = (
                     processed_samples + model_params["save_model_frequency"]
