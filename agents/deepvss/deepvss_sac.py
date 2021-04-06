@@ -189,7 +189,7 @@ if __name__ == "__main__":
         torch.set_num_threads(20)
         print("Threads available: %d" % torch.get_num_threads())
 
-        for _ in range(2):
+        for i in range(4):
             th_a = mp.Process(
                 target=play,
                 args=(
@@ -199,9 +199,9 @@ if __name__ == "__main__":
                     exp_queue,
                     env_name,
                     args.test,
-                    writer_path,
                     collected_samples,
                     finish_event,
+                    i
                 ),
             )
             play_threads.append(th_a)
@@ -241,8 +241,6 @@ if __name__ == "__main__":
         print(traceback.format_exc())
 
     finally:
-
-        finish_event.set()
         if exp_queue:
             while exp_queue.qsize() > 0:
                 exp_queue.get()
@@ -253,9 +251,6 @@ if __name__ == "__main__":
             train_process.join()
 
         print("Waiting for threads to finish...")
-        play_threads = [
-            t.join(1) for t in play_threads if t is not None and t.isAlive()
-        ]
-
-        env.close()
-        sys.exit(1)
+        for p in play_threads:
+            p.terminate()
+            p.join()
