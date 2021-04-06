@@ -6,6 +6,7 @@ MODEL_HYPERPARAMS = {  # SAC
     'MAX_N_GRADS': 1000000,
     'replay_size': 1000000,
     'replay_initial': 100000,
+    'EXP_GRAD_RATIO': 10,
     'target_net_sync': 1 - 1e-3,
     'sync_freq': 0,
     'epsilon_frames': 10 ** 5,

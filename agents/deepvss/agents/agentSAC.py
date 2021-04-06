@@ -332,17 +332,17 @@ def train(
         alpha_loss = 0.0
         last_loss_average = 0.0
         first = True
-        new_samples = 0
         n_episodes = 0
         n_grads = 0
 
         # training loop:
         while not finish_event.is_set() or n_grads < model_params['MAX_N_GRADS']:
+            new_samples = 0
             metrics = {}
             ep_infos = list()
             st_time = time.perf_counter()
             # print("get qsize: %d" % size)
-            for _ in range(0, max(1, int(queue_max_size))):
+            while new_samples < model_params['EXP_GRAD_RATIO']:
                 exp = exp_queue.get()
                 if exp is None:
                     break
