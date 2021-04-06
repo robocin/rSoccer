@@ -337,7 +337,7 @@ def train(
         n_grads = 0
 
         # training loop:
-        while not finish_event.is_set():
+        while not finish_event.is_set() or n_grads < model_params['MAX_N_GRADS']:
             metrics = {}
             ep_infos = list()
             st_time = time.perf_counter()
