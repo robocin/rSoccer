@@ -1,17 +1,16 @@
+import copy
 import os
 import shutil
-import traceback
 import time
+import traceback
+
+import gym
 import numpy as np
 import ptan
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from tensorboardX import SummaryWriter
-import gym
 import rc_gym
-
-
+import torch
+import torch.nn.functional as F
+import wandb
 from lib import common, sac_model
 
 gradMax = 0
@@ -61,31 +60,19 @@ def avg_rewards(exp_buffer, total):
     return reward
 
 
-def calc_loss_sac_actor(min_qf_pi, log_pi, model_params):
-    alpha = model_params["alpha"]
-
-    policy_loss = ((alpha * log_pi) - min_qf_pi).mean()
-    return policy_loss
-
-
-def calc_loss_sac_critic(
+def calc_loss_sac(
     model_params,
     batch,
     crt_net,
     act_net,
     tgt_crt_net,
+    alpha,
     cuda=False,
     cuda_async=False,
 ):
-    (
-        state_batch,
-        action_batch,
-        reward_batch,
-        mask_batch,
-        next_state_batch,
-    ) = common.unpack_batch(batch)
+    state_batch, action_batch, reward_batch,\
+        mask_batch, next_state_batch = common.unpack_batch(batch)
 
-    alpha = model_params["alpha"]
     gamma = model_params["gamma"]
 
     states_v = torch.tensor(state_batch, dtype=torch.float32)
@@ -120,7 +107,7 @@ def calc_loss_sac_critic(
             - alpha * next_state_log_pi
         )
         min_qf_next_target[mask_batch] = 0.0
-        next_q_value = reward_batch + gamma * (min_qf_next_target)
+        next_q_value = reward_batch + gamma * min_qf_next_target
 
     # Two Q-functions to mitigate
 
@@ -138,7 +125,12 @@ def calc_loss_sac_critic(
     qf1_pi, qf2_pi = crt_net(state_batch, pi)
     min_qf_pi = torch.min(qf1_pi, qf2_pi)
 
-    return qf1_loss, qf2_loss, log_pi, min_qf_pi
+    # Jπ = 𝔼st∼D,εt∼N[α * logπ(f(εt;st)|st) − Q(st,f(εt;st))]
+    policy_loss = alpha * log_pi
+    policy_loss = policy_loss - min_qf_pi
+    policy_loss = policy_loss.mean()
+
+    return policy_loss, qf1_loss, qf2_loss, log_pi
 
 
 def create_actor_model(model_params, state_shape, action_shape, device):
@@ -163,15 +155,12 @@ def play(
     exp_queue,
     agent_env,
     test,
-    writer_path,
     collected_samples,
     finish_event,
+    agent_id
 ):
 
     try:
-        writer = SummaryWriter(
-            log_dir=writer_path + "/agents", comment="-agent"
-        )
         agent_env = gym.make(agent_env)
         agent = sac_model.AgentSAC(
             net,
@@ -184,7 +173,6 @@ def play(
         matches_played = 0
         epi_reward = 0
         then = time.time()
-        eval_freq_matches = params["eval_freq_matches"]
         evaluation = False
         steps = 0
 
@@ -206,22 +194,10 @@ def play(
             if done:
                 fps = steps / (time.time() - then)
                 then = time.time()
-                writer.add_scalar("rw/total", epi_reward, matches_played)
-                # writer.add_scalar("rw/steps_ep", steps, matches_played)
-                # writer.add_scalar(
-                #     "rw/goal_score", info["goal_score"], matches_played
-                # )
-                # writer.add_scalar("rw/move", info["move"], matches_played)
-                # writer.add_scalar(
-                #     "rw/ball_grad", info["ball_grad"], matches_played
-                # )
-                # writer.add_scalar("rw/energy", info["energy"], matches_played)
-                # writer.add_scalar(
-                #     "rw/goals_blue", info["goals_blue"], matches_played
-                # )
-                # writer.add_scalar(
-                #     "rw/goals_yellow", info["goals_yellow"], matches_played
-                # )
+                info['fps'] = fps
+                info['ep_steps'] = steps
+                info['ep_rw'] = epi_reward
+                exp_queue.put(info)
                 print(f"<======Match {matches_played}======>")
                 print(f"-------Reward:", epi_reward)
                 print(f"-------FPS:", fps)
@@ -230,15 +206,6 @@ def play(
                 steps = 0
                 matches_played += 1
                 state = agent_env.reset()
-
-                if not test and evaluation:  # evaluation just finished
-                    writer.add_scalar("eval/rw", epi_reward, matches_played)
-                    print("evaluation finished")
-
-                evaluation = matches_played % eval_freq_matches == 0
-
-                if not test and evaluation:  # evaluation just started
-                    print("Evaluation started")
 
             collected_samples.value += 1
 
@@ -356,9 +323,8 @@ def train(
         )
         next_net_sync = processed_samples + model_params["target_net_sync"]
         queue_max_size = batch_size = model_params["batch_size"]
-        writer_path = model_params["writer_path"]
-        writer = SummaryWriter(log_dir=writer_path + "/train")
-        tracker = common.RewardTracker(writer)
+        wandb.init(project='RoboCIn-RL', entity='goncamateus',
+                   name=model_params["run_name"], config=model_params)
 
         policy_loss = 0.0
         qf1_loss = 0.0
@@ -366,72 +332,100 @@ def train(
         alpha_loss = 0.0
         last_loss_average = 0.0
         first = True
+        new_samples = 0
+        n_episodes = 0
+        n_grads = 0
 
         # training loop:
         while not finish_event.is_set():
-            new_samples = 0
-
+            metrics = {}
+            ep_infos = list()
+            st_time = time.perf_counter()
             # print("get qsize: %d" % size)
             for _ in range(0, max(1, int(queue_max_size))):
                 exp = exp_queue.get()
                 if exp is None:
                     break
-                exp_buffer._add(exp)
-                new_samples += 1
+                safe_exp = copy.deepcopy(exp)
+                del(exp)
+
+                # Dict is returned with end of episode info
+                if isinstance(safe_exp, dict):
+                    logs = {"ep_info/"+key: value for key,
+                            value in safe_exp.items() if 'truncated' not in key}
+                    ep_infos.append(logs)
+                    n_episodes += 1
+                else:
+                    exp_buffer._add(safe_exp)
+                    new_samples += 1
 
             if len(exp_buffer) < replay_initial:
                 continue
 
             collected_samples += new_samples
+            sample_time = time.perf_counter()
 
             # training loop:
-            while exp_queue.qsize() < queue_max_size / 2:
-                if first:
-                    print("Training started.")
-                    print(crt_net)
-                    print(act_net)
-                    first = False
+            if first:
+                print("Training started.")
+                print(crt_net)
+                print(act_net)
+                first = False
 
-                batch = exp_buffer.sample(batch_size=batch_size)
+            batch = exp_buffer.sample(batch_size=batch_size)
 
-                qf1_loss, qf2_loss, log_pi, min_qf_pi = calc_loss_sac_critic(
-                    model_params,
-                    batch,
-                    crt_net,
-                    act_net,
-                    tgt_crt_net.target_model,
-                    cuda=(device.type == "cuda"),
-                    cuda_async=True,
-                )
+            policy_loss, qf1_loss, qf2_loss, log_pi = calc_loss_sac(
+                model_params,
+                batch,
+                crt_net,
+                act_net,
+                tgt_crt_net.target_model,
+                alpha,
+                cuda=(device.type == "cuda"),
+                cuda_async=True,
+            )
 
+            optimizer_act.zero_grad()
+            policy_loss.backward()
+            optimizer_act.step()
 
-                policy_loss = calc_loss_sac_actor(
-                    min_qf_pi, log_pi, model_params
-                )
-                optimizer_act.zero_grad()
-                policy_loss.backward()
-                optimizer_act.step()
+            q_loss = qf1_loss + qf2_loss
+            optimizer_crt.zero_grad()
+            q_loss.backward()
+            optimizer_crt.step()
 
-                q_loss = qf1_loss + qf2_loss
-                optimizer_crt.zero_grad()
-                q_loss.backward()
-                optimizer_crt.step()
+            if model_params["automatic_entropy_tuning"]:
+                alpha_loss = -(
+                    log_alpha * (log_pi + target_entropy).detach()
+                ).mean()
 
-                if model_params["automatic_entropy_tuning"]:
-                    alpha_loss = -(
-                        log_alpha * (log_pi + target_entropy).detach()
-                    ).mean()
+                alpha_optim.zero_grad()
+                alpha_loss.backward()
+                alpha_optim.step()
 
-                    alpha_optim.zero_grad()
-                    alpha_loss.backward()
-                    alpha_optim.step()
+                alpha = log_alpha.exp()
+            else:
+                alpha_loss = torch.tensor(0.0).to(device)
+            processed_samples += batch_size
 
-                    alpha = log_alpha.exp()
-                    alpha_tlogs = alpha.clone()  # For TensorboardX logs
-                else:
-                    alpha_loss = torch.tensor(0.0).to(device)
-                    alpha_tlogs = torch.tensor(alpha)  # For TensorboardX logs
-                processed_samples += batch_size
+            n_grads += 1
+            grad_time = time.perf_counter()
+            metrics["train/loss_alpha"] = alpha_loss.cpu().detach().numpy()
+            metrics["train/alpha"] = alpha.cpu().detach().numpy()
+            metrics["train/loss_pi"] = policy_loss.cpu().detach().numpy()
+            metrics["train/loss_Q1"] = qf1_loss.cpu().detach().numpy()
+            metrics["train/loss_Q2"] = qf2_loss.cpu().detach().numpy()
+            metrics['speed/samples'] = new_samples/(sample_time - st_time)
+            metrics['speed/grad'] = 1/(grad_time - sample_time)
+            metrics['speed/total'] = 1/(grad_time - st_time)
+            metrics['counters/samples'] = collected_samples
+            metrics['counters/grads'] = n_grads
+            metrics['counters/episodes'] = n_episodes
+            metrics["counters/buffer_len"] = len(exp_buffer)
+            if ep_infos:
+                for key in ep_infos[0].keys():
+                    metrics[key] = np.mean([info[key] for info in ep_infos])
+            wandb.log(metrics)
 
             if processed_samples >= next_check_point:
                 next_check_point = (
@@ -487,15 +481,6 @@ def train(
                             "avg_reward:%.4f, avg_loss:%f"
                             % (reward_avg, policy_loss)
                         )
-                        tracker.track_training_sac(
-                            processed_samples,
-                            reward_avg,
-                            policy_loss.item(),
-                            qf1_loss.item(),
-                            qf2_loss.item(),
-                            alpha_tlogs.item(),
-                            alpha_loss.item(),
-                        )
                         policy_loss = 0.0
                         last_loss_average = processed_samples
 
@@ -518,6 +503,7 @@ def train(
             errfile.write(traceback.format_exc())
 
     finally:
+        wandb.finish()
         if not finish_event.is_set():
             print("Train process set finish flag.")
             finish_event.set()

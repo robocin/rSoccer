@@ -4,7 +4,7 @@ MODEL_HYPERPARAMS = {  # SAC
     'crt_type': 'linear',
     'save_model_frequency': 500000,
     'replay_size': 1000000,
-    'replay_initial': 100000,
+    'replay_initial': 512,
     'target_net_sync': 1 - 1e-3,
     'sync_freq': 0,
     'epsilon_frames': 10 ** 5,
