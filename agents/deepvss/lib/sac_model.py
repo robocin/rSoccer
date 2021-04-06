@@ -161,7 +161,7 @@ class AgentSAC(ptan.agent.BaseAgent):
     Agent implementing Orstein-Uhlenbeck exploration process
     """
 
-    def __init__(self, net, device="cpu", ou_enabled=True, ou_mu=0.0, ou_teta=0.15, ou_sigma=0.2):
+    def __init__(self, net, device="cpu", ou_enabled=False, ou_mu=0.0, ou_teta=0.15, ou_sigma=0.2):
         self.net = net
         self.device = device
         self.ou_enabled = ou_enabled
@@ -173,25 +173,12 @@ class AgentSAC(ptan.agent.BaseAgent):
     def initial_state(self):
         return None
 
-    def __call__(self, states, agent_states):
+    def __call__(self, states):
         self.ou_epsilon = 1.0  # self.selector.epsilon
         #self.ou_epsilon = np.max((self.ou_epsilon*self.ou_epsilon_decay, 0.2))
-
         states_v = ptan.agent.float32_preprocessor(states).to(self.device)
         mu_v, _, _ = self.net.sample(states_v)
         actions = mu_v.data.cpu().numpy()
 
-        if self.ou_enabled and self.ou_epsilon > 0:
-            new_a_states = []
-            for a_state, action in zip(agent_states, actions):
-                if a_state is None:
-                    a_state = np.zeros(shape=action.shape, dtype=np.float32)
-                a_state += self.ou_teta * (self.ou_mu - a_state)
-                a_state += self.ou_sigma * np.random.normal(size=action.shape)
-
-                action += self.ou_epsilon * a_state
-                new_a_states.append(a_state)
-        else:
-            new_a_states = agent_states
-        actions = np.clip(actions, -1, 1)
-        return actions, new_a_states
+        actions = np.clip(actions, -1, 1)[0]
+        return actions
