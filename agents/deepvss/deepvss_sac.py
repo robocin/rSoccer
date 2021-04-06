@@ -110,7 +110,8 @@ if __name__ == "__main__":
 
         sys.stdout.flush()
 
-        env = gym.make("SSLGoToBallIR-v1")
+        env_name = "SSLGoToBallIR-v1"
+        env = gym.make(env_name)
         state_shape, action_shape = env.observation_space, env.action_space
         model_params["state_shape"] = state_shape
         model_params["action_shape"] = action_shape
@@ -180,9 +181,7 @@ if __name__ == "__main__":
             checkpoint["exp"] = args.exp[0]
 
         writer_path = model_params["data_path"] + "/logs/" + run_name
-        writer = SummaryWriter(
-            log_dir=writer_path + "/agents", comment="-agent"
-        )
+        
 
         queue_size = model_params["batch_size"]
         exp_queue = mp.Queue(maxsize=queue_size)
@@ -190,22 +189,23 @@ if __name__ == "__main__":
         torch.set_num_threads(20)
         print("Threads available: %d" % torch.get_num_threads())
 
-        th_a = threading.Thread(
-            target=play,
-            args=(
-                model_params,
-                net,
-                device,
-                exp_queue,
-                env,
-                args.test,
-                writer,
-                collected_samples,
-                finish_event,
-            ),
-        )
-        play_threads.append(th_a)
-        th_a.start()
+        for _ in range(2):
+            th_a = mp.Process(
+                target=play,
+                args=(
+                    model_params,
+                    net,
+                    device,
+                    exp_queue,
+                    env_name,
+                    args.test,
+                    writer_path,
+                    collected_samples,
+                    finish_event,
+                ),
+            )
+            play_threads.append(th_a)
+            th_a.start()
 
         if args.test:
             while True:
