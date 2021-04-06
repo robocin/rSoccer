@@ -169,21 +169,21 @@ class SSLGoToBallIREnv(SSLBaseEnv):
             pos_frame.robots_yellow[i] = Robot(x=x(), y=y(), theta=theta())
             agents.append(pos_frame.robots_yellow[i])
 
-        def same_position_ref(obj, ref, radius):
-            if obj.x >= ref.x - radius and obj.x <= ref.x + radius and \
-                    obj.y >= ref.y - radius and obj.y <= ref.y + radius:
-                return True
-            return False
+        # def same_position_ref(obj, ref, radius):
+        #     if obj.x >= ref.x - radius and obj.x <= ref.x + radius and \
+        #             obj.y >= ref.y - radius and obj.y <= ref.y + radius:
+        #         return True
+        #     return False
 
-        radius_ball = 0.03
-        radius_robot = 0.1
+        # radius_ball = 0.03
+        # radius_robot = 0.1
 
-        for i in range(len(agents)):
-            while same_position_ref(agents[i], pos_frame.ball, radius_ball):
-                agents[i] = Robot(x=x(), y=y(), theta=theta())
-            for j in range(i):
-                while same_position_ref(agents[i], agents[j], radius_robot):
-                    agents[i] = Robot(x=x(), y=y(), theta=theta())
+        # for i in range(len(agents)):
+        #     while same_position_ref(agents[i], pos_frame.ball, radius_ball):
+        #         agents[i] = Robot(x=x(), y=y(), theta=theta())
+        #     for j in range(i):
+        #         while same_position_ref(agents[i], agents[j], radius_robot):
+        #             agents[i] = Robot(x=x(), y=y(), theta=theta())
 
         for i in range(self.n_robots_blue):
             pos_frame.robots_blue[i] = agents[i]
