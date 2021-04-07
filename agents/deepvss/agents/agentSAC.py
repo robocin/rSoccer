@@ -73,7 +73,7 @@ def calc_loss_sac(
     state_batch, action_batch, reward_batch,\
         mask_batch, next_state_batch = common.unpack_batch(batch)
 
-    gamma = model_params["gamma"]
+    gamma = model_params["gamma"]**model_params['REWARD_STEPS']
 
     states_v = torch.tensor(state_batch, dtype=torch.float32)
     next_states_v = torch.tensor(next_state_batch, dtype=torch.float32)
@@ -161,6 +161,7 @@ def play(
 ):
 
     try:
+        tracer = common.NStepTracer(n=params["REWARD_STEPS"], gamma=params["gamma"])
         agent_env = gym.make(agent_env)
         agent = sac_model.AgentSAC(
             net,
@@ -169,45 +170,43 @@ def play(
             ou_sigma=params["ou_sigma"],
         )
         print(f"Started from sample {collected_samples.value}.")
-        state = agent_env.reset()
         matches_played = 0
-        epi_reward = 0
-        then = time.time()
         evaluation = False
-        steps = 0
 
         while not finish_event.is_set():
-            action = agent([state])
-            next_state, reward, done, info = agent_env.step(action)
-            steps += 1
-            epi_reward += reward
-            next_state = next_state if not done else None
-            exp = ptan.experience.ExperienceFirstLast(
-                state, action, reward, next_state
-            )
-            state = next_state
-            if not test and not evaluation:
-                exp_queue.put(exp)
-            elif test:
-                agent_env.render()
+            state = agent_env.reset()
+            tracer.reset()
+            then = time.time()
+            steps = 0
+            epi_reward = 0
+            for steps in range(agent_env.spec.max_episode_steps):
+                action = agent([state])
+                next_state, reward, done, info = agent_env.step(action)
+                steps += 1
+                epi_reward += reward
+                next_state = next_state if not done else None
+                tracer.add(state, action, reward, done)
+                state = next_state
+                if not test and not evaluation:
+                    while tracer:
+                        exp_queue.put(tracer.pop())
+                elif test:
+                    agent_env.render()
 
-            if done:
-                fps = steps / (time.time() - then)
-                then = time.time()
-                info['fps'] = fps
-                info['ep_steps'] = steps
-                info['ep_rw'] = epi_reward
-                exp_queue.put(info)
-                print(f"<======Match {matches_played}======>")
-                print(f"-------Reward:", epi_reward)
-                print(f"-------FPS:", fps)
-                print(f"<==================================>\n")
-                epi_reward = 0
-                steps = 0
-                matches_played += 1
-                state = agent_env.reset()
-
-            collected_samples.value += 1
+                collected_samples.value += 1
+                if done:
+                    fps = steps / (time.time() - then)
+                    info['fps'] = fps
+                    info['ep_steps'] = steps
+                    info['ep_rw'] = epi_reward
+                    exp_queue.put(info)
+                    print(f"<======Match {matches_played}======>")
+                    print(f"-------Reward:", epi_reward)
+                    print(f"-------FPS:", fps)
+                    print(f"<==================================>\n")
+                    matches_played += 1
+                    break
+ 
 
     except KeyboardInterrupt:
         print("...Agent Finishing...")

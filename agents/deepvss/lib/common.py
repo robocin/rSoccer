@@ -3,6 +3,8 @@ import os
 import struct
 import sys
 import time
+from collections import deque, namedtuple
+from itertools import islice
 
 import numpy as np
 import ptan
@@ -20,7 +22,8 @@ def unpack_batch(batch):
         if exp.last_state is None:
             last_states.append(state)  # the result will be masked anyway
         else:
-            last_states.append(np.array(exp.last_state, copy=False, dtype=np.float))
+            last_states.append(
+                np.array(exp.last_state, copy=False, dtype=np.float))
     return np.array(states, copy=False), np.array(actions), np.array(rewards, dtype=np.float32), \
         np.array(dones, dtype=np.uint8), np.array(last_states, copy=False)
 
@@ -54,6 +57,75 @@ def soft_update(target, source, tau):
 def hard_update(target, source):
     for target_param, param in zip(target.parameters(), source.parameters()):
         target_param.data.copy_(param.data)
+
+
+class NStepTracer():
+    """
+    A short-term cache for n-step bootstrapping.
+
+    Parameters
+    ----------
+    n : positive int
+
+        The number of steps over which to bootstrap.
+
+    gamma : float between 0 and 1
+
+        The amount by which to discount future rewards.
+    """
+
+    def __init__(self, n, gamma):
+        self.n = int(n)
+        self.gamma = float(gamma)
+        self.reset()
+
+    def reset(self):
+        self._deque_s = deque([])
+        self._deque_r = deque([])
+        self._done = False
+        self._gammas = np.power(self.gamma, np.arange(self.n))
+        self._gamman = np.power(self.gamma, self.n)
+
+    def add(self, s, a, r, done):
+        if self._done and len(self):
+            # ("please flush cache (or repeatedly call popleft) before appending new transitions")
+            raise Exception
+
+        self._deque_s.append((s, a))
+        self._deque_r.append(r)
+        self._done = bool(done)
+
+    def __len__(self):
+        return len(self._deque_s)
+
+    def __bool__(self):
+        return bool(len(self)) and (self._done or len(self) > self.n)
+
+    def pop(self):
+        if not self:
+            # ("cache needs to receive more transitions before it can be popped from")
+            raise Exception
+
+        # pop state-action (propensities) pair
+        s, a = self._deque_s.popleft()
+
+        # n-step partial return
+        zipped = zip(self._gammas, self._deque_r)
+        rn = sum(x * r for x, r in islice(zipped, self.n))
+        self._deque_r.popleft()
+
+        # keep in mind that we've already popped (s, a)
+        if len(self) >= self.n:
+            s_next, a_next = self._deque_s[self.n - 1]
+            done = False
+        else:
+            # no more bootstrapping
+            s_next, a_next, done = None, a, True
+
+        return ptan.experience.ExperienceFirstLast(state=s,
+                                                   action=a,
+                                                   reward=rn,
+                                                   last_state=s_next)
 
 
 class RewardTracker:

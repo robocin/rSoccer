@@ -189,7 +189,7 @@ if __name__ == "__main__":
         torch.set_num_threads(20)
         print("Threads available: %d" % torch.get_num_threads())
 
-        for i in range(4):
+        for i in range(2):
             th_a = mp.Process(
                 target=play,
                 args=(
@@ -217,19 +217,18 @@ if __name__ == "__main__":
             model_params["action_format"] = "3f"
             model_params["state_format"] = f"{state_shape.shape[0]}f"
             net.share_memory()
-            train_process = mp.Process(
-                target=train,
-                args=(
-                    model_params,
-                    net,
-                    device,
-                    exp_queue,
-                    finish_event,
-                    checkpoint,
-                ),
-            )
-            train_process.start()
-            train_process.join()
+            train(model_params,net,device,exp_queue,finish_event,checkpoint)
+            # train_process = mp.Process(
+            #     target=train,
+            #     args=(
+            #         model_params,
+            #         net,
+            #         device,
+            #         exp_queue,
+            #         finish_event,
+            #         checkpoint,
+            #     ),
+            # )
             print("Train process joined.")
 
     except KeyboardInterrupt:
@@ -247,10 +246,6 @@ if __name__ == "__main__":
 
         print("queue is empty")
 
-        if train_process is not None:
-            train_process.join()
-
         print("Waiting for threads to finish...")
         for p in play_threads:
-            p.terminate()
             p.join()
