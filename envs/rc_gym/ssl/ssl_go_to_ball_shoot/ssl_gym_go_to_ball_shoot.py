@@ -55,7 +55,7 @@ class SSLGoToBallShootEnv(SSLBaseEnv):
 
         # scale max dist rw to 1 Considering that max possible move rw if ball and robot are in opposite corners of field
         self.ball_dist_scale = np.linalg.norm([self.field.width, self.field.length/2])
-        self.ball_grad_scale = np.linalg.norm([self.field.width/2, self.field.length/2])
+        self.ball_grad_scale = np.linalg.norm([self.field.width/2, self.field.length/2])/4
         
         # scale max energy rw to 1 Considering that max possible energy if max robot wheel speed sent every step
         wheel_max_rad_s = 160
@@ -143,7 +143,7 @@ class SSLGoToBallShootEnv(SSLBaseEnv):
             return rbt.x > half_len - pen_len and abs(rbt.y) < half_pen_wid
         
         # Check if robot exited field right side limits
-        if robot.x < 0.2 or abs(robot.y) > half_wid:
+        if robot.x < -0.2 or abs(robot.y) > half_wid:
             done = True
             self.reward_shaping_total['done_rbt_out'] += 1
         # If flag is set, end episode if robot enter gk area
