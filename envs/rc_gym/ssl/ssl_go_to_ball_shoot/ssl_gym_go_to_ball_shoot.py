@@ -47,7 +47,7 @@ class SSLGoToBallShootEnv(SSLBaseEnv):
         self.action_space = gym.spaces.Box(low=-1, high=1,
                                            shape=(5, ), dtype=np.float32)
         
-        n_obs = 4 + 7*self.n_robots_blue + 5*self.n_robots_yellow
+        n_obs = 4 + 8*self.n_robots_blue + 2*self.n_robots_yellow
         self.observation_space = gym.spaces.Box(low=-self.NORM_BOUNDS,
                                                 high=self.NORM_BOUNDS,
                                                 shape=(n_obs, ),
@@ -93,13 +93,11 @@ class SSLGoToBallShootEnv(SSLBaseEnv):
             observation.append(self.norm_v(self.frame.robots_blue[i].v_x))
             observation.append(self.norm_v(self.frame.robots_blue[i].v_y))
             observation.append(self.norm_w(self.frame.robots_blue[i].v_theta))
+            observation.append(1 if self.frame.robots_blue[i].infrared else 0)
 
         for i in range(self.n_robots_yellow):
             observation.append(self.norm_pos(self.frame.robots_yellow[i].x))
             observation.append(self.norm_pos(self.frame.robots_yellow[i].y))
-            observation.append(self.norm_v(self.frame.robots_yellow[i].v_x))
-            observation.append(self.norm_v(self.frame.robots_yellow[i].v_y))
-            observation.append(self.norm_w(self.frame.robots_yellow[i].v_theta))
 
         return np.array(observation, dtype=np.float32)
 
@@ -120,6 +118,10 @@ class SSLGoToBallShootEnv(SSLBaseEnv):
         if self.reward_shaping_total is None:
             self.reward_shaping_total = {
                 'goal': 0,
+                'rbt_in_gk_area': 0,
+                'done_ball_out': 0,
+                'done_ball_out_right': 0,
+                'done_rbt_out': 0,
                 'ball_dist': 0,
                 'ball_grad': 0,
                 'energy': 0
@@ -141,18 +143,25 @@ class SSLGoToBallShootEnv(SSLBaseEnv):
             return rbt.x > half_len - pen_len and abs(rbt.y) < half_pen_wid
         
         # Check if robot exited field right side limits
-        if robot.x < 0 or abs(robot.y) > half_wid:
+        if robot.x < 0.2 or abs(robot.y) > half_wid:
             done = True
+            self.reward_shaping_total['done_rbt_out'] += 1
         # If flag is set, end episode if robot enter gk area
         elif not self.enter_goal_area and robot_in_gk_area(robot):
             done = True
+            self.reward_shaping_total['rbt_in_gk_area'] += 1
         # Check ball for ending conditions
         elif ball.x < 0 or abs(ball.y) > half_wid:
             done = True
+            self.reward_shaping_total['done_ball_out'] += 1
         elif ball.x > half_len:
             done = True
-            reward = 1 if abs(ball.y) < half_goal_wid else 0
-            self.reward_shaping_total['goal'] += reward
+            if abs(ball.y) < half_goal_wid:
+                reward = 5 
+                self.reward_shaping_total['goal'] += 1
+            else:
+                reward = 0
+                self.reward_shaping_total['done_ball_out_right'] += 1
         elif self.last_frame is not None:
             ball_dist_rw = self.__ball_dist_rw() / self.ball_dist_scale
             self.reward_shaping_total['ball_dist'] += ball_dist_rw
@@ -181,7 +190,7 @@ class SSLGoToBallShootEnv(SSLBaseEnv):
             penalty_len = self.field.penalty_length
             def x(): return random.uniform(0.3, half_len - penalty_len - 0.3)
             def y(): return random.uniform(-half_wid + 0.1, half_wid - 0.1)
-            def theta(): return random.uniform(-180, 180)
+            def theta(): return random.uniform(0, 360)
         else:
             def x(): return self.field.length / 4
             def y(): return self.field.width / 8
@@ -189,9 +198,17 @@ class SSLGoToBallShootEnv(SSLBaseEnv):
 
         pos_frame: Frame = Frame()
 
+        def same_position_ref(obj, ref, dist):
+            if abs(obj.x - ref.x) < dist and abs(obj.y - ref.y) < dist:
+                return True
+            return False
+
         pos_frame.ball = Ball(x=x(), y=y())
 
+        d_ball_rbt = (self.field.ball_radius + self.field.rbt_radius) * 1.1
         pos_frame.robots_blue[0] = Robot(x=x(), y=-y(), theta=theta())
+        while same_position_ref(pos_frame.robots_blue[0],pos_frame.ball, d_ball_rbt):
+                    pos_frame.robots_blue[0] = Robot(x=x(), y=y(), theta=theta())
 
         return pos_frame
     
