@@ -180,15 +180,18 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
                             self.frame.robots_blue[shooter_id].y])
         receiver = np.array([self.frame.robots_blue[self.receiver_id].x,
                              self.frame.robots_blue[self.receiver_id].y])
-        receiver_angle = np.deg2rad(
-            self.frame.robots_blue[self.receiver_id].theta)
+        receiver_angle = self.frame.robots_blue[self.receiver_id].theta
         receiver_ball = receiver - ball
         receiver_ball = receiver_ball/np.linalg.norm(receiver_ball)
-        receiver_ball_angle = np.arctan2(receiver_ball[1], receiver_ball[0])
-        receiver_angle_reward = receiver_ball_angle - receiver_angle
-        receiver_angle_reward = (180 - np.rad2deg(receiver_angle_reward))/180
+        receiver_ball_angle = np.arctan2(receiver_ball[1], receiver_ball[0]) + np.pi
+        min_diff = np.rad2deg(receiver_ball_angle) - receiver_angle
+        receiver_angle_reward = (min_diff + 180) % 360 - 180
+        receiver_angle_reward = np.cos(np.deg2rad(receiver_angle_reward))
 
         shooter_ball = ball - shooter
         shooter_ball = shooter_ball/np.linalg.norm(shooter_ball)
-        angle_reward = np.dot(shooter_ball, receiver_ball)
-        return angle_reward, receiver_angle_reward
+        shooter_ball_angle = np.arctan2(shooter_ball[1], shooter_ball[0])
+        min_diff = np.rad2deg(receiver_ball_angle) - np.rad2deg(shooter_ball_angle)
+        shooter_angle_reward = (min_diff + 180) % 360 - 180
+        shooter_angle_reward = np.cos(np.deg2rad(shooter_angle_reward))
+        return shooter_angle_reward, receiver_angle_reward
