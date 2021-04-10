@@ -107,7 +107,7 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
             reward += 1
             self.reward_shaping_total['pass_score'] += 1
         else:
-            rw_dist = w_dist*(1 - self.__ball_dist_rw())
+            rw_dist = w_dist*self.__ball_dist_rw()
             rw_angle = w_angle * self.__angle_reward()
             reward += rw_dist + rw_angle
             self.reward_shaping_total['ball_dist'] += rw_dist
