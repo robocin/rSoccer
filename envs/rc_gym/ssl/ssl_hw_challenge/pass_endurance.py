@@ -123,7 +123,8 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
             self.reward_shaping_total['angle_sht'] += rw_angle_shooter
             self.reward_shaping_total['angle_rec'] += rw_angle_receiver
         if done:
-            reward -= 1
+            reward[0] -= 1
+            reward[1] -= 1
 
         return reward, done
 
