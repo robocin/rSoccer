@@ -224,5 +224,8 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
                 else:
                     shooter_angle_reward = 1            
         else:
-            shooter_angle_reward = cos_shooter
+            if self.holding_steps < 20:
+                shooter_angle_reward = cos_shooter
+            else:
+                shooter_angle_reward -= 0.5
         return shooter_angle_reward, receiver_angle_reward
