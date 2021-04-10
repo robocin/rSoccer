@@ -41,37 +41,43 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
         super().__init__(field_type=2, n_robots_blue=2,
                          n_robots_yellow=0, time_step=0.025)
         self.action_space = gym.spaces.Box(low=-1, high=1,
-                                           shape=(2, 3), dtype=np.float32)
+                                           shape=(self.n_robots_blue, 3),
+                                           dtype=np.float32)
 
         n_obs = 4 + 4*self.n_robots_blue
         self.observation_space = gym.spaces.Box(low=-self.NORM_BOUNDS,
                                                 high=self.NORM_BOUNDS,
-                                                shape=(n_obs, ),
+                                                shape=(self.n_robots_blue,
+                                                       n_obs),
                                                 dtype=np.float32)
         self.receiver_id = 1
 
         print('Environment initialized')
 
     def _frame_to_observations(self):
+        observations = [None]*self.n_robots_blue
 
-        observation = []
+        ball = []
 
-        observation.append(self.norm_pos(self.frame.ball.x))
-        observation.append(self.norm_pos(self.frame.ball.y))
-        observation.append(self.norm_v(self.frame.ball.v_x))
-        observation.append(self.norm_v(self.frame.ball.v_y))
-
+        ball.append(self.norm_pos(self.frame.ball.x))
+        ball.append(self.norm_pos(self.frame.ball.y))
+        ball.append(self.norm_v(self.frame.ball.v_x))
+        ball.append(self.norm_v(self.frame.ball.v_y))
+        robots = [list() for _ in range(self.n_robots_blue)]
         for i in range(self.n_robots_blue):
-            observation.append(self.norm_pos(self.frame.robots_blue[i].x))
-            observation.append(self.norm_pos(self.frame.robots_blue[i].y))
-            observation.append(
+            robots[i].append(self.norm_pos(self.frame.robots_blue[i].x))
+            robots[i].append(self.norm_pos(self.frame.robots_blue[i].y))
+            robots[i].append(
                 np.sin(np.deg2rad(self.frame.robots_blue[i].theta))
             )
-            observation.append(
+            robots[i].append(
                 np.cos(np.deg2rad(self.frame.robots_blue[i].theta))
             )
-
-        return np.array(observation, dtype=np.float32)
+        for i in range(self.n_robots_blue):
+            observations[i] = ball + robots[i]
+            for k in [j for j in range(self.n_robots_blue) if j!=i]:
+                observations[i] = observations[i] + robots[k]
+        return np.array(observations, dtype=np.float32)
 
     def reset(self):
         self.reward_shaping_total = None
@@ -83,7 +89,6 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
 
     def _get_commands(self, actions):
         commands = []
-
         for i, action in enumerate(actions):
             cmd = Robot(yellow=False, id=i, v_x=0,
                         v_y=0, v_theta=action[0],
@@ -97,21 +102,26 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
 
         w_dist = 0.8
         w_angle = 0.2
-        reward = 0
+        reward = [0, 0]
         done = self.__wrong_ball()
         if self.reward_shaping_total is None:
-            self.reward_shaping_total = {'pass_score': 0, 'angle': 0,
-                                         'ball_dist': 0, 'energy': 0}
+            self.reward_shaping_total = {'pass_score': 0, 'angle_sht': 0,
+                                         'ball_dist': 0, 'angle_rec': 0}
         if self.frame.robots_blue[self.receiver_id].infrared:
             self.receiver_id = 1 - self.receiver_id
-            reward += 1
+            reward[0] += 1
+            reward[1] += 1
             self.reward_shaping_total['pass_score'] += 1
         else:
+            shooter_rw, receiver_rw = self.__angle_reward()
             rw_dist = w_dist*self.__ball_dist_rw()
-            rw_angle = w_angle * self.__angle_reward()
-            reward += rw_dist + rw_angle
+            rw_angle_shooter = w_angle * shooter_rw
+            rw_angle_receiver = w_angle * receiver_rw
+            reward[0] += rw_dist + rw_angle_shooter
+            reward[1] += rw_angle_receiver
             self.reward_shaping_total['ball_dist'] += rw_dist
-            self.reward_shaping_total['angle'] += rw_angle
+            self.reward_shaping_total['angle_sht'] += rw_angle_shooter
+            self.reward_shaping_total['angle_rec'] += rw_angle_receiver
         if done:
             reward -= 1
 
@@ -157,20 +167,21 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
         return ball_dist_rw
 
     def __angle_reward(self):
-        '''Calculate Move to ball reward
-
-        Cosine between the robot vel vector and the vector robot -> ball.
-        This indicates rather the robot is moving towards the ball or not.
-        '''
         shooter_id = 0 if self.receiver_id else 1
         ball = np.array([self.frame.ball.x, self.frame.ball.y])
-        robot_shooter = np.array([self.frame.robots_blue[shooter_id].x,
-                                  self.frame.robots_blue[shooter_id].y])
-        robot_receiver = np.array([self.frame.robots_blue[self.receiver_id].x,
-                                   self.frame.robots_blue[self.receiver_id].y])
-        shooter_ball = ball - robot_shooter
-        shooter_ball = shooter_ball/np.linalg.norm(shooter_ball)
-        receiver_ball = robot_receiver - ball
+        shooter = np.array([self.frame.robots_blue[shooter_id].x,
+                            self.frame.robots_blue[shooter_id].y])
+        receiver = np.array([self.frame.robots_blue[self.receiver_id].x,
+                             self.frame.robots_blue[self.receiver_id].y])
+        receiver_angle = np.deg2rad(
+            self.frame.robots_blue[self.receiver_id].theta)
+        receiver_ball = receiver - ball
         receiver_ball = receiver_ball/np.linalg.norm(receiver_ball)
+        receiver_ball_angle = np.arctan2(receiver_ball[1], receiver_ball[0])
+        receiver_angle_reward = receiver_ball_angle - receiver_angle
+        receiver_angle_reward = (180 - np.rad2deg(receiver_angle_reward))/180
+
+        shooter_ball = ball - shooter
+        shooter_ball = shooter_ball/np.linalg.norm(shooter_ball)
         angle_reward = np.dot(shooter_ball, receiver_ball)
-        return angle_reward
+        return angle_reward, receiver_angle_reward
