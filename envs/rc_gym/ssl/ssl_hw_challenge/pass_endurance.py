@@ -168,7 +168,7 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
         pos_frame.robots_blue[0] = Robot(
             x=pos_frame.ball.x, y=pos_frame.ball.y-0.1, theta=90
         )
-        pos_frame.robots_blue[1] = Robot(x=pos_frame.ball.x, y=-pos_frame.ball.y, theta=270)
+        pos_frame.robots_blue[1] = Robot(x=x(), y=-pos_frame.ball.y, theta=270)
 
         return pos_frame
    
