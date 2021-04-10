@@ -15,12 +15,11 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
         Description:
 
         Observation:
-            Type: Box(4 + 4*n_robots_blue)
+            Type: Box(4 + 5*n_robots_blue)
             Normalized Bounds to [-1.2, 1.2]
             Num      Observation normalized  
             0->3     Ball [X, Y, V_x, V_y]
-            4->7    id 0 Blue [X, Y, sin(theta), cos(theta)]
-            8->11    id 1 Blue [X, Y, sin(theta), cos(theta)]
+            4->N    id 0 Blue [X, Y, sin(theta), cos(theta), receiver]
 
         Actions:
             Type: Box(2, 3)
@@ -44,7 +43,7 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
                                            shape=(self.n_robots_blue, 3),
                                            dtype=np.float32)
 
-        n_obs = 4 + 4*self.n_robots_blue
+        n_obs = 4 + 5*self.n_robots_blue
         self.observation_space = gym.spaces.Box(low=-self.NORM_BOUNDS,
                                                 high=self.NORM_BOUNDS,
                                                 shape=(self.n_robots_blue,
@@ -73,6 +72,7 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
             robots[i].append(
                 np.cos(np.deg2rad(self.frame.robots_blue[i].theta))
             )
+            robots[i].append(self.receiver_id == i)
         for i in range(self.n_robots_blue):
             observations[i] = ball + robots[i]
             for k in [j for j in range(self.n_robots_blue) if j!=i]:
