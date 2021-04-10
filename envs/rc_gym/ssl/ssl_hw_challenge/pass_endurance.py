@@ -88,13 +88,18 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
         return observation, reward, done, self.reward_shaping_total
 
     def _get_commands(self, actions):
+        shooter_id = int(not self.receiver_id)
         commands = []
-        for i, action in enumerate(actions):
-            cmd = Robot(yellow=False, id=i, v_x=0,
-                        v_y=0, v_theta=action[0],
-                        kick_v_x=action[1],
-                        dribbler=True if action[2] > 0 else False)
-            commands.append(cmd)
+        cmd = Robot(yellow=False, id=shooter_id, v_x=0,
+                    v_y=0, v_theta=actions[0][0],
+                    kick_v_x=actions[0][1],
+                    dribbler=True if actions[0][2] > 0 else False)
+        commands.append(cmd)
+        cmd = Robot(yellow=False, id=self.receiver_id, v_x=0,
+                    v_y=0, v_theta=actions[1][0],
+                    kick_v_x=actions[1][1],
+                    dribbler=True if actions[1][2] > 0 else False)
+        commands.append(cmd)
 
         return commands
 
@@ -113,12 +118,13 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
             reward[1] += 1
             self.reward_shaping_total['pass_score'] += 1
         else:
+            shooter_id = int(not self.receiver_id)
             shooter_rw, receiver_rw = self.__angle_reward()
             rw_dist = w_dist*self.__ball_dist_rw()
             rw_angle_shooter = w_angle * shooter_rw
             rw_angle_receiver = w_angle * receiver_rw
-            reward[0] += rw_dist + rw_angle_shooter
-            reward[1] += rw_angle_receiver
+            reward[shooter_id] += rw_dist + rw_angle_shooter
+            reward[self.receiver_id] += rw_angle_receiver
             self.reward_shaping_total['ball_dist'] += rw_dist
             self.reward_shaping_total['angle_sht'] += rw_angle_shooter
             self.reward_shaping_total['angle_rec'] += rw_angle_receiver
