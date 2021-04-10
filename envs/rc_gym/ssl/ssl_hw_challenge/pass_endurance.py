@@ -171,7 +171,6 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
         return ball_y > rec_y if self.receiver_id else ball_y < rec_y
 
     def __ball_dist_rw(self):
-        assert(self.last_frame is not None)
         # Calculate new ball dist
         ball = self.frame.ball
         robot = self.frame.robots_blue[self.receiver_id]
