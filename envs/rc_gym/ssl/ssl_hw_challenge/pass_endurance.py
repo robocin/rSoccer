@@ -36,6 +36,7 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
             30 seconds (1200 steps) or wrong pass
     """
     original_vec = None
+    max_dist = 100
 
     def __init__(self):
         super().__init__(field_type=2, n_robots_blue=2,
@@ -85,6 +86,7 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
         self.reward_shaping_total = None
         state = super().reset()
         self.original_vec = self.__get_shooter_receiver_vec()
+        self.max_dist = self.__ball_dist_rw()
         self.n_steps = 0
         return state
 
@@ -126,7 +128,7 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
         else:
             shooter_id = int(not self.receiver_id)
             shooter_rw, receiver_rw = self.__angle_reward()
-            rw_dist = w_dist*self.__ball_dist_rw()
+            rw_dist = -w_dist*self.__ball_dist_rw()/self.max_dist
             rw_angle_shooter = shooter_rw/2
             rw_angle_receiver = w_angle * receiver_rw
             reward[shooter_id] += rw_dist + rw_angle_shooter
@@ -170,24 +172,13 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
 
     def __ball_dist_rw(self):
         assert(self.last_frame is not None)
-
-        # Calculate previous ball dist
-        last_ball = self.last_frame.ball
-        last_robot = self.last_frame.robots_blue[self.receiver_id]
-        last_ball_pos = np.array([last_ball.x, last_ball.y])
-        last_robot_pos = np.array([last_robot.x, last_robot.y])
-        last_ball_dist = np.linalg.norm(last_robot_pos - last_ball_pos)
-
         # Calculate new ball dist
         ball = self.frame.ball
         robot = self.frame.robots_blue[self.receiver_id]
         ball_pos = np.array([ball.x, ball.y])
         robot_pos = np.array([robot.x, robot.y])
         ball_dist = np.linalg.norm(robot_pos - ball_pos)
-
-        ball_dist_rw = last_ball_dist - ball_dist
-
-        return ball_dist_rw
+        return ball_dist
 
     def __angle_reward(self):
         shooter_id = 0 if self.receiver_id else 1
@@ -211,4 +202,5 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
         else:
             shooter_ball /= np.linalg.norm(shooter_ball)
             shooter_angle_reward = np.dot(shooter_ball, self.original_vec)
+            shooter_angle_reward *= 1 if self.receiver_id else -1
         return shooter_angle_reward, receiver_angle_reward
