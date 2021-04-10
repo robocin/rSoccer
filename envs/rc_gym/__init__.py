@@ -99,3 +99,8 @@ register(id='SSLContestedPossessionEnv-v1',
          kwargs={'random_init' : True},
          max_episode_steps=1200
          )
+
+register(id='SSLPassEndurance-v0',
+         entry_point='rc_gym.ssl.ssl_hw_challenge:SSLPassEnduranceEnv',
+         max_episode_steps=1200
+         )
