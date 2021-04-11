@@ -40,7 +40,7 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
     original_vec = None
     max_dist = 100
     actions = {}
-
+    shooted = False
     def __init__(self):
         super().__init__(field_type=2, n_robots_blue=2,
                          n_robots_yellow=0, time_step=0.025)
@@ -149,7 +149,7 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
 
         pos_frame.ball = Ball(x=x(), y=y())
         factor = (pos_frame.ball.y/abs(pos_frame.ball.y))
-        offset = 0.11*factor
+        offset = 0.115*factor
         angle = 270 if factor > 0 else 90
         pos_frame.robots_blue[0] = Robot(
             x=pos_frame.ball.x, y=pos_frame.ball.y+offset, theta=angle
@@ -226,10 +226,9 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
         return np.clip(ball_dist_rw, -1, 1)
 
     def __angle_reward(self):
-        shooter_id = 0 if self.receiver_id else 1
         ball = np.array([self.frame.ball.x, self.frame.ball.y])
-        shooter = np.array([self.last_frame.robots_blue[shooter_id].x,
-                            self.last_frame.robots_blue[shooter_id].y])
+        shooter = np.array([self.last_frame.robots_blue[0].x,
+                            self.last_frame.robots_blue[0].y])
 
         ball = np.array([self.last_frame.ball.x, self.last_frame.ball.y])
         shooter_ball = ball - shooter
@@ -237,13 +236,13 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
         shooter_ball /= dist_ball
         cos_shooter = np.dot(shooter_ball, self.original_vec)
         shooter_angle_reward = 0
-        if dist_ball > 0.11:
-            if self.holding_steps != 0:
-                if np.rad2deg(np.arccos(cos_shooter)) > 1:
-                    shooter_angle_reward = -1
-                else:
-                    shooter_angle_reward = 1
-        else:
+        self.shooted = self.last_frame.robots_blue[0].infrared and self.actions[1] > 0
+        if self.shooted:
+            if np.rad2deg(np.arccos(cos_shooter)) > 1:
+                shooter_angle_reward = -1
+            else:
+                shooter_angle_reward = 1
+        elif self.last_frame.robots_blue[0].infrared:
             if self.holding_steps < 20:
                 shooter_angle_reward = cos_shooter
             else:
