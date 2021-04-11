@@ -49,7 +49,7 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
                                            shape=(3, ),
                                            dtype=np.float32)
 
-        n_obs = 4 + 5*self.n_robots_blue
+        n_obs = 4 + 4 + 2
         self.holding_steps = 0
         self.stopped_steps = 0
         self.recv_angle = 270
