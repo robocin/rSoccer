@@ -102,5 +102,5 @@ register(id='SSLContestedPossessionEnv-v1',
 
 register(id='SSLPassEndurance-v0',
          entry_point='rc_gym.ssl.ssl_hw_challenge:SSLPassEnduranceEnv',
-         max_episode_steps=1200
+         max_episode_steps=120
          )
