@@ -6,7 +6,6 @@ import gym
 import numpy as np
 from rc_gym.Entities import Ball, Frame, Robot
 from rc_gym.ssl.ssl_gym_base import SSLBaseEnv
-from sympy.geometry import Line
 
 
 class SSLPassEnduranceEnv(SSLBaseEnv):
@@ -143,11 +142,12 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
         '''Returns the position of each robot and ball for the initial frame'''
         pos_frame: Frame = Frame()
         def x(): return random.uniform(-1.5, 1.5)
-        def y(): return random.uniform(0, -1.5)
+        def y(): return random.uniform(1.5, -1.5)
 
         pos_frame.ball = Ball(x=x(), y=y())
+        offset = 0.11*(pos_frame.ball.y/abs(pos_frame.ball.y))
         pos_frame.robots_blue[0] = Robot(
-            x=pos_frame.ball.x, y=pos_frame.ball.y-0.11, theta=90
+            x=pos_frame.ball.x, y=pos_frame.ball.y+offset, theta=0
         )
         shooter = np.array([pos_frame.ball.x, pos_frame.ball.y-0.1])
         receiver = np.array([x(), -pos_frame.ball.y])
@@ -168,13 +168,15 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
                          self.frame.robots_blue[0].y])
         shooter = np.array([self.frame.robots_blue[1].x,
                             self.frame.robots_blue[1].y])
-        line_check = Line(shooter, recv).distance(ball) > 0.1
+        inside_x = min(recv[0], shooter[0]) < ball[0] < max(recv[0], shooter[0])
+        inside_y = min(recv[1], shooter[1]) < ball[1] < max(recv[1], shooter[1])
+        inside = inside_x and inside_y
         last_dist = np.linalg.norm(last_ball - recv)
         dist = np.linalg.norm(ball - recv)
         stopped = abs(last_dist - dist) < 0.02
         if stopped:
             self.stopped_steps += 1
-        return line_check or self.stopped_steps > 10
+        return self.stopped_steps > 10 and inside
 
     def __energy_rw(self):
         kick, dribbling = self.actions[1:]
