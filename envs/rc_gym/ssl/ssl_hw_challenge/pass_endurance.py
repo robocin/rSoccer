@@ -213,8 +213,10 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
         # Calculate new ball dist
         ball_pos = np.array([ball.x, ball.y])
         ball_dist = np.linalg.norm(goal - ball_pos)
+        vect = self.__get_shooter_receiver_vec()
         
-        ball_dist_rw = last_ball_dist - ball_dist
+        
+        ball_dist_rw = np.linalg.norm(vect) - ball_dist
         
         if ball_dist_rw > 1:
             print("ball_dist -> ", ball_dist_rw)
