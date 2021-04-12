@@ -49,7 +49,7 @@ class SSLHWDribblingEnv(SSLBaseEnv):
         self.action_space = gym.spaces.Box(low=-1, high=1,
                                            shape=(4, ), dtype=np.float32)
         
-        n_obs = 4 + 7*self.n_robots_blue + 2*self.n_robots_yellow
+        n_obs = 5 + 8*self.n_robots_blue + 2*self.n_robots_yellow
         self.observation_space = gym.spaces.Box(low=-self.NORM_BOUNDS,
                                                 high=self.NORM_BOUNDS,
                                                 shape=(n_obs, ),
@@ -74,6 +74,7 @@ class SSLHWDribblingEnv(SSLBaseEnv):
 
         observation = []
 
+        observation.append(((self.checkpoints_count/6)*2)-1)
         observation.append(self.norm_pos(self.frame.ball.x))
         observation.append(self.norm_pos(self.frame.ball.y))
         observation.append(self.norm_v(self.frame.ball.v_x))
@@ -91,8 +92,7 @@ class SSLHWDribblingEnv(SSLBaseEnv):
             observation.append(self.norm_v(self.frame.robots_blue[i].v_x))
             observation.append(self.norm_v(self.frame.robots_blue[i].v_y))
             observation.append(self.norm_w(self.frame.robots_blue[i].v_theta))
-            observation.append(1 if self.frame.robots_blue[i].infrared else -1))
-            observation.append(((self.checkpoints_count/6)*2)-1)
+            observation.append(1 if self.frame.robots_blue[i].infrared else -1)
 
         for i in range(self.n_robots_yellow):
             observation.append(self.norm_pos(self.frame.robots_yellow[i].x))
