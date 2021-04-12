@@ -125,7 +125,7 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
         if self.reward_shaping_total is None:
             self.reward_shaping_total = {'pass_score': 0, 'angle': 0,
                                          'ball_grad': 0}
-        if self.frame.robots_blue[1].infrared or dist_ball <= 0.11:
+        if self.frame.robots_blue[1].infrared or dist_ball <= 0.13:
             reward += 1
             self.reward_shaping_total['pass_score'] += 1
             done = True
