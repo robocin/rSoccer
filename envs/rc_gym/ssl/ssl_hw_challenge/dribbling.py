@@ -91,6 +91,8 @@ class SSLHWDribblingEnv(SSLBaseEnv):
             observation.append(self.norm_v(self.frame.robots_blue[i].v_x))
             observation.append(self.norm_v(self.frame.robots_blue[i].v_y))
             observation.append(self.norm_w(self.frame.robots_blue[i].v_theta))
+            observation.append(1 if self.frame.robots_blue[i].infrared else -1))
+            observation.append(((self.checkpoints_count/6)*2)-1)
 
         for i in range(self.n_robots_yellow):
             observation.append(self.norm_pos(self.frame.robots_yellow[i].x))
