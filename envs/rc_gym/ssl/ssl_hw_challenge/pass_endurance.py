@@ -87,6 +87,7 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
         self.original_vec = self.__get_shooter_receiver_vec()
         self.holding_steps = 0
         self.stopped_steps = 0
+        self.shooted = False
         return state
 
     def step(self, action):
@@ -95,6 +96,7 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
 
     def _get_commands(self, actions):
         commands = []
+        actions[1] = actions[1] if abs(actions[1]) > 0.5 else 0
         self.actions = actions
         cmd = Robot(yellow=False, id=0, v_x=0,
                     v_y=0, v_theta=actions[0],
@@ -106,24 +108,21 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
 
     def _calculate_reward_and_done(self):
 
-        w_en = 0.1
         w_angle = 0.2
         w_ball_grad = 0.8
         reward = 0
         done = False
         if self.reward_shaping_total is None:
             self.reward_shaping_total = {'pass_score': 0, 'angle': 0,
-                                         'energy': 0, 'ball_grad': 0}
+                                         'ball_grad': 0}
         if self.frame.robots_blue[1].infrared:
             reward += 1
             self.reward_shaping_total['pass_score'] += 1
             done = True
         else:
-            rw_angle = w_angle * self.__angle_reward()
-            rw_energy = w_en * self.__energy_rw()
+            rw_angle = w_angle * self.__angle_reward() if not self.shooted else 0
             rw_ball_grad = w_ball_grad * self.__ball_grad_rw()
-            reward = rw_angle + rw_energy + rw_ball_grad
-            self.reward_shaping_total['energy'] += rw_energy
+            reward = rw_angle + rw_ball_grad
             self.reward_shaping_total['angle'] += rw_angle
             self.reward_shaping_total['ball_grad'] += rw_ball_grad
         if self.__wrong_ball() or self.holding_steps > 15:
@@ -170,35 +169,24 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
         ball = np.array([self.frame.ball.x, self.frame.ball.y])
         last_ball = np.array([self.last_frame.ball.x, self.last_frame.ball.y])
 
-        recv = np.array([self.frame.robots_blue[0].x,
-                         self.frame.robots_blue[0].y])
-        shooter = np.array([self.frame.robots_blue[1].x,
-                            self.frame.robots_blue[1].y])
-        inside_x = min(recv[0], shooter[0]) < ball[0] < max(
-            recv[0], shooter[0])
-        inside_y = min(recv[1], shooter[1]) < ball[1] < max(
-            recv[1], shooter[1])
-        inside = not(inside_x and inside_y)
+        recv = np.array([self.frame.robots_blue[1].x,
+                         self.frame.robots_blue[1].y])
+        shooter = np.array([self.frame.robots_blue[0].x,
+                            self.frame.robots_blue[0].y])
+        comp_ball = np.array(ball*100, dtype=int)
+        comp_shoot = np.array(shooter*100, dtype=int)
+        comp_recv = np.array(recv*100, dtype=int)
+        inside_x = min(comp_recv[0], comp_shoot[0]) <= comp_ball[0] <= max(comp_recv[0], comp_shoot[0])
+        inside_y = min(comp_recv[1], comp_shoot[1]) <= comp_ball[1] <= max(comp_recv[1], comp_shoot[1])
+        not_inside = not(inside_x and inside_y) and self.shooted
         last_dist = np.linalg.norm(last_ball - recv)
         dist = np.linalg.norm(ball - recv)
-        stopped = abs(last_dist - dist) < 0.1
+        stopped = abs(last_dist - dist) < 0.01
         if stopped:
             self.stopped_steps += 1
         else:
             self.stopped_steps = 0
-        return self.stopped_steps > 20 and inside
-
-    def __energy_rw(self):
-        kick, dribbling = self.actions[1:]
-        kick = 1 if kick > 0 else 0
-        if self.last_frame.robots_blue[0].infrared:
-            self.holding_steps += 1
-            kick = 0
-        else:
-            self.holding_steps = 0
-        dribbling = 0.05 if dribbling > 0 else 0
-        shooter_energy = kick + dribbling
-        return -shooter_energy
+        return self.stopped_steps > 20 or not_inside
 
     def __ball_grad_rw(self):
         assert(self.last_frame is not None)
@@ -217,8 +205,11 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
         ball_pos = np.array([ball.x, ball.y])
         ball_dist = np.linalg.norm(goal - ball_pos)
         vect = self.__get_shooter_receiver_vec()
+        ori_dist = np.linalg.norm(vect)
 
-        ball_dist_rw = -ball_dist/np.linalg.norm(vect)
+        ball_dist_rw= 0
+        if self.shooted:
+            ball_dist_rw = (ori_dist-ball_dist)/ori_dist
 
         if ball_dist_rw > 1:
             print("ball_dist -> ", ball_dist_rw)
@@ -241,7 +232,8 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
         ori_norm = self.original_vec/np.linalg.norm(self.original_vec)
         cos_shooter = np.dot(shooter_ball, ori_norm)
         shooter_angle_reward = 0
-        self.shooted = self.last_frame.robots_blue[0].infrared and self.actions[1] > 0
+        if not self.shooted:
+            self.shooted = self.last_frame.robots_blue[0].infrared and self.actions[1] > 0
         if self.shooted:
             if np.rad2deg(np.arccos(cos_shooter)) > 1:
                 shooter_angle_reward = -1
@@ -252,4 +244,4 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
                 shooter_angle_reward = cos_shooter
             else:
                 shooter_angle_reward -= 0.5
-        return shooter_angle_reward
+        return shooter_angle_reward - 1
