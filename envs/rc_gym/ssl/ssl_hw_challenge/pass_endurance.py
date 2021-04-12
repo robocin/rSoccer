@@ -102,6 +102,8 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
                     v_y=0, v_theta=actions[0],
                     kick_v_x=actions[1],
                     dribbler=True if actions[2] > 0 else False)
+        commands.append(cmd)
+        
         cmd = Robot(yellow=False, id=1, v_x=0,
                     v_y=0, v_theta=0,
                     kick_v_x=0,
