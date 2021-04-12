@@ -59,8 +59,8 @@ class SSLHWDribblingEnv(SSLBaseEnv):
         # Checkpoints nodes positions
         self.node_0 = -0.5 
         self.node_1 = -1.
-        self.node_2 = -1.4
-        self.node_3 = -1.90
+        self.node_2 = -1.5
+        self.node_3 = -2.
         self.field_margin = 1
         
         
@@ -103,8 +103,7 @@ class SSLHWDribblingEnv(SSLBaseEnv):
 
         cmd = Robot(yellow=False, id=0, v_x=actions[0],
                               v_y=actions[1], v_theta=actions[2],
-                              kick_v_x=1. if actions[3] > 0 else 0., 
-                              dribbler=True if actions[4] > 0 else False)
+                              dribbler=True if actions[3] > 0 else False)
         cmd.to_local(self.frame.robots_blue[0].theta)
         commands.append(cmd)
 
@@ -120,7 +119,7 @@ class SSLHWDribblingEnv(SSLBaseEnv):
         
         # End episode in case of collision
         for rbt in self.frame.robots_yellow.values():
-            if abs(rbt.v_x) > 0.02 or abs(rbt.v_y) > 0.02:
+            if abs(rbt.v_x) > 0.05 or abs(rbt.v_y) > 0.05:
                 done = True
         
         def robot_out_of_bounds(rbt):
@@ -144,14 +143,20 @@ class SSLHWDribblingEnv(SSLBaseEnv):
                         reward = 1
                         self.checkpoints_count += 1
             elif self.checkpoints_count >= 2:
-                if ball.x < self.node_2 and ball.x > self.node_3:
-                    if last_ball.y >= 0 and ball.y < 0:
-                        reward = 1
-                        self.checkpoints_count += 1
-                        if self.checkpoints_count == 5:
+                if self.checkpoints_count % 2 == 0:
+                    if ball.x < self.node_2 and ball.x > self.node_3:
+                        if last_ball.y >= 0 and ball.y < 0:
+                            reward = 1
+                            self.checkpoints_count += 1
+                            if self.checkpoints_count == 7:
+                                done = True
+                        elif last_ball.y < 0 and ball.y >= 0:
                             done = True
-                    elif last_ball.y < 0 and ball.y >= 0:
-                        done = True
+                else:
+                    if ball.x > self.node_3 - self.field_margin and ball.x < self.node_3:
+                        if last_ball.y < 0 and ball.y >= 0:
+                            reward = 1
+                            self.checkpoints_count += 1
 
         done = done
 
