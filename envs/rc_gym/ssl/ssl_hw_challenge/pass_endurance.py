@@ -126,7 +126,7 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
             self.reward_shaping_total['pass_score'] += 1
             done = True
         else:
-            rw_angle = w_angle * self.__angle_reward() if not self.shooted else 0
+            rw_angle = w_angle * (self.__angle_reward() - 1) if not self.shooted else 0
             rw_ball_grad = w_ball_grad * self.__ball_grad_rw()
             reward = rw_angle + rw_ball_grad
             self.reward_shaping_total['angle'] += rw_angle
@@ -161,7 +161,10 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
             x=pos_frame.ball.x, y=pos_frame.ball.y+offset, theta=angle
         )
         shooter = np.array([pos_frame.ball.x, pos_frame.ball.y-0.1])
-        receiver = np.array([x(), -pos_frame.ball.y])
+        recv_x = x()
+        while abs(recv_x - pos_frame.ball.x) < 1:
+            recv_x = x()
+        receiver = np.array([recv_x, -pos_frame.ball.y])
         vect = receiver - shooter
         recv_angle = np.rad2deg(np.arctan2(vect[1], vect[0]) + np.pi)
 
@@ -250,4 +253,4 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
                 shooter_angle_reward = cos_shooter
             else:
                 shooter_angle_reward -= 0.5
-        return shooter_angle_reward - 1
+        return shooter_angle_reward
