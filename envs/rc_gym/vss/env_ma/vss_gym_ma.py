@@ -140,7 +140,7 @@ class VSSMAEnv(VSSBaseEnv):
 
             observations.append(np.array(observation, dtype=np.float32))
 
-        observations = np.array(observations, dtype=np.ndarray)
+        observations = np.array(observations)
         return observations
 
     def _get_commands(self, actions):
@@ -319,7 +319,7 @@ class VSSMAEnv(VSSBaseEnv):
         en_penalty_1 = abs(self.sent_commands[robot_idx].v_wheel0)
         en_penalty_2 = abs(self.sent_commands[robot_idx].v_wheel1)
         energy_penalty = - (en_penalty_1 + en_penalty_2)
-        energy_penalty /= self.field.robot_wheel_radius
+        energy_penalty /= self.field.rbt_wheel_radius
         return energy_penalty
 
 
