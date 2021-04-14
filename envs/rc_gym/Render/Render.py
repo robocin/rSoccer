@@ -7,16 +7,16 @@ from typing import Dict, List, Tuple
 
 # COLORS RGB
 BLACK =         (0   /255, 0   /255, 0   /255)
-BG_GREEN =      (11  /255, 102 /255, 35  /255)
+BG_GREEN =      (20  /255, 90  /255, 45  /255)
 LINES_WHITE =   (220 /255, 220 /255, 220 /255)
 ROBOT_BLACK =   (25  /255, 25  /255, 25  /255)
 BALL_ORANGE =   (253 /255, 106 /255, 2   /255)
 TAG_BLUE =      (0   /255, 64  /255, 255 /255)
 TAG_YELLOW =    (250 /255, 218 /255, 94  /255)
-TAG_GREEN =     (57  /255, 255 /255, 20  /255)
+TAG_GREEN =     (57  /255, 220 /255, 20  /255)
 TAG_RED =       (151 /255, 21  /255, 0   /255)
 TAG_PURPLE =    (102 /255, 51  /255, 153 /255)
-
+TAG_PINK =      (220 /255, 0   /255, 220 /255)
 
 class RCGymRender:
     '''
@@ -63,7 +63,7 @@ class RCGymRender:
         screen_height = height
 
         # Window margin
-        margin = 0.05 if simulator == "vss" else 0.3
+        margin = 0.05 if simulator == "vss" else 0.35
         # Half field width
         h_len = (self.field.length + 2*self.field.goal_depth) / 2
         # Half field height
@@ -85,7 +85,7 @@ class RCGymRender:
         # Set window bounds, will scale objects accordingly
         self.screen.set_bounds(**self.screen_dimensions)
 
-        # add backgrond
+        # add background
         self._add_background()
 
         if simulator == "vss":
@@ -326,6 +326,8 @@ class RCGymRender:
     #----------SSL-----------#
     
     def _add_field_lines_ssl(self) -> None:
+        field_margin = 0.3
+        
         # Vertical Lines X
         x_border = self.field.length / 2
         x_goal = x_border + self.field.goal_depth
@@ -336,6 +338,20 @@ class RCGymRender:
         y_border = self.field.width / 2
         y_penalty = self.field.penalty_width / 2
         y_goal = self.field.goal_width / 2
+
+        # add outside field borders
+        field_outer_border_points = [
+            (x_border+field_margin, y_border+field_margin),
+            (x_border+field_margin, -y_border-field_margin),
+            (-x_border-field_margin, -y_border-field_margin),
+            (-x_border-field_margin, y_border+field_margin)
+        ]
+        field_bg = rendering.FilledPolygon(field_outer_border_points)
+        field_bg.set_color(*BG_GREEN)
+        
+        outer_border = rendering.PolyLine(field_outer_border_points, close=True)
+        outer_border.set_linewidth(self.linewidth)
+        outer_border.set_color(*LINES_WHITE)
 
         # add field borders
         field_border_points = [
@@ -404,6 +420,8 @@ class RCGymRender:
         goal_line_left.set_linewidth(self.linewidth)
         goal_line_left.set_color(*LINES_WHITE)
 
+        self.screen.add_geom(field_bg)
+        self.screen.add_geom(outer_border)
         self.screen.add_geom(field_border)
         self.screen.add_geom(center_line)
         self.screen.add_geom(center_circle)
@@ -413,20 +431,37 @@ class RCGymRender:
         self.screen.add_geom(goal_line_left)
 
     def _add_ssl_robots(self) -> None:
-        
+        tag_id_colors: Dict[int, Dict[int, Tuple[float, float, float,]]] = {
+            0 : {0: TAG_PINK, 1: TAG_GREEN, 2: TAG_PINK, 3:TAG_PINK},
+            1 : {0: TAG_GREEN, 1: TAG_GREEN, 2: TAG_PINK, 3:TAG_PINK},
+            2 : {0: TAG_GREEN, 1: TAG_GREEN, 2: TAG_PINK, 3:TAG_GREEN},
+            3 : {0: TAG_PINK, 1: TAG_GREEN, 2: TAG_PINK, 3:TAG_GREEN},
+            4 : {0: TAG_PINK, 1: TAG_PINK, 2: TAG_GREEN, 3:TAG_PINK},
+            5 : {0: TAG_GREEN, 1: TAG_PINK, 2: TAG_GREEN, 3:TAG_PINK},
+            6 : {0: TAG_GREEN, 1: TAG_PINK, 2: TAG_GREEN, 3:TAG_GREEN},
+            7 : {0: TAG_PINK, 1: TAG_PINK, 2: TAG_GREEN, 3:TAG_GREEN},
+            8 : {0: TAG_GREEN, 1: TAG_GREEN, 2: TAG_GREEN, 3:TAG_GREEN},
+            9 : {0: TAG_PINK, 1: TAG_PINK, 2: TAG_PINK, 3:TAG_PINK},
+            10 : {0: TAG_PINK, 1: TAG_GREEN, 2: TAG_GREEN, 3:TAG_PINK},
+            11 : {0: TAG_GREEN, 1: TAG_PINK, 2: TAG_PINK, 3:TAG_GREEN},
+            12 : {0: TAG_GREEN, 1: TAG_GREEN, 2: TAG_GREEN, 3:TAG_PINK},
+            13 : {0: TAG_GREEN, 1: TAG_PINK, 2: TAG_PINK, 3:TAG_PINK},
+            14 : {0: TAG_PINK, 1: TAG_GREEN, 2: TAG_GREEN, 3:TAG_GREEN},
+            15 : {0: TAG_PINK, 1: TAG_PINK, 2: TAG_PINK, 3:TAG_GREEN}
+        }
         # Add blue robots
         for id in range(self.n_robots_blue):
             self.blue_robots.append(
-                self._add_ssl_robot(team_color=TAG_BLUE)
+                self._add_ssl_robot(team_color=TAG_BLUE, id_color=tag_id_colors[id])
             )
             
         # Add yellow robots
         for id in range(self.n_robots_yellow):
             self.yellow_robots.append(
-                self._add_ssl_robot(team_color=TAG_YELLOW)
+                self._add_ssl_robot(team_color=TAG_YELLOW, id_color=tag_id_colors[id])
             )
 
-    def _add_ssl_robot(self, team_color, id_color=0) -> rendering.Transform:
+    def _add_ssl_robot(self, team_color, id_color) -> rendering.Transform:
         robot_transform:rendering.Transform = rendering.Transform()
         
         # Robot dimensions
@@ -443,17 +478,45 @@ class RCGymRender:
 
         # Robot object
         robot = rendering.FilledPolygon(points)
-        robot.set_color(*team_color)
+        robot.set_color(*ROBOT_BLACK)
         robot.add_attr(robot_transform)
         
-        # Robot outline
-        robot_outline = rendering.PolyLine(points, True)
-        robot_outline.set_color(*ROBOT_BLACK)
-        robot_outline.add_attr(robot_transform)
+        # Team Tag
+        tag_team = rendering.make_circle(0.025, filled=True)
+        tag_team.set_color(*team_color)
+        tag_team.add_attr(robot_transform)
+        
+        # Tag 0, upper right
+        tag_0 = rendering.make_circle(0.020, filled=True)
+        tag_0.set_color(*id_color[0])
+        tag_0.add_attr(rendering.Transform(translation=(0.035, 0.054772)))
+        tag_0.add_attr(robot_transform)
+        
+        # Tag 1, upper left
+        tag_1 = rendering.make_circle(0.020, filled=True)
+        tag_1.set_color(*id_color[1])
+        tag_1.add_attr(rendering.Transform(translation=(-0.054772, 0.035)))
+        tag_1.add_attr(robot_transform)
+        
+        # Tag 2, lower left
+        tag_2 = rendering.make_circle(0.020, filled=True)
+        tag_2.set_color(*id_color[2])
+        tag_2.add_attr(rendering.Transform(translation=(-0.054772, -0.035)))
+        tag_2.add_attr(robot_transform)
+        
+        # Tag 3, lower right
+        tag_3 = rendering.make_circle(0.020, filled=True)
+        tag_3.set_color(*id_color[3])
+        tag_3.add_attr(rendering.Transform(translation=(0.035, -0.054772)))
+        tag_3.add_attr(robot_transform)
 
         # Add objects to screen
         self.screen.add_geom(robot)
-        self.screen.add_geom(robot_outline)
+        self.screen.add_geom(tag_team)
+        self.screen.add_geom(tag_0)
+        self.screen.add_geom(tag_1)
+        self.screen.add_geom(tag_2)
+        self.screen.add_geom(tag_3)
 
         # Return the transform class to change robot position
         return robot_transform
@@ -466,8 +529,8 @@ class RCGymRender:
         ball.set_color(*BALL_ORANGE)
         ball.add_attr(ball_transform)
         
-        ball_outline: rendering.Geom = rendering.make_circle(ball_radius, filled=False)
-        ball_outline.linewidth.stroke = 3
+        ball_outline: rendering.Geom = rendering.make_circle(ball_radius*1.1, filled=False)
+        ball_outline.linewidth.stroke = 1
         ball_outline.set_color(*BLACK)
         ball_outline.add_attr(ball_transform)
         
