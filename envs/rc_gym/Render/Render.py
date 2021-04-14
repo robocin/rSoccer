@@ -6,6 +6,7 @@ from gym.envs.classic_control import rendering
 from typing import Dict, List, Tuple
 
 # COLORS RGB
+BLACK =         (0   /255, 0   /255, 0   /255)
 BG_GREEN =      (11  /255, 102 /255, 35  /255)
 LINES_WHITE =   (220 /255, 220 /255, 220 /255)
 ROBOT_BLACK =   (25  /255, 25  /255, 25  /255)
@@ -62,11 +63,13 @@ class RCGymRender:
         screen_height = height
 
         # Window margin
-        margin = 0.1 if simulator == "vss" else 0.3
+        margin = 0.05 if simulator == "vss" else 0.3
         # Half field width
         h_len = (self.field.length + 2*self.field.goal_depth) / 2
         # Half field height
         h_wid = self.field.width / 2
+        
+        self.linewidth = 3
 
         # Window dimensions in meters
         self.screen_dimensions = {
@@ -139,7 +142,7 @@ class RCGymRender:
             (self.screen_dimensions["left"], self.screen_dimensions["bottom"]),
             (self.screen_dimensions["left"], self.screen_dimensions["top"]),
         ])
-        back_ground.set_color(*BG_GREEN)
+        back_ground.set_color(*BLACK)
         self.screen.add_geom(back_ground)
 
     #----------VSS-----------#
@@ -155,22 +158,35 @@ class RCGymRender:
         y_border = self.field.width / 2
         y_penalty = self.field.penalty_width / 2
         y_goal = self.field.goal_width / 2
+        
+        # Corners Angle offset
+        corner = 0.07
 
         # add field borders
         field_border_points = [
-            (x_border, y_border),
-            (x_border, -y_border),
-            (-x_border, -y_border),
-            (-x_border, y_border)
+            (x_border-corner, y_border),
+            (x_border, y_border-corner),
+            (x_border, -y_border+corner),
+            (x_border-corner, -y_border),
+            (-x_border+corner, -y_border),
+            (-x_border, -y_border+corner),
+            (-x_border, y_border-corner),
+            (-x_border+corner, y_border)
         ]
+        field_bg = rendering.FilledPolygon(field_border_points)
+        field_bg.set_color(60/255,60/255,60/255)
+        
         field_border = rendering.PolyLine(field_border_points, close=True)
+        field_border.set_linewidth(self.linewidth)
         field_border.set_color(*LINES_WHITE)
 
         # Center line and circle
         center_line = rendering.Line(
             (x_center, y_border), (x_center, -y_border))
+        center_line.linewidth.stroke = self.linewidth
         center_line.set_color(*LINES_WHITE)
         center_circle = rendering.make_circle(0.2, filled=False)
+        center_circle.linewidth.stroke = self.linewidth
         center_circle.set_color(*LINES_WHITE)
 
         # right side penalty box
@@ -182,6 +198,7 @@ class RCGymRender:
         ]
         penalty_box_right = rendering.PolyLine(
             penalty_box_right_points, close=False)
+        penalty_box_right.set_linewidth(self.linewidth)
         penalty_box_right.set_color(*LINES_WHITE)
 
         # left side penalty box
@@ -193,6 +210,7 @@ class RCGymRender:
         ]
         penalty_box_left = rendering.PolyLine(
             penalty_box_left_points, close=False)
+        penalty_box_left.set_linewidth(self.linewidth)
         penalty_box_left.set_color(*LINES_WHITE)
 
         # Right side goal line
@@ -202,8 +220,12 @@ class RCGymRender:
             (x_goal, -y_goal),
             (x_border, -y_goal)
         ]
+        goal_bg_right = rendering.FilledPolygon(goal_line_right_points)
+        goal_bg_right.set_color(60/255,60/255,60/255)
+        
         goal_line_right = rendering.PolyLine(
             goal_line_right_points, close=False)
+        goal_line_right.set_linewidth(self.linewidth)
         goal_line_right.set_color(*LINES_WHITE)
 
         # Left side goal line
@@ -213,9 +235,16 @@ class RCGymRender:
             (-x_goal, -y_goal),
             (-x_border, -y_goal)
         ]
+        goal_bg_left = rendering.FilledPolygon(goal_line_left_points)
+        goal_bg_left.set_color(60/255,60/255,60/255)
+        
         goal_line_left = rendering.PolyLine(goal_line_left_points, close=False)
+        goal_line_left.set_linewidth(self.linewidth)
         goal_line_left.set_color(*LINES_WHITE)
 
+        self.screen.add_geom(field_bg)
+        self.screen.add_geom(goal_bg_right)
+        self.screen.add_geom(goal_bg_left)
         self.screen.add_geom(field_border)
         self.screen.add_geom(center_line)
         self.screen.add_geom(center_circle)
@@ -316,13 +345,16 @@ class RCGymRender:
             (-x_border, y_border)
         ]
         field_border = rendering.PolyLine(field_border_points, close=True)
+        field_border.set_linewidth(self.linewidth)
         field_border.set_color(*LINES_WHITE)
 
         # Center line and circle
         center_line = rendering.Line(
             (x_center, y_border), (x_center, -y_border))
+        center_line.linewidth.stroke = self.linewidth
         center_line.set_color(*LINES_WHITE)
         center_circle = rendering.make_circle(0.2, filled=False)
+        center_circle.linewidth.stroke = self.linewidth
         center_circle.set_color(*LINES_WHITE)
 
         # right side penalty box
@@ -334,6 +366,7 @@ class RCGymRender:
         ]
         penalty_box_right = rendering.PolyLine(
             penalty_box_right_points, close=False)
+        penalty_box_right.set_linewidth(self.linewidth)
         penalty_box_right.set_color(*LINES_WHITE)
 
         # left side penalty box
@@ -345,6 +378,7 @@ class RCGymRender:
         ]
         penalty_box_left = rendering.PolyLine(
             penalty_box_left_points, close=False)
+        penalty_box_left.set_linewidth(self.linewidth)
         penalty_box_left.set_color(*LINES_WHITE)
 
         # Right side goal line
@@ -356,6 +390,7 @@ class RCGymRender:
         ]
         goal_line_right = rendering.PolyLine(
             goal_line_right_points, close=False)
+        goal_line_right.set_linewidth(self.linewidth)
         goal_line_right.set_color(*LINES_WHITE)
 
         # Left side goal line
@@ -366,6 +401,7 @@ class RCGymRender:
             (-x_border, -y_goal)
         ]
         goal_line_left = rendering.PolyLine(goal_line_left_points, close=False)
+        goal_line_left.set_linewidth(self.linewidth)
         goal_line_left.set_color(*LINES_WHITE)
 
         self.screen.add_geom(field_border)
@@ -431,7 +467,8 @@ class RCGymRender:
         ball.add_attr(ball_transform)
         
         ball_outline: rendering.Geom = rendering.make_circle(ball_radius, filled=False)
-        ball_outline.set_color(*ROBOT_BLACK)
+        ball_outline.linewidth.stroke = 3
+        ball_outline.set_color(*BLACK)
         ball_outline.add_attr(ball_transform)
         
         self.screen.add_geom(ball)
