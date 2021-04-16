@@ -15,19 +15,19 @@ class SSLPassEnduranceMAEnv(SSLBaseEnv):
         Description:
 
         Observation:
-            Type: Box(4 + 5*n_robots_blue)
+            Type: Box(4 + 8*n_robots_blue)
             Normalized Bounds to [-1.2, 1.2]
             Num      Observation normalized  
             0->3     Ball [X, Y, V_x, V_y]
-            4->N    id N Blue [X, Y, sin(theta), cos(theta)]
-
-
+            4->N    id 0 Blue [X, Y, sin(theta), cos(theta), v_x, v_y, v_theta, is_receiver]
         Actions:
-            Type: Box(3,)
+            Type: Box(N, 5)
             Num     Action
-            0       id i Blue Angular Speed  (%)
-            1       id i Blue Kick x Speed  (%)
-            2       id i Blue Dribbler  (%) (true if % is positive)
+            0       id 0 Blue Global X Direction Speed  (%)
+            1       id 0 Blue Global Y Direction Speed  (%)
+            2       id 0 Blue Angular Speed  (%)
+            3       id i Blue Kick x Speed  (%)
+            4       id i Blue Dribbler  (%) (true if % is positive)
 
         Reward:
 
@@ -45,121 +45,62 @@ class SSLPassEnduranceMAEnv(SSLBaseEnv):
         super().__init__(field_type=2, n_robots_blue=2,
                          n_robots_yellow=0, time_step=0.025)
         self.action_space = gym.spaces.Box(low=-1, high=1,
-                                           shape=(self.n_robots_blue, 3),
+                                           shape=(self.n_robots_blue, 5),
                                            dtype=np.float32)
 
-        n_obs = 4 + 4*self.n_robots_blue
+        n_obs = 4 + 8*self.n_robots_blue
         self.holding_steps = 0
         self.stopped_steps = 0
         self.recv_angle = 270
         self.observation_space = gym.spaces.Box(low=-self.NORM_BOUNDS,
                                                 high=self.NORM_BOUNDS,
-                                                shape=(self.n_robots_blue, n_obs),
+                                                shape=(self.n_robots_blue,
+                                                       n_obs),
                                                 dtype=np.float32)
         self.shooter_id = 0
         self.receiver_id = 1
+        # scale max dist rw to 1 Considering that max possible move rw if ball and robot are in opposite corners of field
+        self.move_scale = np.linalg.norm([self.field.width,
+                                          self.field.length/2])
+        self.ball_grad_scale = np.linalg.norm([self.field.width/2,
+                                               self.field.length/2])/4
+        self.energy_scale = ((160 * 4) * 1200)
 
         print('Environment initialized')
 
     def _frame_to_observations(self):
-        observation = list()
+        observations = list()
+        ball = []
 
-        observation.append(self.norm_pos(self.frame.ball.x))
-        observation.append(self.norm_pos(self.frame.ball.y))
-        observation.append(self.norm_v(self.frame.ball.v_x))
-        observation.append(self.norm_v(self.frame.ball.v_y))
+        ball.append(self.norm_pos(self.frame.ball.x))
+        ball.append(self.norm_pos(self.frame.ball.y))
+        ball.append(self.norm_v(self.frame.ball.v_x))
+        ball.append(self.norm_v(self.frame.ball.v_y))
+
+        robots = list()
         for i in range(self.n_robots_blue):
-            observation.append(self.norm_pos(self.frame.robots_blue[i].x))
-            observation.append(self.norm_pos(self.frame.robots_blue[i].y))
-            observation.append(
+            robot = list()
+            robot.append(self.norm_pos(self.frame.robots_blue[i].x))
+            robot.append(self.norm_pos(self.frame.robots_blue[i].y))
+            robot.append(
                 np.sin(np.deg2rad(self.frame.robots_blue[i].theta))
             )
-            observation.append(
+            robot.append(
                 np.cos(np.deg2rad(self.frame.robots_blue[i].theta))
             )
-        return np.array([observation]*self.n_robots_blue, dtype=np.float32)
+            robot.append(self.norm_v(self.frame.robots_blue[i].v_x))
+            robot.append(self.norm_v(self.frame.robots_blue[i].v_y))
+            robot.append(self.norm_w(self.frame.robots_blue[i].v_theta))
+            robot.append(int(self.receiver_id == i))
+            robots.append(robot)
 
-    def reset(self):
-        self.reward_shaping_total = None
-        state = super().reset()
-        self.actions = {}
-        self.original_vec = self.__get_shooter_receiver_vec()
-        self.holding_steps = 0
-        self.stopped_steps = 0
-        self.shooted = False
-        return state
-
-    def step(self, action):
-        observation, reward, done, _ = super().step(action)
-        return observation, reward, done, self.reward_shaping_total
-
-    def _get_commands(self, actions):
-        commands = []
-        if abs(actions[self.shooter_id][1]) > 0.5:
-            actions[self.shooter_id][1] = abs(actions[self.shooter_id][1])
-        else:
-            actions[self.shooter_id][1] = 0
-        if abs(actions[self.receiver_id][1]) > 0.5:
-            actions[self.receiver_id][1] = abs(actions[self.receiver_id][1])
-        else:
-            actions[self.receiver_id][1] = 0
-        self.actions = {
-            self.shooter_id: actions[self.shooter_id], 
-            self.receiver_id: actions[self.receiver_id]
-            }
-        cmd = Robot(yellow=False, id=self.shooter_id, v_x=0,
-                    v_y=0, v_theta=actions[self.shooter_id][0],
-                    kick_v_x=actions[self.shooter_id][1],
-                    dribbler=True if actions[self.shooter_id][2] > 0 else False)
-        commands.append(cmd)
-        
-        cmd = Robot(yellow=False, id=self.receiver_id, v_x=0,
-                    v_y=0, v_theta=actions[self.receiver_id][0],
-                    kick_v_x=actions[self.receiver_id][1],
-                    dribbler=True if actions[self.receiver_id][2] > 0 else False)
-        commands.append(cmd)
-
-        return commands
-
-    def _calculate_reward_and_done(self):
-
-        w_angle = 0.2
-        w_ball_grad = 0.8
-        reward = np.array([0, 0])
-        done = False
-        if self.reward_shaping_total is None:
-            self.reward_shaping_total = {'pass_score': 0, 'angle': 0,
-                                         'ball_grad': 0, 'recv_angle': 0}
-        if self.frame.robots_blue[self.receiver_id].infrared:
-            reward += 1
-            self.reward_shaping_total['pass_score'] += 1
-            self.receiver_id, self.shooter_id = self.shooter_id, self.receiver_id
-            self.original_vec = self.__get_shooter_receiver_vec()
-            self.holding_steps = 0
-            self.stopped_steps = 0
-            self.shooted = False
-        else:
-            rw_angle = w_angle * (self.__shooter_angle_reward() - 1) if not self.shooted else 0
-            rw_ball_grad = w_ball_grad * self.__ball_grad_rw()
-            rw_recv = w_angle * self.__recv_angle_reward()
-            reward = np.array([rw_angle + rw_ball_grad, rw_recv])
-            self.reward_shaping_total['angle'] += rw_angle
-            self.reward_shaping_total['recv_angle'] += rw_recv
-            self.reward_shaping_total['ball_grad'] += rw_ball_grad
-        if self.__wrong_ball() or self.holding_steps > 15:
-            reward -= 1
-            done = True
-
-        return reward, done
-
-    def __get_shooter_receiver_vec(self):
-        receiver = np.array([self.frame.robots_blue[self.receiver_id].x,
-                             self.frame.robots_blue[self.receiver_id].y])
-        shooter = np.array([self.frame.robots_blue[self.shooter_id].x,
-                            self.frame.robots_blue[self.shooter_id].y])
-        shooter_receiver = receiver - shooter
-        shooter_receiver = shooter_receiver
-        return shooter_receiver
+        for i in range(self.n_robots_blue):
+            observations.append(ball + robots[i])
+            for j in range(self.n_robots_blue):
+                if j == i:
+                    continue
+                observations[i] += robots[j]
+        return np.array(observations, dtype=np.float32)
 
     def _get_initial_positions_frame(self):
         '''Returns the position of each robot and ball for the initial frame'''
@@ -171,37 +112,80 @@ class SSLPassEnduranceMAEnv(SSLBaseEnv):
         factor = (pos_frame.ball.y/abs(pos_frame.ball.y))
         offset = 0.115*factor
         angle = 270 if factor > 0 else 90
-        pos_frame.robots_blue[0] = Robot(
+        pos_frame.robots_blue[self.shooter_id] = Robot(
             x=pos_frame.ball.x, y=pos_frame.ball.y+offset, theta=angle
         )
-        shooter = np.array([pos_frame.ball.x, pos_frame.ball.y-0.1])
         recv_x = x()
         while abs(recv_x - pos_frame.ball.x) < 1:
             recv_x = x()
         receiver = np.array([recv_x, -pos_frame.ball.y])
-        vect = receiver - shooter
-        recv_angle = np.rad2deg(np.arctan2(vect[1], vect[0]) + np.pi)
 
-        pos_frame.robots_blue[1] = Robot(x=receiver[0],
-                                         y=receiver[1],
-                                         theta=recv_angle)
+        self.objective = np.array([x(), receiver[1]])
+
+        pos_frame.robots_blue[self.receiver_id] = Robot(x=receiver[0],
+                                                        y=receiver[1],
+                                                        theta=270)
 
         return pos_frame
 
+    def reset(self):
+        self.reward_shaping_total = None
+        state = super().reset()
+        self.actions = {}
+        self.stopped_steps = 0
+        return state
+
+    def step(self, action):
+        observation, reward, done, _ = super().step(action)
+        return observation, reward, done, self.reward_shaping_total
+
+    def _get_commands(self, actions):
+        commands = []
+        self.actions = {}
+        for idx in [self.shooter_id, self.receiver_id]:
+            if abs(actions[idx][3]) > 0.5:
+                actions[idx][3] = abs(actions[idx][3])
+            else:
+                actions[idx][3] = 0
+            self.actions[idx] = actions[idx]
+            cmd = Robot(yellow=False, id=idx,
+                        v_x=actions[idx][0],
+                        v_y=actions[idx][1],
+                        v_theta=actions[idx][2],
+                        kick_v_x=actions[idx][3],
+                        dribbler=True if actions[idx][4] > 0 else False)
+            commands.append(cmd)
+
+        return commands
+
     def __wrong_ball(self):
-        ball = np.array([self.frame.ball.x, self.frame.ball.y])
+        done = False
+        # Field parameters
+        half_len = self.field.length / 2
+        half_wid = self.field.width / 2
+        pen_len = self.field.penalty_length
+        half_pen_wid = self.field.penalty_width / 2
         last_ball = np.array([self.last_frame.ball.x, self.last_frame.ball.y])
 
         recv = np.array([self.frame.robots_blue[self.receiver_id].x,
                          self.frame.robots_blue[self.receiver_id].y])
-        shooter = np.array([self.frame.robots_blue[self.shooter_id].x,
-                            self.frame.robots_blue[self.shooter_id].y])
-        comp_ball = np.array(ball*100, dtype=int)
-        comp_shoot = np.array(shooter*100, dtype=int)
-        comp_recv = np.array(recv*100, dtype=int)
-        inside_x = min(comp_recv[0], comp_shoot[0]) <= comp_ball[0] <= max(comp_recv[0], comp_shoot[0])
-        inside_y = min(comp_recv[1], comp_shoot[1]) <= comp_ball[1] <= max(comp_recv[1], comp_shoot[1])
-        not_inside = not(inside_x and inside_y) and self.shooted
+
+        ball = self.frame.ball
+        robot = self.frame.robots_blue[self.receiver_id]
+
+        def robot_in_gk_area(rbt):
+            return rbt.x > half_len - pen_len and abs(rbt.y) < half_pen_wid
+
+        # If flag is set, end episode if robot enter gk area
+        if robot_in_gk_area(robot):
+            done = True
+            self.reward_shaping_total['rbt_in_gk_area'] += 1
+        # Check ball for ending conditions
+        elif abs(ball.x) > half_len or abs(ball.y) > half_wid:
+            done = True
+            self.reward_shaping_total['done_ball_out'] += 1
+
+        ball = np.array([self.frame.ball.x, self.frame.ball.y])
         last_dist = np.linalg.norm(last_ball - recv)
         dist = np.linalg.norm(ball - recv)
         stopped = abs(last_dist - dist) < 0.01
@@ -209,66 +193,113 @@ class SSLPassEnduranceMAEnv(SSLBaseEnv):
             self.stopped_steps += 1
         else:
             self.stopped_steps = 0
-        return self.stopped_steps > 20 or not_inside
+        return self.stopped_steps > 20 or done
+
+    def _calculate_reward_and_done(self):
+        w_move = 1/self.move_scale
+        w_ball_grad = 1/self.ball_grad_scale
+        w_energy = 1/self.energy_scale
+        done = False
+        reward = {f'robot_{i}': 0 for i in range(self.n_robots_blue)}
+        if self.reward_shaping_total is None:
+            self.reward_shaping_total = {'pass_score': 0,
+                                         'ball_grad': 0,
+                                         'move': 0,
+                                         'done_ball_out': 0,
+                                         'done_ball_out_right': 0,
+                                         'done_rbt_out': 0,
+                                         }
+            for i in range(self.n_robots_blue):
+                self.reward_shaping_total[f'robot_{i}'] = {'energy': 0}
+
+        recv = self.frame.robots_blue[self.receiver_id]
+        recv_pos = np.array([recv.x, recv.y])
+        ball = np.array([self.frame.ball.x, self.frame.ball.y])
+        
+        grad_rw = w_ball_grad*self.__ball_grad_rw()
+        move_rw = w_move*self.__move_rw()
+        def energy_rw(i): return w_energy*self.__energy_pen(i)
+
+        if recv.infrared:
+            if np.linalg.norm(recv_pos - ball) <= 0.05:
+                for i in range(self.n_robots_blue):
+                    reward[f'robot_{i}'] = 1
+                self.reward_shaping_total['pass_score'] += 1
+                done = True
+            else:
+                reward[f'robot_{self.shooter_id}'] = -grad_rw*0.2
+                reward[f'robot_{self.receiver_id}'] = move_rw*1.5
+                self.reward_shaping_total['move'] += move_rw*1.5
+                self.reward_shaping_total['ball_grad'] -= grad_rw*0.2
+
+        elif np.linalg.norm(self.objective - ball) <= 0.05:
+            if np.linalg.norm(recv_pos - self.objective) > 0.1:
+                reward[f'robot_{self.receiver_id}'] = -move_rw*0.2
+                reward[f'robot_{self.shooter_id}'] = grad_rw
+                self.reward_shaping_total['move'] -= move_rw*0.2
+                self.reward_shaping_total['ball_grad'] += grad_rw       
+        else:
+            reward[f'robot_{self.shooter_id}'] = grad_rw
+            reward[f'robot_{self.receiver_id}'] = move_rw
+            self.reward_shaping_total['move'] += move_rw
+            self.reward_shaping_total['ball_grad'] += grad_rw
+
+        reward[f'robot_{self.shooter_id}'] += w_energy*energy_rw(self.shooter_id)
+        reward[f'robot_{self.receiver_id}'] += w_energy*energy_rw(self.receiver_id)
+        for i in range(self.n_robots_blue):
+            self.reward_shaping_total[f'robot_{i}'] = {
+                'energy': w_energy*energy_rw(i)
+            }
+        if self.__wrong_ball() or self.holding_steps > 15:
+            for i in range(self.n_robots_blue):
+                reward[f'robot_{i}'] = -1
+            done = True
+
+        return reward, done
+
+    def __move_rw(self):
+        assert(self.last_frame is not None)
+
+        # recv pos
+        recv = self.frame.robots_blue[self.receiver_id]
+        recv = np.array([recv.x, recv.y])
+        prev_recv = self.last_frame.robots_blue[self.receiver_id]
+        prev_recv = np.array([prev_recv.x, prev_recv.y])
+
+        # Calculate previous dist
+        last_dist = np.linalg.norm(self.objective - prev_recv)
+
+        # Calculate new dist
+        dist = np.linalg.norm(self.objective - recv)
+
+        dist_rw = last_dist - dist
+
+        return np.clip(dist_rw, -1, 1)
 
     def __ball_grad_rw(self):
-        # Goal pos
-        goal = np.array([self.frame.robots_blue[self.receiver_id].x,
-                         self.frame.robots_blue[self.receiver_id].y])
+        assert(self.last_frame is not None)
 
         # Calculate previous ball dist
+        last_ball = self.last_frame.ball
         ball = self.frame.ball
+        last_ball_pos = np.array([last_ball.x, last_ball.y])
+        last_ball_dist = np.linalg.norm(self.objective - last_ball_pos)
 
         # Calculate new ball dist
         ball_pos = np.array([ball.x, ball.y])
-        ball_dist = np.linalg.norm(goal - ball_pos)
-        ori_dist = np.linalg.norm(self.original_vec)
+        ball_dist = np.linalg.norm(self.objective - ball_pos)
 
-        ball_dist_rw= 0
-        if self.shooted:
-            ball_dist_rw = (ori_dist-ball_dist)/ori_dist
+        ball_dist_rw = last_ball_dist - ball_dist
 
         return np.clip(ball_dist_rw, -1, 1)
 
-    def __shooter_angle_reward(self):
-        ball = np.array([self.frame.ball.x, self.frame.ball.y])
-        shooter = np.array([self.last_frame.robots_blue[self.shooter_id].x,
-                            self.last_frame.robots_blue[self.shooter_id].y])
+    def __energy_pen(self, index):
+        robot = self.frame.robots_blue[index]
 
-        ball = np.array([self.last_frame.ball.x, self.last_frame.ball.y])
-        shooter_ball = ball - shooter
-        dist_ball = np.linalg.norm(shooter_ball)
-        shooter_ball /= dist_ball
-        ori_norm = self.original_vec/np.linalg.norm(self.original_vec)
-        cos_shooter = np.dot(shooter_ball, ori_norm)
-        shooter_angle_reward = 0
-        if not self.shooted:
-            kick_on = self.actions[self.shooter_id][1] > 0
-            ir = self.last_frame.robots_blue[self.shooter_id].infrared
-            self.shooted = ir and kick_on
-        if self.shooted:
-            if np.rad2deg(np.arccos(cos_shooter)) > 1:
-                shooter_angle_reward = -1
-            else:
-                shooter_angle_reward = 1
-        elif self.last_frame.robots_blue[self.shooter_id].infrared:
-            if self.holding_steps < 20:
-                shooter_angle_reward = cos_shooter
-            else:
-                shooter_angle_reward -= 0.5
-        return shooter_angle_reward
+        # Sum of abs each wheel speed sent
+        energy = abs(robot.v_wheel0)\
+            + abs(robot.v_wheel1)\
+            + abs(robot.v_wheel2)\
+            + abs(robot.v_wheel3)
 
-    def __recv_angle_reward(self):
-        ball = np.array([self.frame.ball.x, self.frame.ball.y])
-        recv = self.frame.robots_blue[self.receiver_id]
-        recv_pos = np.array([recv.x, recv.y])
-        recv_ball = ball - recv_pos
-        recv_ball = recv_ball/np.linalg.norm(recv_ball)
-        angle_recv_ball = np.rad2deg(np.arctan2(recv_ball[1], recv_ball[0]))
-        recv_angle = recv.theta
-        angle_between = angle_recv_ball - recv_angle
-        angle_between = (angle_between + 180) % 360 - 180
-        angle_between = np.deg2rad(angle_between)
-        return np.cos(angle_between)
-
-
+        return energy
