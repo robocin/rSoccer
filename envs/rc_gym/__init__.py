@@ -27,59 +27,59 @@ register(id='VSSFIRA-v0',
 
 register(id='SSLGoToBall-v0',
          entry_point='rc_gym.ssl.ssl_go_to_ball:SSLGoToBallEnv',
-         kwargs={'field_type' : 2, 'n_robots_yellow' : 0},
+         kwargs={'field_type': 2, 'n_robots_yellow': 0},
          max_episode_steps=1200
          )
 
 register(id='SSLGoToBall-v1',
          entry_point='rc_gym.ssl.ssl_go_to_ball:SSLGoToBallEnv',
-         kwargs={'field_type' : 2, 'n_robots_yellow' : 6},
+         kwargs={'field_type': 2, 'n_robots_yellow': 6},
          max_episode_steps=1200
          )
 
 register(id='SSLGoToBallIR-v0',
          entry_point='rc_gym.ssl.ssl_go_to_ball:SSLGoToBallIREnv',
-         kwargs={'field_type' : 2, 'n_robots_yellow' : 0},
+         kwargs={'field_type': 2, 'n_robots_yellow': 0},
          max_episode_steps=1200
          )
 
 register(id='SSLGoToBallIR-v1',
          entry_point='rc_gym.ssl.ssl_go_to_ball:SSLGoToBallIREnv',
-         kwargs={'field_type' : 2, 'n_robots_yellow' : 6},
+         kwargs={'field_type': 2, 'n_robots_yellow': 6},
          max_episode_steps=1200
          )
 
 register(id='SSLGoToBallShoot-v0',
          entry_point='rc_gym.ssl.ssl_go_to_ball_shoot:SSLGoToBallShootEnv',
-         kwargs={'field_type' : 2, 'random_init' : False, 
-                 'enter_goal_area' : True},
+         kwargs={'field_type': 2, 'random_init': False,
+                 'enter_goal_area': True},
          max_episode_steps=2400
          )
 
 register(id='SSLGoToBallShoot-v1',
          entry_point='rc_gym.ssl.ssl_go_to_ball_shoot:SSLGoToBallShootEnv',
-         kwargs={'field_type' : 2, 'random_init' : True, 
-                 'enter_goal_area' : True},
+         kwargs={'field_type': 2, 'random_init': True,
+                 'enter_goal_area': True},
          max_episode_steps=2400
          )
 
 register(id='SSLGoToBallShoot-v2',
          entry_point='rc_gym.ssl.ssl_go_to_ball_shoot:SSLGoToBallShootEnv',
-         kwargs={'field_type' : 2, 'random_init' : False, 
-                 'enter_goal_area' : False},
+         kwargs={'field_type': 2, 'random_init': False,
+                 'enter_goal_area': False},
          max_episode_steps=2400
          )
 
 register(id='SSLGoToBallShoot-v3',
          entry_point='rc_gym.ssl.ssl_go_to_ball_shoot:SSLGoToBallShootEnv',
-         kwargs={'field_type' : 2, 'random_init' : True, 
-                 'enter_goal_area' : False},
+         kwargs={'field_type': 2, 'random_init': True,
+                 'enter_goal_area': False},
          max_episode_steps=2400
          )
 
 register(id='SSLHWStaticDefenders-v0',
          entry_point='rc_gym.ssl.ssl_hw_challenge.static_defenders:SSLHWStaticDefendersEnv',
-         kwargs={'field_type' : 2},
+         kwargs={'field_type': 2},
          max_episode_steps=1000
          )
 
@@ -90,22 +90,17 @@ register(id='SSLHWDribbling-v0',
 
 register(id='SSLContestedPossessionEnv-v0',
          entry_point='rc_gym.ssl.ssl_hw_challenge.contested_possession:SSLContestedPossessionEnv',
-         kwargs={'random_init' : False},
+         kwargs={'random_init': False},
          max_episode_steps=1200
          )
 
 register(id='SSLContestedPossessionEnv-v1',
          entry_point='rc_gym.ssl.ssl_hw_challenge.contested_possession:SSLContestedPossessionEnv',
-         kwargs={'random_init' : True},
+         kwargs={'random_init': True},
          max_episode_steps=1200
          )
 
 register(id='SSLPassEndurance-v0',
          entry_point='rc_gym.ssl.ssl_hw_challenge:SSLPassEnduranceEnv',
          max_episode_steps=120
-         )
-
-register(id='SSLPassEnduranceMA-v0',
-         entry_point='rc_gym.ssl.ssl_hw_challenge:SSLPassEnduranceMAEnv',
-         max_episode_steps=1200
          )
