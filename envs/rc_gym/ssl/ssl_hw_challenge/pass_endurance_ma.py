@@ -45,7 +45,6 @@ class SSLPassEnduranceMAEnv(SSLBaseEnv):
                                            dtype=np.float32)
 
         n_obs = 4 + 8*self.n_robots_blue
-        self.holding_steps = 0
         self.stopped_steps = 0
         self.observation_space = gym.spaces.Box(low=-self.NORM_BOUNDS,
                                                 high=self.NORM_BOUNDS,
@@ -53,7 +52,7 @@ class SSLPassEnduranceMAEnv(SSLBaseEnv):
                                                 dtype=np.float32)
         self.receiver_id = 1
         self.shooter_id = 0
-        self.last_cos_diff = 0
+        self.last_diff = 0
         self.ball_grad_scale = np.linalg.norm([self.field.width/2,
                                                self.field.length/2])/4
 
@@ -108,7 +107,6 @@ class SSLPassEnduranceMAEnv(SSLBaseEnv):
     def reset(self):
         self.reward_shaping_total = None
         state = super().reset()
-        self.holding_steps = 0
         self.stopped_steps = 0
         self.shooter_id, self.receiver_id = 0, 1
         return state
@@ -133,7 +131,6 @@ class SSLPassEnduranceMAEnv(SSLBaseEnv):
 
     def _calculate_reward_and_done(self):
         w_ball_grad = 1/self.ball_grad_scale
-        w_angle = 0.2
         reward = {f'robot_{i}': 0 for i in range(self.n_robots_blue)}
         done = False
         if self.reward_shaping_total is None:
@@ -144,17 +141,18 @@ class SSLPassEnduranceMAEnv(SSLBaseEnv):
             for i in range(self.n_robots_blue):
                 reward[f'robot_{i}'] = 10
             self.reward_shaping_total['n_passes'] += 1
+            self.stopped_steps = 0
             self.shooter_id, self.receiver_id = self.receiver_id, self.shooter_id
         else:
             rw_ball_grad = w_ball_grad * self.__ball_grad_rw()
             reward[f'robot_{self.shooter_id}'] += rw_ball_grad
             self.reward_shaping_total['ball_grad'] += rw_ball_grad
 
-            rw_angle_ball = w_angle * self.__angle_ball_rw()
+            rw_angle_ball = self.__angle_ball_rw()
             reward[f'robot_{self.receiver_id}'] += rw_angle_ball
             self.reward_shaping_total['angle_ball'] += rw_angle_ball
 
-        if self.__wrong_ball() or self.holding_steps > 15:
+        if self.__wrong_ball():
             for i in range(self.n_robots_blue):
                 reward[f'robot_{i}'] = -1
             done = True
@@ -168,7 +166,7 @@ class SSLPassEnduranceMAEnv(SSLBaseEnv):
 
         pos_frame.ball = Ball(x=x(), y=y())
         factor = (pos_frame.ball.y/abs(pos_frame.ball.y))
-        offset = 0.115*factor
+        offset = 0.09*factor
         angle = 270 if factor > 0 else 90
         pos_frame.robots_blue[0] = Robot(
             x=pos_frame.ball.x, y=pos_frame.ball.y+offset, theta=angle
@@ -211,7 +209,7 @@ class SSLPassEnduranceMAEnv(SSLBaseEnv):
             self.stopped_steps += 1
         else:
             self.stopped_steps = 0
-        return self.stopped_steps > 20 or not_inside
+        return self.stopped_steps > 10 or not_inside
 
     def __ball_grad_rw(self):
         assert(self.last_frame is not None)
@@ -243,6 +241,7 @@ class SSLPassEnduranceMAEnv(SSLBaseEnv):
         receiver_ball = receiver_ball/np.linalg.norm(receiver_ball)
         desired_angle = np.rad2deg(np.arctan2(receiver_ball[1], receiver_ball[0]))
         diff = desired_angle - recv_angle
-        diff = (diff + 180) % 360 - 180
-        angle_ball_rw = 1 - abs(diff/180)
+        diff = abs((diff + 180) % 360 - 180)
+        angle_ball_rw = (self.last_diff - diff)/180
+        self.last_diff = diff
         return angle_ball_rw
