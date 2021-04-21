@@ -44,7 +44,7 @@ class SSLPassEnduranceMAEnv(SSLBaseEnv):
                                            shape=(self.n_robots_blue, 3),
                                            dtype=np.float32)
 
-        n_obs = 4 + 6*self.n_robots_blue
+        n_obs = 4 + 8*self.n_robots_blue
         self.holding_steps = 0
         self.stopped_steps = 0
         self.observation_space = gym.spaces.Box(low=-self.NORM_BOUNDS,
