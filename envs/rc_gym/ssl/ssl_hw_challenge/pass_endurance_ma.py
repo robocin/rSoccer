@@ -209,7 +209,7 @@ class SSLPassEnduranceMAEnv(SSLBaseEnv):
             self.stopped_steps += 1
         else:
             self.stopped_steps = 0
-        return self.stopped_steps > 10 or not_inside
+        return self.stopped_steps > 20 or not_inside
 
     def __ball_grad_rw(self):
         assert(self.last_frame is not None)
