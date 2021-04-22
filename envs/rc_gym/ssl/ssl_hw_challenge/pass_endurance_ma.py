@@ -41,23 +41,26 @@ class SSLPassEnduranceMAEnv(SSLBaseEnv):
         super().__init__(field_type=2, n_robots_blue=2,
                          n_robots_yellow=0, time_step=0.025)
         self.action_space = gym.spaces.Box(low=-1, high=1,
-                                           shape=(self.n_robots_blue, 3),
+                                           shape=(self.n_robots_blue, 5),
                                            dtype=np.float32)
 
-        n_obs = 4 + 8*self.n_robots_blue
+        n_obs = 4 + 9*self.n_robots_blue
         self.stopped_steps = 0
         self.observation_space = gym.spaces.Box(low=-self.NORM_BOUNDS,
                                                 high=self.NORM_BOUNDS,
-                                                shape=(self.n_robots_blue, n_obs),
+                                                shape=(
+                                                    self.n_robots_blue, n_obs),
                                                 dtype=np.float32)
         self.receiver_id = 1
         self.shooter_id = 0
-        self.last_diff = 0
         self.ball_grad_scale = np.linalg.norm([self.field.width/2,
                                                self.field.length/2])/4
+        wheel_max_rad_s = 160
+        max_steps = 1200
+        self.energy_scale = ((wheel_max_rad_s * 4) * max_steps)
 
         print('Environment initialized')
-    
+
     def get_rotated_obs(self):
         robots_dict = dict()
         for i in range(self.n_robots_blue):
@@ -72,8 +75,11 @@ class SSLPassEnduranceMAEnv(SSLBaseEnv):
             )
             robots_dict[i].append(self.norm_v(self.frame.robots_blue[i].v_x))
             robots_dict[i].append(self.norm_v(self.frame.robots_blue[i].v_y))
-            robots_dict[i].append(self.norm_w(self.frame.robots_blue[i].v_theta))
-            robots_dict[i].append(1 if self.frame.robots_blue[i].infrared else 0)
+            robots_dict[i].append(self.norm_w(
+                self.frame.robots_blue[i].v_theta))
+            robots_dict[i].append(
+                1 if self.frame.robots_blue[i].infrared else 0)
+            robots_dict[i].append(1 if i == self.shooter_id else 0)
 
         rotaded_obs = list()
         for i in range(self.n_robots_blue):
@@ -117,26 +123,29 @@ class SSLPassEnduranceMAEnv(SSLBaseEnv):
 
     def _get_commands(self, actions):
         commands = []
-        actions[0][1] = actions[0][1] if abs(actions[0][1]) > 0.5 else 0
-        actions[1][1] = actions[1][1] if abs(actions[1][1]) > 0.5 else 0
+        actions[0][3] = actions[0][3] if abs(actions[0][3]) > 0.5 else 0
+        actions[1][3] = actions[1][3] if abs(actions[1][3]) > 0.5 else 0
 
         for i in range(self.n_robots_blue):
-            cmd = Robot(yellow=False, id=i, v_x=0,
-                        v_y=0, v_theta=actions[i][0],
-                        kick_v_x=actions[i][1],
-                        dribbler=True if actions[i][2] > 0 else False)
+            cmd = Robot(yellow=False, id=i, v_x=actions[i][0],
+                        v_y=actions[i][1], v_theta=actions[i][2],
+                        kick_v_x=actions[i][3],
+                        dribbler=True if actions[i][4] > 0 else False)
             commands.append(cmd)
 
         return commands
 
     def _calculate_reward_and_done(self):
         w_ball_grad = 1/self.ball_grad_scale
+        w_energy = 1/self.energy_scale
         reward = {f'robot_{i}': 0 for i in range(self.n_robots_blue)}
         done = False
         if self.reward_shaping_total is None:
             self.reward_shaping_total = {'n_passes': 0,
-                                         'angle_ball': 0,
                                          'ball_grad': 0}
+            for i in range(self.n_robots_blue):
+                self.reward_shaping_total[f'robot_{i}'] = {'energy': 0}
+
         if self.frame.robots_blue[self.receiver_id].infrared:
             for i in range(self.n_robots_blue):
                 reward[f'robot_{i}'] = 10
@@ -146,13 +155,15 @@ class SSLPassEnduranceMAEnv(SSLBaseEnv):
         else:
             rw_ball_grad = w_ball_grad * self.__ball_grad_rw()
             reward[f'robot_{self.shooter_id}'] += rw_ball_grad
+            reward[f'robot_{self.receiver_id}'] += rw_ball_grad
             self.reward_shaping_total['ball_grad'] += rw_ball_grad
 
-            rw_angle_ball = self.__angle_ball_rw()
-            reward[f'robot_{self.receiver_id}'] += rw_angle_ball
-            self.reward_shaping_total['angle_ball'] += rw_angle_ball
+            for i in range(self.n_robots_blue):
+                rw_energy = w_energy*self.__energy_pen(i)
+                reward[f'robot_{i}'] += rw_energy
+                self.reward_shaping_total[f'robot_{i}']['energy'] += rw_energy
 
-        if self.__wrong_ball():
+        if self.__bad_state():
             for i in range(self.n_robots_blue):
                 reward[f'robot_{i}'] = -1
             done = True
@@ -161,7 +172,7 @@ class SSLPassEnduranceMAEnv(SSLBaseEnv):
     def _get_initial_positions_frame(self):
         '''Returns the position of each robot and ball for the initial frame'''
         pos_frame: Frame = Frame()
-        def x(): return random.uniform(-1.5, 1.5)
+        def x(): return random.uniform(-2, 2)
         def y(): return random.uniform(1.5, -1.5)
 
         pos_frame.ball = Ball(x=x(), y=y())
@@ -172,9 +183,9 @@ class SSLPassEnduranceMAEnv(SSLBaseEnv):
             x=pos_frame.ball.x, y=pos_frame.ball.y+offset, theta=angle
         )
         ball = np.array([pos_frame.ball.x,
-                            pos_frame.ball.y])
+                         pos_frame.ball.y])
         recv_x = x()
-        while abs(recv_x - pos_frame.ball.x) < 1:
+        while abs(recv_x - pos_frame.ball.x) < 1.5:
             recv_x = x()
         receiver = np.array([recv_x, -pos_frame.ball.y])
         vect = receiver - ball
@@ -186,22 +197,20 @@ class SSLPassEnduranceMAEnv(SSLBaseEnv):
 
         return pos_frame
 
-    def __wrong_ball(self):
-        ball = np.array([self.frame.ball.x, self.frame.ball.y])
-        last_ball = np.array([self.last_frame.ball.x, self.last_frame.ball.y])
-
+    def __bad_state(self):
+        # Check if dist between robots > 1.5
         recv = np.array([self.frame.robots_blue[self.receiver_id].x,
                          self.frame.robots_blue[self.receiver_id].y])
         shooter = np.array([self.frame.robots_blue[self.shooter_id].x,
                             self.frame.robots_blue[self.shooter_id].y])
-        comp_ball = np.array(ball*100, dtype=int)
-        comp_shoot = np.array(shooter*100, dtype=int)
-        comp_recv = np.array(recv*100, dtype=int)
-        inside_x = min(comp_recv[0], comp_shoot[0]) <= comp_ball[0] <= max(
-            comp_recv[0], comp_shoot[0])
-        inside_y = min(comp_recv[1], comp_shoot[1]) <= comp_ball[1] <= max(
-            comp_recv[1], comp_shoot[1])
-        not_inside = not(inside_x and inside_y)
+        min_dist = np.linalg.norm(recv - shooter) > 1.5
+
+        # Check if ball is in this rectangle
+        ball = np.array([self.frame.ball.x, self.frame.ball.y])
+        last_ball = np.array([self.last_frame.ball.x, self.last_frame.ball.y])
+        inside = -2 < ball[0] < 2 and -1.5 < ball[1] < 1.5
+
+        # Check if ball is stopped for too long
         last_dist = np.linalg.norm(last_ball - recv)
         dist = np.linalg.norm(ball - recv)
         stopped = abs(last_dist - dist) < 0.01
@@ -209,7 +218,7 @@ class SSLPassEnduranceMAEnv(SSLBaseEnv):
             self.stopped_steps += 1
         else:
             self.stopped_steps = 0
-        return self.stopped_steps > 20 or not_inside
+        return self.stopped_steps > 20 or not inside or not min_dist
 
     def __ball_grad_rw(self):
         assert(self.last_frame is not None)
@@ -231,17 +240,13 @@ class SSLPassEnduranceMAEnv(SSLBaseEnv):
         ball_dist_rw = last_ball_dist - ball_dist
         return np.clip(ball_dist_rw, -1, 1)
 
-    def __angle_ball_rw(self):
-        recv_angle = self.frame.robots_blue[self.receiver_id].theta
-        receiver = np.array([self.frame.robots_blue[self.receiver_id].x,
-                             self.frame.robots_blue[self.receiver_id].y])
-        ball = np.array([self.frame.ball.x, self.frame.ball.y])
+    def __energy_pen(self, idx):
+        robot = self.frame.robots_blue[idx]
 
-        receiver_ball = ball - receiver
-        receiver_ball = receiver_ball/np.linalg.norm(receiver_ball)
-        desired_angle = np.rad2deg(np.arctan2(receiver_ball[1], receiver_ball[0]))
-        diff = desired_angle - recv_angle
-        diff = abs((diff + 180) % 360 - 180)
-        angle_ball_rw = (self.last_diff - diff)/180
-        self.last_diff = diff
-        return angle_ball_rw
+        # Sum of abs each wheel speed sent
+        energy = abs(robot.v_wheel0)\
+            + abs(robot.v_wheel1)\
+            + abs(robot.v_wheel2)\
+            + abs(robot.v_wheel3)
+
+        return energy
