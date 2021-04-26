@@ -77,24 +77,24 @@ register(id='SSLGoToBallShoot-v3',
          max_episode_steps=2400
          )
 
-register(id='SSLHWStaticDefenders-v0',
+register(id='SSLStaticDefenders-v0',
          entry_point='rc_gym.ssl.ssl_hw_challenge.static_defenders:SSLHWStaticDefendersEnv',
          kwargs={'field_type': 2},
          max_episode_steps=1000
          )
 
-register(id='SSLHWDribbling-v0',
+register(id='SSLDribbling-v0',
          entry_point='rc_gym.ssl.ssl_hw_challenge.dribbling:SSLHWDribblingEnv',
          max_episode_steps=4800
          )
 
-register(id='SSLContestedPossessionEnv-v0',
+register(id='SSLContestedPossession-v0',
          entry_point='rc_gym.ssl.ssl_hw_challenge.contested_possession:SSLContestedPossessionEnv',
          kwargs={'random_init': False},
          max_episode_steps=1200
          )
 
-register(id='SSLContestedPossessionEnv-v1',
+register(id='SSLContestedPossession-v1',
          entry_point='rc_gym.ssl.ssl_hw_challenge.contested_possession:SSLContestedPossessionEnv',
          kwargs={'random_init': True},
          max_episode_steps=1200

@@ -30,12 +30,12 @@ class VSSBaseEnv(gym.Env):
                                       n_robots_blue=n_robots_blue,
                                       n_robots_yellow=n_robots_yellow,
                                       time_step_ms=int(self.time_step*1000))
-        self.n_robots_blue: int = n_robots_blue
-        self.n_robots_yellow: int = n_robots_yellow
+        self.n_robots_blue = n_robots_blue
+        self.n_robots_yellow = n_robots_yellow
 
         # Get field dimensions
-        self.field_type: int = field_type
-        self.field: Dict[str, np.float64] = self.rsim.get_field_params()
+        self.field_type = field_type
+        self.field = self.rsim.get_field_params()
         self.norm_max_pos = max(self.field.width / 2,
                                 (self.field.length / 2)
                                  + self.field.penalty_length
