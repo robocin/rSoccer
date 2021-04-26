@@ -88,13 +88,6 @@ class RSim:
 
 
 class RSimVSS(RSim):
-    def __init__(self, field_type: int, n_robots_blue: int,
-                 n_robots_yellow: int, time_step_ms: int):
-        super().__init__(field_type=field_type, n_robots_blue=n_robots_blue,
-                         n_robots_yellow=n_robots_yellow, time_step_ms=time_step_ms)
-
-        self.linear_speed_range = 1.2  # m/s
-
     def send_commands(self, commands):
         sim_commands = np.zeros(
             (self.n_robots_blue + self.n_robots_yellow, 2), dtype=np.float64)
@@ -104,9 +97,8 @@ class RSimVSS(RSim):
                 rbt_id = self.n_robots_blue + cmd.id
             else:
                 rbt_id = cmd.id
-            # convert from linear speed to angular speed
-            sim_commands[rbt_id][0] = cmd.v_wheel0 / self.field.rbt_wheel_radius
-            sim_commands[rbt_id][1] = cmd.v_wheel1 / self.field.rbt_wheel_radius
+            sim_commands[rbt_id][0] = cmd.v_wheel0
+            sim_commands[rbt_id][1] = cmd.v_wheel1
         self.simulator.step(sim_commands)
 
     def get_frame(self) -> FrameVSS:
