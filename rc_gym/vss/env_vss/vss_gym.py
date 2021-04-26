@@ -243,13 +243,11 @@ class VSSEnv(VSSBaseEnv):
         return pos_frame
 
     def _actions_to_v_wheels(self, actions):
-        left_wheel_speed = actions[0] * self.rsim.linear_speed_range
-        right_wheel_speed = actions[1] * self.rsim.linear_speed_range
+        left_wheel_speed = actions[0] * self.max_v
+        right_wheel_speed = actions[1] * self.max_v
 
         left_wheel_speed, right_wheel_speed = np.clip(
-            (left_wheel_speed, right_wheel_speed),
-            -self.rsim.linear_speed_range,
-            self.rsim.linear_speed_range
+            (left_wheel_speed, right_wheel_speed), -self.max_v, self.max_v
         )
 
         # Deadzone
@@ -259,7 +257,11 @@ class VSSEnv(VSSBaseEnv):
         if -self.v_wheel_deadzone < right_wheel_speed < self.v_wheel_deadzone:
             right_wheel_speed = 0
 
-        return left_wheel_speed, right_wheel_speed
+        # Convert to rad/s
+        left_wheel_speed /= self.field.rbt_wheel_radius
+        right_wheel_speed /= self.field.rbt_wheel_radius
+
+        return left_wheel_speed , right_wheel_speed
 
     def __ball_grad(self):
         '''Calculate ball potential gradient

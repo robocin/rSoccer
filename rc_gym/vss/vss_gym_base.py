@@ -36,13 +36,12 @@ class VSSBaseEnv(gym.Env):
         # Get field dimensions
         self.field_type = field_type
         self.field = self.rsim.get_field_params()
-        self.norm_max_pos = max(self.field.width / 2,
-                                (self.field.length / 2)
-                                 + self.field.penalty_length
-                                )
-        self.norm_max_v = self.rsim.linear_speed_range
-        # 0.0425 = robot radius (0.0375) + wheel thicknees (0.05)
-        self.norm_max_w = np.rad2deg(self.rsim.linear_speed_range / 0.0425)
+        self.max_pos = max(self.field.width / 2, (self.field.length / 2) 
+                                + self.field.penalty_length)
+        max_wheel_rad_s = (self.field.rbt_motor_max_rpm / 60) * 2 * np.pi
+        self.max_v = max_wheel_rad_s * self.field.rbt_wheel_radius
+        # 0.04 = robot radius (0.0375) + wheel thicknees (0.025)
+        self.max_w = np.rad2deg(self.max_v / 0.04)
         
         # Initiate 
         self.frame: Frame = None
@@ -86,7 +85,7 @@ class VSSBaseEnv(gym.Env):
 
         return self._frame_to_observations()
 
-    def render(self, mode: Optional = 'human') -> None:
+    def render(self, mode='human') -> None:
         '''
         Renders the game depending on 
         ball's and players' positions.
@@ -131,21 +130,21 @@ class VSSBaseEnv(gym.Env):
 
     def norm_pos(self, pos):
         return np.clip(
-            pos / self.norm_max_pos,
+            pos / self.max_pos,
             -self.NORM_BOUNDS,
             self.NORM_BOUNDS
         )
 
     def norm_v(self, v):
         return np.clip(
-            v / self.norm_max_v,
+            v / self.max_v,
             -self.NORM_BOUNDS,
             self.NORM_BOUNDS
         )
 
     def norm_w(self, w):
         return np.clip(
-            w / self.norm_max_w,
+            w / self.max_w,
             -self.NORM_BOUNDS,
             self.NORM_BOUNDS
         )
