@@ -234,14 +234,17 @@ class SSLHWStaticDefendersEnv(SSLBaseEnv):
         while in_gk_area(pos_frame.ball):
             pos_frame.ball = Ball(x=x(), y=y())
 
-        d_ball_rbt = (self.field.ball_radius + self.field.rbt_radius) * 1.1
-        d_rbt_rbt = (self.field.rbt_radius * 2) * 1.1
+        radius_robot = 0.1
 
+        places = KDTree()
+        places.insert((pos_frame.ball.x, pos_frame.ball.y))
         for i in range(len(agents)):
-            for j in range(i):
-                while same_position_ref(agents[i], agents[j], d_rbt_rbt)\
-                    or same_position_ref(agents[i], pos_frame.ball, d_ball_rbt):
-                    agents[i] = Robot(x=x(), y=y(), theta=theta())
+            pos = (x(), y())
+            while in_gk_area(pos) or places.get_nearest(pos)[1] < radius_robot:
+                pos = (x(), y())
+
+            places.insert(pos)
+            agents[i] = Robot(x=pos[0], y=pos[1], theta=theta())
 
         for i in range(self.n_robots_yellow):
             pos_frame.robots_yellow[i] = agents[i]
