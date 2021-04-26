@@ -1,5 +1,0 @@
-#!/bin/sh
-
-SCRIPTPATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-echo exporting $SCRIPTPATH/lib to LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=$SCRIPTPATH/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
