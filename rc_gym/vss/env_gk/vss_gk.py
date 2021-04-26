@@ -182,31 +182,51 @@ class rSimVSSGK(VSSBaseEnv):
 
     def _get_commands(self, actions):
         commands = []
-        v_wheel1 = actions[0]
-        v_wheel2 = actions[1]
-        self.energy_penalty = -(abs(v_wheel1 * 100) + abs(v_wheel2 * 100))
-        commands.append(Robot(yellow=False, id=0, v_wheel1=v_wheel1,
-                              v_wheel2=v_wheel2))
+        self.energy_penalty = -(abs(actions[0] * 100) + abs(actions[1] * 100))
+        v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions)
+        commands.append(Robot(yellow=False, id=0, v_wheel0=v_wheel0,
+                              v_wheel1=v_wheel1))
 
         # Send random commands to the other robots
-        commands.append(Robot(yellow=False, id=1,
-                              v_wheel1=random.uniform(-1, 1),
-                              v_wheel2=random.uniform(-1, 1)))
-        commands.append(Robot(yellow=False, id=2,
-                              v_wheel1=random.uniform(-1, 1),
-                              v_wheel2=random.uniform(-1, 1)))
+        for i in range(1, self.n_robots_blue):
+            actions = self.ou_actions[i].sample()
+            v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions)
+            commands.append(Robot(yellow=False, id=i, v_wheel0=v_wheel0,
+                                  v_wheel1=v_wheel1))
 
         atk_action = self.attacker.get_action(self._atk_obs())
+        v_wheel0, v_wheel1 = self._actions_to_v_wheels(atk_action)
         # we invert the speed on the wheels because of the attacker's reflection on the Y axis.
-        commands.append(Robot(yellow=True, id=0, v_wheel1=atk_action[1],
-                              v_wheel2=atk_action[0]))
-        commands.append(Robot(yellow=True, id=1,
-                              v_wheel1=random.uniform(-1, 1),
-                              v_wheel2=random.uniform(-1, 1)))
-        commands.append(Robot(yellow=True, id=2,
-                              v_wheel1=random.uniform(-1, 1),
-                              v_wheel2=random.uniform(-1, 1)))
+        commands.append(Robot(yellow=True, id=0, v_wheel0=v_wheel1,
+                              v_wheel1=v_wheel0))
+        for i in range(1, self.n_robots_yellow):
+            actions = self.ou_actions[self.n_robots_blue+i].sample()
+            v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions)
+            commands.append(Robot(yellow=False, id=i, v_wheel0=v_wheel0,
+                                  v_wheel1=v_wheel1))
+
         return commands
+
+    def _actions_to_v_wheels(self, actions):
+        left_wheel_speed = actions[0] * self.max_v
+        right_wheel_speed = actions[1] * self.max_v
+
+        left_wheel_speed, right_wheel_speed = np.clip(
+            (left_wheel_speed, right_wheel_speed), -self.max_v, self.max_v
+        )
+
+        # Deadzone
+        if -self.v_wheel_deadzone < left_wheel_speed < self.v_wheel_deadzone:
+            left_wheel_speed = 0
+
+        if -self.v_wheel_deadzone < right_wheel_speed < self.v_wheel_deadzone:
+            right_wheel_speed = 0
+
+        # Convert to rad/s
+        left_wheel_speed /= self.field.rbt_wheel_radius
+        right_wheel_speed /= self.field.rbt_wheel_radius
+
+        return left_wheel_speed , right_wheel_speed
 
     def _calculate_future_point(self, pos, vel):
         if vel[0] > 0:
