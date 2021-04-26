@@ -1,7 +1,7 @@
 # SSL gym environments
 
 Creating new environments is done over inheritance of the SSL base class through the following steps:
-+ Setting the field type (0 for the 6 vs 6 competition field size, and 1 for 11 vs 11), the number of blue and yellow robots and the simulation time step.
++ Setting the field type (0 for the 6 vs 6 competition field size, 1 for 11 vs 11 and 2 for the field size specified on the 2021 hardware challenges), the number of blue and yellow robots and the simulation time step.
 + Defining the obsevation and action spaces as [gym.Spaces](https://gym.openai.com/docs/#spaces) types.
 + Implement the base class methods:
     + _get_commands
