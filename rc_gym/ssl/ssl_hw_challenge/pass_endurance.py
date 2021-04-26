@@ -60,6 +60,11 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
         self.ball_grad_scale = np.linalg.norm([self.field.width/2,
                                                self.field.length/2])/4
 
+        # Limit robot speeds
+        self.max_v = 2.5
+        self.max_w = 10
+        self.max_kick_x = 5.0
+
         print('Environment initialized')
 
     def _frame_to_observations(self):
@@ -100,8 +105,8 @@ class SSLPassEnduranceEnv(SSLBaseEnv):
         actions[1] = actions[1] if abs(actions[1]) > 0.5 else 0
         self.actions = actions
         cmd = Robot(yellow=False, id=0, v_x=0,
-                    v_y=0, v_theta=actions[0],
-                    kick_v_x=actions[1],
+                    v_y=0, v_theta=actions[0] * self.max_w,
+                    kick_v_x=actions[1] * self.max_kick_x,
                     dribbler=True if actions[2] > 0 else False)
         commands.append(cmd)
 

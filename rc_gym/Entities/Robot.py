@@ -21,8 +21,3 @@ class Robot:
     v_wheel1: float = 0 # rad/s
     v_wheel2: float = 0 # rad/s
     v_wheel3: float = 0 # rad/s
-    
-    def to_local(self, rbt_angle):
-        angle = np.deg2rad(rbt_angle)
-        self.v_x, self.v_y = self.v_x*np.cos(angle) + self.v_y*np.sin(angle), \
-            -self.v_x*np.sin(angle) + self.v_y*np.cos(angle)

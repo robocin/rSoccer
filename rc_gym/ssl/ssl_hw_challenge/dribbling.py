@@ -63,6 +63,9 @@ class SSLHWDribblingEnv(SSLBaseEnv):
         self.node_3 = -2.
         self.field_margin = 1
         
+        # Limit robot speeds
+        self.max_v = 2.5
+        self.max_w = 10
         
         print('Environment initialized')
 
@@ -103,13 +106,30 @@ class SSLHWDribblingEnv(SSLBaseEnv):
     def _get_commands(self, actions):
         commands = []
 
-        cmd = Robot(yellow=False, id=0, v_x=actions[0],
-                              v_y=actions[1], v_theta=actions[2],
-                              dribbler=True if actions[3] > 0 else False)
-        cmd.to_local(self.frame.robots_blue[0].theta)
+        angle = self.frame.robots_blue[0].theta
+        v_x, v_y, v_theta = self.convert_actions(actions, np.deg2rad(angle))
+        cmd = Robot(yellow=False, id=0, v_x=v_x, v_y=v_y, v_theta=v_theta,
+                    dribbler=True if actions[3] > 0 else False)
         commands.append(cmd)
 
         return commands
+
+    def convert_actions(self, action, angle):
+        """Denormalize, clip to absolute max and convert to local"""
+        # Denormalize
+        v_x = action[0] * self.max_v
+        v_y = action[1] * self.max_v
+        v_theta = action[2] * self.max_w
+        # Convert to local
+        v_x, v_y = v_x*np.cos(angle) + v_y*np.sin(angle),\
+            -v_x*np.sin(angle) + v_y*np.cos(angle)
+
+        # clip by max absolute
+        v_norm = np.linalg.norm([v_x,v_y])
+        c = v_norm < self.max_v or self.max_v / v_norm
+        v_x, v_y = v_x*c, v_y*c
+        
+        return v_x, v_y, v_theta
 
     def _calculate_reward_and_done(self):
         reward = 0
