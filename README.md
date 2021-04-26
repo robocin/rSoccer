@@ -12,12 +12,12 @@ $ pip install -e .
 |           [VSS-v0](rc_gym/vss/README.md#vss-v0)          |      Box(40,)     |    Box(2,)   |    1200    |
 |          [VSSMA-v0](rc_gym/vss/README.md#vssma-v0)         |     Box(3,40)     |   Box(3,2)   |    1200    |
 |          [VSSGk-v0](rc_gym/vss/README.md#vssgk-v0)         |      Box(40,)     |    Box(2,)   |    1200    |
-|      [SSLGoToBallIR-v0](rc_gym/ssl/README.md#sslgotoballir-v0)     |      Box(24,)     |    Box(3,)   |    1200    |
+|      [SSLGoToBallIR-v0](rc_gym/ssl/README.md#sslgotoballir-v0)     |      Box(24,)     |    Box(3,)   |    2400    |
 |    [SSLGoToBallShoot-v0](rc_gym/ssl/README.md#sslgotoballshoot-v0)    |      Box(12,)     |    Box(5,)   |    1200    |
-|  [SSLStaticDefenders-v0](rc_gym/ssl/README.md#sslstaticdefenders-v0)  |      Box(24,)     |    Box(5,)   |    1200    |
-|     [SSLDribbling-v0](rc_gym/ssl/README.md#ssldribbling-v0)     |      Box(21,)     |    Box(4,)   |    1200    |
+|  [SSLStaticDefenders-v0](rc_gym/ssl/README.md#sslstaticdefenders-v0)  |      Box(24,)     |    Box(5,)   |    1000    |
+|     [SSLDribbling-v0](rc_gym/ssl/README.md#ssldribbling-v0)     |      Box(21,)     |    Box(4,)   |    4800    |
 | [SSLContestedPossession-v0](rc_gym/ssl/README.md#sslcontestedpossession-v0) |      Box(14,)     |    Box(5,)   |    1200    |
-|    [SSLPassEndurance-v0](rc_gym/ssl/README.md#sslpassendurance-v0)    |      Box(18,)     |    Box(3,)   |    1200    |
+|    [SSLPassEndurance-v0](rc_gym/ssl/README.md#sslpassendurance-v0)    |      Box(18,)     |    Box(3,)   |    120    |
 |    [SSLPassEnduranceMA-v0](rc_gym/ssl/README.md#sslpassendurancema-v0)    |      Box(18,)     |    Box(2,3)   |    1200    |
 
 # Example code
