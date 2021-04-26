@@ -1,7 +1,41 @@
-# Robocin Environments for Reinforcement Learning
+# RoboSim VSSS and SSL gym environments
 
-- agents
-    - RL agents used to train on the environments
+## Install environments
 
-- envs
-    - environment for vss and SSL using RoboSim
+```bash
+$ pip install -e .
+```
+# Available Envs
+- [**IEE VSSS**](rc_gym/vss/README.md)
+
+|       Environment Id      | Observation Space | Action Space | Step limit |
+|:-------------------------:|:-----------------:|:------------:|:----------:|
+|           [VSS-v0](rc_gym/vss/README.md#vss-v0)          |      Box(40,)     |    Box(2,)   |    1200    |
+|          [VSSMA-v0](rc_gym/vss/README.md#vssma-v0)         |     Box(3,40)     |   Box(3,2)   |    1200    |
+|          [VSSGk-v0](rc_gym/vss/README.md#vssgk-v0)         |      Box(40,)     |    Box(2,)   |    1200    |
+|      [SSLGoToBallIR-v0](rc_gym/ssl/README.md#sslgotoballir-v0)     |      Box(24,)     |    Box(3,)   |    1200    |
+|    [SSLGoToBallShoot-v0](rc_gym/ssl/README.md#sslgotoballshoot-v0)    |      Box(12,)     |    Box(5,)   |    1200    |
+|  [SSLStaticDefenders-v0](rc_gym/ssl/README.md#sslstaticdefenders-v0)  |      Box(24,)     |    Box(5,)   |    1200    |
+|     [SSLDribbling-v0](rc_gym/ssl/README.md#ssldribbling-v0)     |      Box(21,)     |    Box(4,)   |    1200    |
+| [SSLContestedPossession-v0](rc_gym/ssl/README.md#sslcontestedpossession-v0) |      Box(14,)     |    Box(5,)   |    1200    |
+|    [SSLPassEndurance-v0](rc_gym/ssl/README.md#sslpassendurance-v0)    |      Box(18,)     |    Box(3,)   |    1200    |
+|    [SSLPassEnduranceMA-v0](rc_gym/ssl/README.md#sslpassendurancema-v0)    |      Box(18,)     |    Box(2,3)   |    1200    |
+
+# Example code
+```python
+import gym
+import rc_gym
+
+# Using VSS 3v3 env
+env = gym.make('VSS3v3-v0')
+
+env.reset()
+# Run for 1 episode and print reward at the end
+for i in range(1):
+    done = False
+    while not done:
+        # Step using random actions
+        action = env.action_space.sample()
+        next_state, reward, done, _ = env.step(action)
+    print(reward)
+```
