@@ -40,7 +40,7 @@ class VSSBaseEnv(gym.Env):
                                 + self.field.penalty_length)
         max_wheel_rad_s = (self.field.rbt_motor_max_rpm / 60) * 2 * np.pi
         self.max_v = max_wheel_rad_s * self.field.rbt_wheel_radius
-        # 0.04 = robot radius (0.0375) + wheel thicknees (0.025)
+        # 0.04 = robot radius (0.0375) + wheel thicknees (0.0025)
         self.max_w = np.rad2deg(self.max_v / 0.04)
         
         # Initiate 

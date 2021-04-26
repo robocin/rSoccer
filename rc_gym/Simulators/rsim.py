@@ -125,16 +125,6 @@ class RSimVSS(RSim):
 
 
 class RSimSSL(RSim):
-    def __init__(self, field_type: int, n_robots_blue: int,
-                 n_robots_yellow: int, time_step_ms: int):
-        super().__init__(field_type=field_type, n_robots_blue=n_robots_blue,
-                         n_robots_yellow=n_robots_yellow, time_step_ms=time_step_ms)
-
-        self.linear_speed_range = 2.5  # m/s
-        self.angular_speed_range = 10  # rad/s
-        self.kick_v_x_speed_range = 5 # m/s
-        self.kick_v_z_speed_range = 5 # m/s
-
     def send_commands(self, commands):
         sim_cmds = np.zeros(
             (self.n_robots_blue + self.n_robots_yellow, 8), dtype=np.float64)
@@ -144,24 +134,22 @@ class RSimSSL(RSim):
                 rbt_id = self.n_robots_blue + cmd.id
             else:
                 rbt_id = cmd.id
-            
             if cmd.wheel_speed:
                 sim_cmds[rbt_id][0] = cmd.wheel_speed
                 sim_cmds[rbt_id][1] = cmd.v_wheel0
                 sim_cmds[rbt_id][2] = cmd.v_wheel1
                 sim_cmds[rbt_id][3] = cmd.v_wheel2
                 sim_cmds[rbt_id][4] = cmd.v_wheel3
-                sim_cmds[rbt_id][5] = cmd.kick_v_x * self.kick_v_x_speed_range
-                sim_cmds[rbt_id][6] = cmd.kick_v_z * self.kick_v_z_speed_range
+                sim_cmds[rbt_id][5] = cmd.kick_v_x
+                sim_cmds[rbt_id][6] = cmd.kick_v_z
                 sim_cmds[rbt_id][7] = cmd.dribbler
             else:
-                v_x, v_y = self._convert_speed(cmd.v_x * self.linear_speed_range, cmd.v_y * self.linear_speed_range)
                 sim_cmds[rbt_id][0] = cmd.wheel_speed
-                sim_cmds[rbt_id][1] = v_x
-                sim_cmds[rbt_id][2] = v_y
-                sim_cmds[rbt_id][3] = cmd.v_theta * self.angular_speed_range
-                sim_cmds[rbt_id][5] = cmd.kick_v_x * self.kick_v_x_speed_range
-                sim_cmds[rbt_id][6] = cmd.kick_v_z * self.kick_v_z_speed_range
+                sim_cmds[rbt_id][1] = cmd.v_x
+                sim_cmds[rbt_id][2] = cmd.v_y
+                sim_cmds[rbt_id][3] = cmd.v_theta
+                sim_cmds[rbt_id][5] = cmd.kick_v_x
+                sim_cmds[rbt_id][6] = cmd.kick_v_z
                 sim_cmds[rbt_id][7] = cmd.dribbler
             
         self.simulator.step(sim_cmds)
@@ -173,12 +161,6 @@ class RSimSSL(RSim):
         frame.parse(state, self.n_robots_blue, self.n_robots_yellow)
 
         return frame
-
-    def _convert_speed(self, v_x, v_y):
-        """converstion made to limit maximum speed in all directions"""
-        v_norm = np.linalg.norm([v_x,v_y])
-        c = v_norm < self.linear_speed_range or self.linear_speed_range / v_norm
-        return v_x*c, v_y*c
     
     def _init_simulator(self, field_type, n_robots_blue, n_robots_yellow,
                         ball_pos, blue_robots_pos, yellow_robots_pos,
