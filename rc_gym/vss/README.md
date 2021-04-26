@@ -8,7 +8,7 @@ Creating new environments is done over inheritance of the VSSS base class throug
     + _frame_to_observations
     + _calculate_reward_and_done
     + _get_initial_positions_frame
-+ Register the environment and set the maximum number of steps in an episode on [**__init__**](rc_gym/__init__.py) 
++ Register the environment and set the maximum number of steps in an episode on [**__init__**](../__init__.py) 
 
 The base environment define normalization methods using field size and robot parameters values which are used on the available environments.
 
