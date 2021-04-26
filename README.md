@@ -6,7 +6,6 @@
 $ pip install -e .
 ```
 # Available Envs
-- [**IEE VSSS**](rc_gym/vss/README.md)
 
 |       Environment Id      | Observation Space | Action Space | Step limit |
 |:-------------------------:|:-----------------:|:------------:|:----------:|
