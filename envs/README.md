@@ -8,23 +8,30 @@ $ pip install -e .
 # Available Envs
 ## VSS
 - **VSS-v0**
+![Alt Text](resources/vss.gif)
 - **VSSFIRA-v0** [Needs to run with FIRASIm]
 - **VSSMA-v0**
-- **VSSMAOpp-v0** [Needs a attacker model trained on VSS3v3-v0]
-- **VSSGk-v0** [Needs a attacker model trained on VSS3v3-v0]
+- **VSSMAOpp-v0** [Needs a attacker model trained on VSS-v0]
+- **VSSGk-v0** [Needs a attacker model trained on VSS-v0]
 ## SSL
 - **SSLGoToBall-v0**
 - **SSLGoToBall-v1**
 - **SSLGoToBallIR-v0**
 - **SSLGoToBallIR-v1**
+![Alt Text](resources/gotoball.gif)
 - **SSLGoToBallShoot-v0**
 - **SSLGoToBallShoot-v1**
 - **SSLGoToBallShoot-v2**
 - **SSLGoToBallShoot-v3**
+![Alt Text](resources/gotoshoot.gif)
 - **SSLHWStaticDefenders-v0**
+![Alt Text](resources/static.gif)
 - **SSLHWDribbling-v0**
+![Alt Text](resources/dribbling.gif)
 - **SSLContestedPossessionEnv-v0**
-- **SSLContestedPossessionEnv-v1**
+![Alt Text](resources/contested_possession.gif)
+- **SSLPassEndurance-v0**
+![Alt Text](resources/pass_endurance.gif)
 
 # Example code
 ```python
