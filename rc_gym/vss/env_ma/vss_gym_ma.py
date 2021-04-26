@@ -7,6 +7,7 @@ import gym
 import numpy as np
 import torch
 from rc_gym.Entities import Frame, Robot
+from rc_gym.Utils.Utils import OrnsteinUhlenbeckAction
 from rc_gym.vss.env_ma.opponent.model import DDPGActor
 from rc_gym.vss.vss_gym_base import VSSBaseEnv
 
@@ -74,6 +75,12 @@ class VSSMAEnv(VSSBaseEnv):
         self.actions: Dict = None
         self.reward_shaping_total = None
         self.v_wheel_deadzone = 0.05
+        
+        self.ou_actions = []
+        for i in range(self.n_robots_blue + self.n_robots_yellow):
+            self.ou_actions.append(
+                OrnsteinUhlenbeckAction(self.action_space, dt=self.time_step)
+            )
 
         print('Environment initialized')
 
@@ -81,6 +88,8 @@ class VSSMAEnv(VSSBaseEnv):
         self.actions = None
         self.reward_shaping_total = None
         self.previous_ball_potential = None
+        for ou in self.ou_actions:
+            ou.reset()
 
         return super().reset()
 
@@ -155,13 +164,13 @@ class VSSMAEnv(VSSBaseEnv):
                                   v_wheel1=v_wheel1))
 
         for i in range(self.n_robots_control, self.n_robots_blue):
-            actions = self.action_space.sample()
+            actions = self.ou_actions[i].sample()
             v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions[0])
             commands.append(Robot(yellow=False, id=i, v_wheel0=v_wheel0,
                                   v_wheel1=v_wheel1))
 
         for i in range(self.n_robots_yellow):
-            actions = self.action_space.sample()
+            actions = self.ou_actions[self.n_robots_blue+i].sample()
             v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions[0])
             commands.append(Robot(yellow=True, id=i, v_wheel0=v_wheel0,
                                   v_wheel1=v_wheel1))
@@ -247,8 +256,12 @@ class VSSMAEnv(VSSBaseEnv):
         return pos_frame
 
     def _actions_to_v_wheels(self, actions):
-        left_wheel_speed = actions[0] * self.rsim.linear_speed_range
-        right_wheel_speed = actions[1] * self.rsim.linear_speed_range
+        left_wheel_speed = actions[0] * self.max_v
+        right_wheel_speed = actions[1] * self.max_v
+
+        left_wheel_speed, right_wheel_speed = np.clip(
+            (left_wheel_speed, right_wheel_speed), -self.max_v, self.max_v
+        )
 
         # Deadzone
         if -self.v_wheel_deadzone < left_wheel_speed < self.v_wheel_deadzone:
@@ -257,10 +270,11 @@ class VSSMAEnv(VSSBaseEnv):
         if -self.v_wheel_deadzone < right_wheel_speed < self.v_wheel_deadzone:
             right_wheel_speed = 0
 
-        left_wheel_speed, right_wheel_speed = np.clip(
-            (left_wheel_speed, right_wheel_speed), -2.6, 2.6)
+        # Convert to rad/s
+        left_wheel_speed /= self.field.rbt_wheel_radius
+        right_wheel_speed /= self.field.rbt_wheel_radius
 
-        return left_wheel_speed, right_wheel_speed
+        return left_wheel_speed , right_wheel_speed
 
     def _ball_grad(self):
         '''Calculate ball potential gradient
