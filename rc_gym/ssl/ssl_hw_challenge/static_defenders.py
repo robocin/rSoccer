@@ -60,7 +60,7 @@ class SSLHWStaticDefendersEnv(SSLBaseEnv):
         
         # scale max energy rw to 1 Considering that max possible energy if max robot wheel speed sent every step
         wheel_max_rad_s = 160
-        max_steps = 1200
+        max_steps = 1000
         self.energy_scale = ((wheel_max_rad_s * 4) * max_steps)
 
         # Limit robot speeds
