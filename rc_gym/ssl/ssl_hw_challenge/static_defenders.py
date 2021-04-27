@@ -6,6 +6,7 @@ import gym
 import numpy as np
 from rc_gym.Entities import Frame, Robot, Ball
 from rc_gym.ssl.ssl_gym_base import SSLBaseEnv
+from rc_gym.Utils import KDTree
 
 
 class SSLHWStaticDefendersEnv(SSLBaseEnv):
@@ -217,16 +218,6 @@ class SSLHWStaticDefendersEnv(SSLBaseEnv):
 
         pos_frame.robots_blue[0] = Robot(x=0., y=0., theta=0.)
 
-        agents = []
-        for i in range(self.n_robots_yellow):
-            pos_frame.robots_yellow[i] = Robot(x=x(), y=y(), theta=theta())
-            agents.append(pos_frame.robots_yellow[i])
-
-        def same_position_ref(obj, ref, dist):
-            if abs(obj.x - ref.x) < dist and abs(obj.y - ref.y) < dist:
-                return True
-            return False
-
         def in_gk_area(obj):
             return obj.x > half_len - pen_len and abs(obj.y) < half_pen_wid
 
@@ -238,16 +229,14 @@ class SSLHWStaticDefendersEnv(SSLBaseEnv):
 
         places = KDTree()
         places.insert((pos_frame.ball.x, pos_frame.ball.y))
-        for i in range(len(agents)):
+        places.insert((pos_frame.robots_blue[0].x, pos_frame.robots_blue[0].y))
+        for i in range(self.n_robots_yellow):
             pos = (x(), y())
-            while in_gk_area(pos) or places.get_nearest(pos)[1] < radius_robot:
+            while places.get_nearest(pos)[1] < radius_robot:
                 pos = (x(), y())
 
             places.insert(pos)
-            agents[i] = Robot(x=pos[0], y=pos[1], theta=theta())
-
-        for i in range(self.n_robots_yellow):
-            pos_frame.robots_yellow[i] = agents[i]
+            pos_frame.robots_yellow[i] = Robot(x=pos[0], y=pos[1], theta=theta())
 
         return pos_frame
 

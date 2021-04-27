@@ -58,8 +58,8 @@ register(id='SSLGoToBallShoot-v0',
 
 register(id='SSLStaticDefenders-v0',
          entry_point='rc_gym.ssl.ssl_hw_challenge.static_defenders:SSLHWStaticDefendersEnv',
-         kwargs={'random_init': True, 'field_type': 2, 'n_robots_yellow': 4},
-         max_episode_steps=1200
+         kwargs={'field_type': 2},
+         max_episode_steps=1000
          )
 
 register(id='SSLDribbling-v0',
