@@ -39,10 +39,9 @@ class SSLContestedPossessionEnv(SSLBaseEnv):
         Episode Termination:
             Goal, 30 seconds (1200 steps), or rule infraction
     """
-    def __init__(self, random_init=False):
+    def __init__(self):
         super().__init__(field_type=2, n_robots_blue=1, 
                          n_robots_yellow=1, time_step=0.025)
-        self.random_init = random_init
         self.action_space = gym.spaces.Box(low=-1, high=1,
                                            shape=(5, ), dtype=np.float32)
         
@@ -218,15 +217,9 @@ class SSLContestedPossessionEnv(SSLBaseEnv):
         def x(): return random.uniform(pen_len, half_len - pen_len)
         def y(): return random.uniform(-half_pen_wid, half_pen_wid)
         
-        if self.random_init:
-            pos_frame.robots_blue[0] = Robot(x=x()-pen_len, y=y(), theta=0.)
-            enemy_x = x()
-            enemy_y = y()
-        else:
-            pos_frame.robots_blue[0] = Robot(x=0, y=0, theta=0.)
-            enemy_x = x()
-            enemy_y = y()
-
+        pos_frame.robots_blue[0] = Robot(x=0, y=0, theta=0.)
+        enemy_x = x()
+        enemy_y = y()
 
         pos_frame.ball = Ball(x=enemy_x-0.1, y=enemy_y)
         pos_frame.robots_yellow[0] = Robot(x=enemy_x, y=enemy_y, theta=180.)
