@@ -2,7 +2,7 @@ import gym
 import rc_gym
 
 # Using VSS 3v3 env
-env = gym.make('SSLStaticDefenders-v0')
+env = gym.make('SSLGoToBall-v0')
 
 env.reset()
 # Run for 1 episode and print reward at the end
