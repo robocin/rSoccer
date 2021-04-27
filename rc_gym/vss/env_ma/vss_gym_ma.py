@@ -6,10 +6,11 @@ from typing import Dict
 import gym
 import numpy as np
 import torch
-from rc_gym.Entities import Frame, Robot
+from rc_gym.Entities import Frame, Robot, Ball
 from rc_gym.Utils.Utils import OrnsteinUhlenbeckAction
 from rc_gym.vss.env_ma.opponent.model import DDPGActor
 from rc_gym.vss.vss_gym_base import VSSBaseEnv
+from rc_gym.Utils import KDTree
 
 
 class VSSMAEnv(VSSBaseEnv):
@@ -236,22 +237,32 @@ class VSSMAEnv(VSSBaseEnv):
         def y(): return random.uniform(-field_half_width + 0.1,
                                        field_half_width - 0.1)
 
-        def theta(): return random.uniform(-180, 180)
+        def theta(): return random.uniform(0, 360)
 
         pos_frame: Frame = Frame()
 
-        pos_frame.ball.x = x()
-        pos_frame.ball.y = y()
-        pos_frame.ball.v_x = 0.
-        pos_frame.ball.v_y = 0.
+        pos_frame.ball = Ball(x=x(), y=y())
 
-        pos_frame.robots_blue[0] = Robot(x=x(), y=y(), theta=theta())
-        pos_frame.robots_blue[1] = Robot(x=x(), y=y(), theta=theta())
-        pos_frame.robots_blue[2] = Robot(x=x(), y=y(), theta=theta())
+        min_dist = 0.1
 
-        pos_frame.robots_yellow[0] = Robot(x=x(), y=y(), theta=theta())
-        pos_frame.robots_yellow[1] = Robot(x=x(), y=y(), theta=theta())
-        pos_frame.robots_yellow[2] = Robot(x=x(), y=y(), theta=theta())
+        places = KDTree()
+        places.insert((pos_frame.ball.x, pos_frame.ball.y))
+        
+        for i in range(self.n_robots_blue):
+            pos = (x(), y())
+            while places.get_nearest(pos)[1] < min_dist:
+                pos = (x(), y())
+
+            places.insert(pos)
+            pos_frame.robots_blue[i] = Robot(x=pos[0], y=pos[1], theta=theta())
+
+        for i in range(self.n_robots_yellow):
+            pos = (x(), y())
+            while places.get_nearest(pos)[1] < min_dist:
+                pos = (x(), y())
+
+            places.insert(pos)
+            pos_frame.robots_yellow[i] = Robot(x=pos[0], y=pos[1], theta=theta())
 
         return pos_frame
 
