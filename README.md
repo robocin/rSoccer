@@ -74,7 +74,7 @@ class SSLExampleEnv(SSLBaseEnv):
 import gym
 import rsoccer_gym
 
-# Using VSS 3v3 env
+# Using VSS Single Agent env
 env = gym.make('VSS-v0')
 
 env.reset()
