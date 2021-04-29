@@ -1,5 +1,0 @@
-from rc_gym.ssl.ssl_hw_challenge.static_defenders import SSLHWStaticDefendersEnv
-from rc_gym.ssl.ssl_hw_challenge.dribbling import SSLHWDribblingEnv
-from rc_gym.ssl.ssl_hw_challenge.contested_possession import SSLContestedPossessionEnv
-from rc_gym.ssl.ssl_hw_challenge.pass_endurance import SSLPassEnduranceEnv
-from rc_gym.ssl.ssl_hw_challenge.pass_endurance_ma import SSLPassEnduranceMAEnv
