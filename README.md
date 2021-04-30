@@ -1,11 +1,11 @@
-# RSoccer SSL and VSSS gym environments
+# RSoccer SSL and VSSS Gym environments
 RSoccer Gym is an open-source framework to study Reinforcement Learning for SSL and IEEE VSSS competition environment. The simulation is done by [rSim](https://github.com/robocin/rsim) and it is one of the requirements.
 ## Install environments
 ```bash
 $ pip install -e .
 ```
 # Available Envs
-IEE VSSS                   |  IEE VSSS Multi-Agent     |        GoTo Ball          | Static Defenders          |
+IEEE VSSS                  |  IEEE VSSS Multi-Agent    |        GoTo Ball          | Static Defenders          |
 :-------------------------:|:-------------------------:|:-------------------------:|:-------------------------:|
 ![](resources/vss.gif)     | ![](resources/vss_ma.gif) | ![](resources/gotoball.gif) | ![](resources/static.gif)     |
 
