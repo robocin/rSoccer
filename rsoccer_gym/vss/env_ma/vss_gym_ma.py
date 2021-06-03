@@ -344,7 +344,6 @@ class VSSMAEnv(VSSBaseEnv):
         en_penalty_1 = abs(self.sent_commands[robot_idx].v_wheel0)
         en_penalty_2 = abs(self.sent_commands[robot_idx].v_wheel1)
         energy_penalty = - (en_penalty_1 + en_penalty_2)
-        energy_penalty /= self.field.rbt_wheel_radius
         return energy_penalty
 
 
