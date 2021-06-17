@@ -2,9 +2,30 @@
 
 RSoccer Gym is an open-source framework to study Reinforcement Learning for SSL and IEEE VSSS competition environment. The simulation is done by [rSim](https://github.com/robocin/rsim) and it is one of the requirements.
 
+## Reference
+
+If you use this environment in your publication and want to cite it, utilize this BibTeX:
+
+```
+@misc{RSoccer,
+  author = {Martins, Felipe B. and Machado, Matheus G. and Bassani, Hansenclever F. and Braga, Pedro B. M. and Barros, Edna S.},
+  title = {RSoccer SSL and VSSS OpenAI Gym environments},
+  year = {2021},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/robocin/rSoccer}},
+}
+```
+
+## Requirements
+- Python 3.5+
+- OpenAI Gym
+- [RSim](https://github.com/robocin/rSim)
 ## Install environments
 
 ```bash
+git clone https://github.com/robocin/rSoccer.git
+cd rSoccer
 pip install -e .
 ```
 
