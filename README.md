@@ -1,16 +1,21 @@
 # RSoccer SSL and VSSS Gym environments
+
 RSoccer Gym is an open-source framework to study Reinforcement Learning for SSL and IEEE VSSS competition environment. The simulation is done by [rSim](https://github.com/robocin/rsim) and it is one of the requirements.
+
 ## Install environments
+
 ```bash
-$ pip install -e .
+pip install -e .
 ```
+
 # Available Envs
+
 IEEE VSSS                  |  IEEE VSSS Multi-Agent    |        GoTo Ball          | Static Defenders          |
 :-------------------------:|:-------------------------:|:-------------------------:|:-------------------------:|
 ![](resources/vss.gif)     | ![](resources/vss_ma.gif) | ![](resources/gotoball.gif) | ![](resources/static.gif)     |
 
   Contested Possession     |        Dribbling          |  Pass Endurance     |        Pass Endurance MA          |
-:-------------------------:|:-------------------------:|:-------------------------:|:-------------------------:| 
+:-------------------------:|:-------------------------:|:-------------------------:|:-------------------------:|
  ![](resources/contested_possession.gif) | ![](resources/dribbling.gif)|![](resources/pass_endurance.gif) | ![](resources/pass_endurance_ma.gif)|
 
 |       Environment Id                                                       | Observation Space | Action Space | Step limit |
@@ -27,6 +32,7 @@ IEEE VSSS                  |  IEEE VSSS Multi-Agent    |        GoTo Ball       
 |[SSLPassEnduranceMA-v0](rsoccer_gym/ssl/README.md#sslpassendurancema-v0)         |      Box(18,)     |    Box(2,3)  |    1200    |
 
 # Example code - Environment
+
 ```python
 import numpy as np
 from gym.spaces import Box
@@ -68,7 +74,9 @@ class SSLExampleEnv(SSLBaseEnv):
         return pos_frame
 
 ```
+
 # Example code - Agent
+
 ```python
 import gym
 import rsoccer_gym
