@@ -7,13 +7,13 @@ RSoccer Gym is an open-source framework to study Reinforcement Learning for SSL 
 If you use this environment in your publication and want to cite it, utilize this BibTeX:
 
 ```
-@misc{RSoccer,
-  author = {Martins, Felipe B. and Machado, Matheus G. and Bassani, Hansenclever F. and Braga, Pedro B. M. and Barros, Edna S.},
-  title = {RSoccer SSL and VSSS OpenAI Gym environments},
-  year = {2021},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/robocin/rSoccer}},
+@misc{martins2021rsoccer,
+      title={rSoccer: A Framework for Studying Reinforcement Learning in Small and Very Small Size Robot Soccer}, 
+      author={Felipe B. Martins and Mateus G. Machado and Hansenclever F. Bassani and Pedro H. M. Braga and Edna S. Barros},
+      year={2021},
+      eprint={2106.12895},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG}
 }
 ```
 
