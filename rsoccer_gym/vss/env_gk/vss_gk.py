@@ -113,6 +113,12 @@ class rSimVSSGK(VSSBaseEnv):
         self.actions = None
         self.reward_shaping_total = None
         self.previous_ball_potential = None
+        self.last_frame = None
+        self.energy_penalty = 0
+        self.reward_shaping_total = None
+        self.previous_ball_direction = []
+        self.isInside = False
+        self.ballInsideArea = False
         for ou in self.ou_actions:
             ou.reset()
 
