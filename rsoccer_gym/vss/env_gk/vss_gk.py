@@ -92,6 +92,12 @@ class rSimVSSGK(VSSBaseEnv):
                                                 shape=(40,),
                                                 dtype=np.float32)
 
+        self.ou_actions = []
+        for i in range(self.n_robots_blue + self.n_robots_yellow):
+            self.ou_actions.append(
+                OrnsteinUhlenbeckAction(self.action_space, dt=self.time_step)
+            )
+
         self.last_frame = None
         self.energy_penalty = 0
         self.reward_shaping_total = None
@@ -101,6 +107,15 @@ class rSimVSSGK(VSSBaseEnv):
         self.ballInsideArea = False
         self.load_atk()
         print('Environment initialized')
+    
+    def reset(self):
+        self.actions = None
+        self.reward_shaping_total = None
+        self.previous_ball_potential = None
+        for ou in self.ou_actions:
+            ou.reset()
+
+        return super().reset()
     
     def step(self, action):
         observation, reward, done, _ = super().step(action)
