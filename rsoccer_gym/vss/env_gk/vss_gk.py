@@ -97,7 +97,8 @@ class rSimVSSGK(VSSBaseEnv):
             self.ou_actions.append(
                 OrnsteinUhlenbeckAction(self.action_space, dt=self.time_step)
             )
-
+        
+        self.v_wheel_deadzone = 0.05
         self.last_frame = None
         self.energy_penalty = 0
         self.reward_shaping_total = None
@@ -124,7 +125,7 @@ class rSimVSSGK(VSSBaseEnv):
     def load_atk(self):
         device = torch.device('cuda')
         atk_path = os.path.dirname(os.path.realpath(
-            __file__)) + '/attacker/atk_model.pth'
+            __file__)) + '/attacker/DDPG_RELEASE_TESTS_1.pth'
         self.attacker = DDPGActor(40, 2)
         print(atk_path)
         atk_checkpoint = torch.load(atk_path, map_location=device)
