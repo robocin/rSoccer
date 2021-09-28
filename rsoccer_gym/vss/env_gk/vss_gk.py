@@ -131,7 +131,7 @@ class rSimVSSGK(VSSBaseEnv):
     def load_atk(self):
         device = torch.device('cuda')
         atk_path = os.path.dirname(os.path.realpath(
-            __file__)) + '/attacker/DDPG_RELEASE_TESTS_1.pth'
+            __file__)) + '/attacker/atk_model.pth'
         self.attacker = DDPGActor(40, 2)
         print(atk_path)
         atk_checkpoint = torch.load(atk_path, map_location=device)
