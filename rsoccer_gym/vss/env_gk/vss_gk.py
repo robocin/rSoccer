@@ -221,7 +221,7 @@ class rSimVSSGK(VSSBaseEnv):
         for i in range(1, self.n_robots_yellow):
             actions = self.ou_actions[self.n_robots_blue+i].sample()
             v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions)
-            commands.append(Robot(yellow=False, id=i, v_wheel0=v_wheel0,
+            commands.append(Robot(yellow=True, id=i, v_wheel0=v_wheel0,
                                   v_wheel1=v_wheel1))
 
         return commands
@@ -322,37 +322,6 @@ class rSimVSSGK(VSSBaseEnv):
                 defense_reward = 1
         
         return defense_reward
-
-    def __ball_grad(self):
-        '''Calculate ball potential gradient
-        Difference of potential of the ball in time_step seconds.
-        '''
-        # Calculate ball potential
-        length_cm = self.field.length * 100
-        half_lenght = (self.field.length / 2.0)\
-            + self.field.goal_depth
-
-        # distance to defence
-        dx_d = (half_lenght + self.frame.ball.x) * 100
-        # distance to attack
-        dx_a = (half_lenght - self.frame.ball.x) * 100
-        dy = (self.frame.ball.y) * 100
-
-        dist_1 = -math.sqrt(dx_a ** 2 + 2 * dy ** 2)
-        dist_2 = math.sqrt(dx_d ** 2 + 2 * dy ** 2)
-        ball_potential = ((dist_1 + dist_2) / length_cm - 1) / 2
-
-        grad_ball_potential = 0
-        # Calculate ball potential gradient
-        # = actual_potential - previous_potential
-        if self.previous_ball_potential is not None:
-            diff = ball_potential - self.previous_ball_potential
-            grad_ball_potential = np.clip(diff * 3 / self.time_step,
-                                          -5.0, 5.0)
-
-        self.previous_ball_potential = ball_potential
-
-        return grad_ball_potential
 
     def _calculate_reward_and_done(self):
         done = False
