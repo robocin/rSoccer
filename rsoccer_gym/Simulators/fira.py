@@ -43,6 +43,7 @@ class Fira(RSim):
         self.vision_sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 128)
         self.vision_sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 1)
         self.vision_sock.bind((self.vision_ip, self.vision_port))
+        self.vision_sock.setblocking(False)
         self.linear_speed_range = 1.15
         self.robot_wheel_radius = 0.026
 
@@ -119,7 +120,13 @@ class Fira(RSim):
 
     def get_frame(self):
         """Receive package and decode."""
-        data, _ = self.vision_sock.recvfrom(1024)
+        data = None
+        while True:
+            try:
+                data, _ = self.vision_sock.recvfrom(1024)
+            except:
+                if data != None:
+                    break
         decoded_data = packet_pb2.Environment().FromString(data)
         frame = FramePB()
         frame.parse(decoded_data)
@@ -143,3 +150,4 @@ class Fira(RSim):
         # send commands
         data = pkt.SerializeToString()
         self.com_socket.sendto(data, self.com_address)
+    
