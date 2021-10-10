@@ -144,8 +144,8 @@ class Fira(RSim):
             robot.yellowteam = cmd.yellow
 
             # convert from linear speed to angular speed
-            robot.wheel_left = cmd.v_wheel1 / self.robot_wheel_radius
-            robot.wheel_right = cmd.v_wheel2 / self.robot_wheel_radius
+            robot.wheel_left = cmd.v_wheel0
+            robot.wheel_right = cmd.v_wheel1
 
         # send commands
         data = pkt.SerializeToString()
