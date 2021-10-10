@@ -75,11 +75,14 @@ class Fira(RSim):
     def reset(self, frame: FramePB):
         pkt = packet_pb2.Packet()
 
+        # replacement commands to stop robots
+        cmd_pkt = pkt.cmd.robot_commands
+        robots_pkt = pkt.replace.robots
         ball_pkt = pkt.replace.ball
+
         ball_pkt.x = frame.ball.x
         ball_pkt.y = frame.ball.y
 
-        robots_pkt = pkt.replace.robots
         for id, robot in frame.robots_blue.items():
             rep_rob = robots_pkt.add()
             rep_rob.position.robot_id = id
@@ -89,6 +92,12 @@ class Fira(RSim):
             rep_rob.yellowteam = False
             rep_rob.turnon = True
 
+            cmd_rob = cmd_pkt.add()
+            cmd_rob.id = id
+            cmd_rob.yellowteam = False
+            cmd_rob.wheel_left = 0.0
+            cmd_rob.wheel_right = 0.0
+
         for id, robot in frame.robots_yellow.items():
             rep_rob = robots_pkt.add()
             rep_rob.position.robot_id = id
@@ -97,6 +106,12 @@ class Fira(RSim):
             rep_rob.position.orientation = robot.theta
             rep_rob.yellowteam = True
             rep_rob.turnon = True
+
+            cmd_rob = cmd_pkt.add()
+            cmd_rob.id = id
+            cmd_rob.yellowteam = True
+            cmd_rob.wheel_left = 0.0
+            cmd_rob.wheel_right = 0.0
 
         # send commands
         data = pkt.SerializeToString()
