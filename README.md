@@ -57,8 +57,8 @@ IEEE VSSS                  |  IEEE VSSS Multi-Agent    |        GoTo Ball       
 ```python
 import numpy as np
 from gym.spaces import Box
-from rc_gym.Entities import Ball, Frame, Robot
-from rc_gym.ssl.ssl_gym_base import SSLBaseEnv
+from rsoccer_gym.Entities import Ball, Frame, Robot
+from rsoccer_gym.ssl.ssl_gym_base import SSLBaseEnv
 
 
 class SSLExampleEnv(SSLBaseEnv):
@@ -73,7 +73,7 @@ class SSLExampleEnv(SSLBaseEnv):
 
     def _frame_to_observations(self):
         ball, robot = self.frame.ball, self.frame.robots_blue[0]
-        return np.array([ball.x, ball.y, rbt.x, rbt.y])
+        return np.array([ball.x, ball.y, robot.x, robot.y])
 
     def _get_commands(self, actions):
         return [Robot(yellow=False, id=0,
