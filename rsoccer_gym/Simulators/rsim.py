@@ -166,12 +166,12 @@ class RSimSSL(RSim):
                         ball_pos, blue_robots_pos, yellow_robots_pos,
                         time_step_ms):
 
-        return robosim.SimulatorSSL(
-            field_type=field_type,
-            n_robots_blue=n_robots_blue,
-            n_robots_yellow=n_robots_yellow,
-            ball_pos=ball_pos,
-            blue_robots_pos=blue_robots_pos,
-            yellow_robots_pos=yellow_robots_pos,
-            time_step_ms=time_step_ms
+        return robosim.SSL(
+            field_type,
+            n_robots_blue,
+            n_robots_yellow,
+            time_step_ms,
+            ball_pos,
+            blue_robots_pos,
+            yellow_robots_pos,
         )
