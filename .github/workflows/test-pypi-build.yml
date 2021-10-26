@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-package:
-    name: Build and publish Python 🐍 distributions 📦 to PyPI (if tagged) and TestPyPI
+    name: Build Python Package
     runs-on: ubuntu-latest
 
     steps:
