@@ -20,7 +20,7 @@ If you use this environment in your publication and want to cite it, utilize thi
 ## Requirements
 - Python 3.7+
 - OpenAI Gym
-- [RSim](https://github.com/robocin/rSim)
+- [RSim](https://github.com/robocin/rSim) >= v1.2.0
 - Pyglet
 - Protobuf
 ## Install through The Python Package Index (PyPI)
