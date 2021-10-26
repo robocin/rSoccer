@@ -18,17 +18,23 @@ If you use this environment in your publication and want to cite it, utilize thi
 ```
 
 ## Requirements
-- Python 3.5+
+- Python 3.7+
 - OpenAI Gym
 - [RSim](https://github.com/robocin/rSim)
-## Install environments
+- Pyglet
+- Protobuf
+## Install through The Python Package Index (PyPI)
 
+```bash
+pip install rsoccer-gym
+```
+## Install through Source
 ```bash
 git clone https://github.com/robocin/rSoccer.git
 cd rSoccer
-pip install -e .
+pip install .
 ```
-
+For [editable installs](https://setuptools.pypa.io/en/latest/userguide/development_mode.html), change last command to `"pip install -e ."`.
 # Available Envs
 
 IEEE VSSS                  |  IEEE VSSS Multi-Agent    |        GoTo Ball          | Static Defenders          |
