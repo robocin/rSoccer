@@ -23,7 +23,7 @@ The base environment define normalization methods using field size and robot par
 In this environment each team has 3 robots, in which the id 0 blue robot is controlled through setting the desired wheel speed, while the other robots receive actions sampled from a Ornstein Uhlenbeck process. The episode ends when a goal occurs.
 
 <p align="center">
-    <img src="../../resources/vss.gif" alt="drawing" width="350"/>
+    <img src="../../.github/resources/vss.gif" alt="drawing" width="350"/>
 </p>
 
 - ## Observations:
@@ -72,7 +72,7 @@ In this environment each team has 3 robots, in which the id 0 blue robot is cont
 In this environment each team has 3 robots, in which the blue robots are controlled through setting the desired wheel speed, while the other robots receive actions sampled from a Ornstein Uhlenbeck process. The episode ends when a goal occurs.
 
 <p align="center">
-    <img src="../../resources/vss_ma.gif" alt="drawing" width="350"/>
+    <img src="../../.github/resources/vss_ma.gif" alt="drawing" width="350"/>
 </p>
 
 - ## Observations:
