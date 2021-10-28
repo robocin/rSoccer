@@ -24,7 +24,7 @@ The base environment define normalization methods using field size and robot par
 # SSLGoToBall-v0
 In this environment the yellow team has six stopped robots and the blue team has one controlled robot. The episode ends when the robot's infrared detects the ball.
 
-![](../../.github/resources/gotoball.gif)
+![SSLGoToBall-v0 environment rendering gif](../../.github/resources/gotoball.gif)
 
 - ## Observations:
     - Box(24,)
@@ -68,7 +68,7 @@ In this environment the yellow team has six stopped robots and the blue team has
 # SSLGoToBallShoot-v0
 In this environment there is no yellow team and the blue team has one controlled robot. The episode ends when a goal occurs.
 
-![](../../.github/resources/gotoshoot.gif)
+![SSLGoToBallShoot-v0 environment rendering gif](../../.github/resources/gotoshoot.gif)
 
 - ## Observations:
     - Box(40,)
@@ -113,7 +113,7 @@ In this environment there is no yellow team and the blue team has one controlled
 # SSLStaticDefenders-v0
 In this environment the yellow team has six stopped robots and the blue team has one controlled robot. The episode ends when a goal occurs.
 
-![](../../.github/resources/static.gif)
+![SSLStaticDefenders-v0 environment rendering gif](../../.github/resources/static.gif)
 
 - ## Observations:
     - Box(24,)
@@ -160,7 +160,7 @@ In this environment the yellow team has six stopped robots and the blue team has
 # SSLDribbling-v0
 In this environment the yellow team has four stopped robots and the blue team has one controlled robot. The controlled robot must zigzag the robots and then pass the last gate three times.The episode ends when the robot's completes the task.
 
-![](../../.github/resources/dribbling.gif)
+![SSLDribbling-v0 environment rendering gif](../../.github/resources/dribbling.gif)
 
 - ## Observations:
     - Box(21,)
@@ -206,7 +206,7 @@ In this environment the yellow team has four stopped robots and the blue team ha
 # SSLContestedPossession-v0
 In this environment each team has 1 robot, in which the id 0 blue robot is controlled and the other robot is stopped and dribbling the ball. The objective of this challenge is to sneak theball from the opponent and score a goal. The episode ends when a goal occurs. 
 
-![](../../.github/resources/contested_possession.gif)
+![SSLContestedPossession-v0 environment rendering gif](../../.github/resources/contested_possession.gif)
 
 - ## Observations:
     - Box(14,)
@@ -255,7 +255,7 @@ In this environment each team has 1 robot, in which the id 0 blue robot is contr
 # SSLPassEndurance-v0
 In this environment the  episode  begins  with  the  two robots at random position with the ball on the dribbler of the controlled one. There are no opponents in this environment. The objective is to perform a pass. The episode ends if a pass happens.
 
-![](../../.github/resources/pass_endurance.gif)
+![SSLPassEndurance-v0 environment rendering gif](../../.github/resources/pass_endurance.gif)
 
 - ## Observations:
     - Box(18,)
@@ -298,7 +298,7 @@ In this environment the  episode  begins  with  the  two robots at random positi
 # SSLPassEnduranceMA-v0
 the  episode  begins  with  the  two  controlled  agents  at random positi on with the ball on the dribbler of one of them. There are no opponents in this environment. The objective is to perform as many passes as possible in 30 seconds. The episode ends if any pass does not reach the teamate.
 
-![](../../.github/resources/pass_endurance_ma.gif)
+![SSLPassEnduranceMA-v0 environment rendering gif](../../.github/resources/pass_endurance_ma.gif)
 
 - ## Observations:
     - Box(18,)
