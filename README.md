@@ -39,11 +39,11 @@ For [editable installs](https://setuptools.pypa.io/en/latest/userguide/developme
 
 IEEE VSSS                  |  IEEE VSSS Multi-Agent    |        GoTo Ball          | Static Defenders          |
 :-------------------------:|:-------------------------:|:-------------------------:|:-------------------------:|
-![](resources/vss.gif)     | ![](resources/vss_ma.gif) | ![](resources/gotoball.gif) | ![](resources/static.gif)     |
+![](.github/resources/vss.gif)     | ![](.github/resources/vss_ma.gif) | ![](.github/resources/gotoball.gif) | ![](.github/resources/static.gif)     |
 
   Contested Possession     |        Dribbling          |  Pass Endurance     |        Pass Endurance MA          |
 :-------------------------:|:-------------------------:|:-------------------------:|:-------------------------:|
- ![](resources/contested_possession.gif) | ![](resources/dribbling.gif)|![](resources/pass_endurance.gif) | ![](resources/pass_endurance_ma.gif)|
+ ![](.github/resources/contested_possession.gif) | ![](.github/resources/dribbling.gif)|![](.github/resources/pass_endurance.gif) | ![](.github/resources/pass_endurance_ma.gif)|
 
 |       Environment Id                                                       | Observation Space | Action Space | Step limit |
 |:--------------------------------------------------------------------------:|:-----------------:|:------------:|:----------:|
