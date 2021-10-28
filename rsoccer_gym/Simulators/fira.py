@@ -73,30 +73,28 @@ class Fira(RSim):
         pass
 
     def reset(self, frame: FramePB):
-        placement_pos = self._placement_dict_from_frame(frame)
         pkt = packet_pb2.Packet()
 
-        ball_pos = placement_pos["ball_pos"][:2]
         ball_pkt = pkt.replace.ball
-        ball_pkt.x = ball_pos[0]
-        ball_pkt.y = ball_pos[1]
+        ball_pkt.x = frame.ball.x
+        ball_pkt.y = frame.ball.y
 
         robots_pkt = pkt.replace.robots
-        for i, robot in enumerate(placement_pos["blue_robots_pos"]):
+        for id, robot in frame.robots_blue.items():
             rep_rob = robots_pkt.add()
-            rep_rob.position.robot_id = i + 1
-            rep_rob.position.x = robot[0]
-            rep_rob.position.y = robot[1]
-            rep_rob.position.orientation = robot[2]
+            rep_rob.position.robot_id = id
+            rep_rob.position.x = robot.x
+            rep_rob.position.y = robot.y
+            rep_rob.position.orientation = robot.theta
             rep_rob.yellowteam = False
             rep_rob.turnon = True
 
-        for i, robot in enumerate(placement_pos["yellow_robots_pos"]):
+        for id, robot in frame.robots_yellow.items():
             rep_rob = robots_pkt.add()
-            rep_rob.position.robot_id = i + 1
-            rep_rob.position.x = robot[0]
-            rep_rob.position.y = robot[1]
-            rep_rob.position.orientation = robot[2]
+            rep_rob.position.robot_id = id
+            rep_rob.position.x = robot.x
+            rep_rob.position.y = robot.y
+            rep_rob.position.orientation = robot.theta
             rep_rob.yellowteam = True
             rep_rob.turnon = True
 
@@ -130,28 +128,3 @@ class Fira(RSim):
         # send commands
         data = pkt.SerializeToString()
         self.com_socket.sendto(data, self.com_address)
-
-    def _placement_dict_from_frame(self, frame: FramePB):
-        replacement_pos: Dict[str, np.ndarray] = {}
-
-        ball_pos: List[float] = [
-            frame.ball.x,
-            frame.ball.y,
-            frame.ball.v_x,
-            frame.ball.v_y,
-        ]
-        replacement_pos["ball_pos"] = np.array(ball_pos)
-
-        blue_pos: List[List[float]] = []
-        for robot in frame.robots_blue.values():
-            robot_pos: List[float] = [robot.x, robot.y, robot.theta]
-            blue_pos.append(robot_pos)
-        replacement_pos["blue_robots_pos"] = np.array(blue_pos)
-
-        yellow_pos: List[List[float]] = []
-        for robot in frame.robots_yellow.values():
-            robot_pos: List[float] = [robot.x, robot.y, robot.theta]
-            yellow_pos.append(robot_pos)
-        replacement_pos["yellow_robots_pos"] = np.array(yellow_pos)
-
-        return replacement_pos
