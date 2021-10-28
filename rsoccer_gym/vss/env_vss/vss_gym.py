@@ -9,7 +9,6 @@ from rsoccer_gym.Entities import Frame, Robot, Ball
 from rsoccer_gym.vss.vss_gym_base import VSSBaseEnv
 from rsoccer_gym.Utils import KDTree
 
-
 class VSSEnv(VSSBaseEnv):
     """This environment controls a single robot in a VSS soccer League 3v3 match 
 
@@ -52,9 +51,9 @@ class VSSEnv(VSSBaseEnv):
             5 minutes match time
     """
 
-    def __init__(self):
+    def __init__(self, use_fira=False):
         super().__init__(field_type=0, n_robots_blue=3, n_robots_yellow=3,
-                         time_step=0.025)
+                         time_step=0.025, use_fira=use_fira)
 
         self.action_space = gym.spaces.Box(low=-1, high=1,
                                            shape=(2, ), dtype=np.float32)
