@@ -53,7 +53,7 @@ class VSS5v5Env(VSSBaseEnv):
     """
 
     def __init__(self):
-        super().__init__(field_type=0, n_robots_blue=3, n_robots_yellow=3,
+        super().__init__(field_type=1, n_robots_blue=1, n_robots_yellow=0,
                          time_step=0.025)
 
         self.action_space = gym.spaces.Box(low=-1, high=1,
@@ -205,7 +205,7 @@ class VSS5v5Env(VSSBaseEnv):
 
         pos_frame: Frame = Frame()
 
-        pos_frame.ball = Ball(x=x(), y=y())
+        pos_frame.ball = Ball(x=0., y=0.)
 
         min_dist = 0.1
 
@@ -213,12 +213,12 @@ class VSS5v5Env(VSSBaseEnv):
         places.insert((pos_frame.ball.x, pos_frame.ball.y))
         
         for i in range(self.n_robots_blue):
-            pos = (x(), y())
+            pos = (-0.1, 0.)
             while places.get_nearest(pos)[1] < min_dist:
                 pos = (x(), y())
 
             places.insert(pos)
-            pos_frame.robots_blue[i] = Robot(x=pos[0], y=pos[1], theta=theta())
+            pos_frame.robots_blue[i] = Robot(x=pos[0], y=pos[1], theta=0.)
 
         for i in range(self.n_robots_yellow):
             pos = (x(), y())
