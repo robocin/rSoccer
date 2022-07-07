@@ -52,7 +52,7 @@ class VSS5v5Env(VSSBaseEnv):
             5 minutes match time
     """
 
-    def __init__(self):
+    def __init__(self, debug=dict()):
         super().__init__(field_type=1, n_robots_blue=1, n_robots_yellow=0,
                          time_step=0.025)
 
@@ -61,6 +61,10 @@ class VSS5v5Env(VSSBaseEnv):
         self.observation_space = gym.spaces.Box(low=-self.NORM_BOUNDS,
                                                 high=self.NORM_BOUNDS,
                                                 shape=(40, ), dtype=np.float32)
+
+        self.debug = debug
+
+        self.debug['max_ball_grad'] = -99999999
 
         # Initialize Class Atributes
         self.previous_ball_potential = None
@@ -205,7 +209,7 @@ class VSS5v5Env(VSSBaseEnv):
 
         pos_frame: Frame = Frame()
 
-        pos_frame.ball = Ball(x=0., y=0.)
+        pos_frame.ball = Ball(x=-1., y=0.)
 
         min_dist = 0.1
 
@@ -213,7 +217,7 @@ class VSS5v5Env(VSSBaseEnv):
         places.insert((pos_frame.ball.x, pos_frame.ball.y))
         
         for i in range(self.n_robots_blue):
-            pos = (-0.1, 0.)
+            pos = (-1.1, 0.)
             while places.get_nearest(pos)[1] < min_dist:
                 pos = (x(), y())
 
@@ -279,6 +283,9 @@ class VSS5v5Env(VSSBaseEnv):
                                           -5.0, 5.0)
 
         self.previous_ball_potential = ball_potential
+
+        if abs(grad_ball_potential > self.debug['max_ball_grad']):
+            self.debug['max_ball_grad'] = grad_ball_potential
 
         return grad_ball_potential
 
