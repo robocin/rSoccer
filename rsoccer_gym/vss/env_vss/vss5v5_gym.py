@@ -60,7 +60,7 @@ class VSS5v5Env(VSSBaseEnv):
                                            shape=(2, ), dtype=np.float32)
         self.observation_space = gym.spaces.Box(low=-self.NORM_BOUNDS,
                                                 high=self.NORM_BOUNDS,
-                                                shape=(40, ), dtype=np.float32)
+                                                shape=(11, ), dtype=np.float32)
 
         self.debug = debug
 
@@ -185,7 +185,7 @@ class VSS5v5Env(VSSBaseEnv):
 
                 reward = w_move * move_reward + \
                     w_ball_grad * grad_ball_potential + \
-                    w_energy * energy_penalty
+                    w_energy * 0.0
 
                 self.reward_shaping_total['move'] += w_move * move_reward
                 self.reward_shaping_total['ball_grad'] += w_ball_grad \
@@ -210,7 +210,7 @@ class VSS5v5Env(VSSBaseEnv):
 
         pos_frame: Frame = Frame()
 
-        pos_frame.ball = Ball(x=1.1, y=0.)
+        pos_frame.ball = Ball(x=x(), y=y())
 
         min_dist = 0.1
 
@@ -218,12 +218,12 @@ class VSS5v5Env(VSSBaseEnv):
         places.insert((pos_frame.ball.x, pos_frame.ball.y))
         
         for i in range(self.n_robots_blue):
-            pos = (-1.1, 0.)
+            pos = (x(), y())
             while places.get_nearest(pos)[1] < min_dist:
                 pos = (x(), y())
 
             places.insert(pos)
-            pos_frame.robots_blue[i] = Robot(x=pos[0], y=pos[1], theta=0.)
+            pos_frame.robots_blue[i] = Robot(x=pos[0], y=pos[1], theta=theta())
 
         for i in range(self.n_robots_yellow):
             pos = (x(), y())
