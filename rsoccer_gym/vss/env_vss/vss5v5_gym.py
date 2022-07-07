@@ -65,6 +65,7 @@ class VSS5v5Env(VSSBaseEnv):
         self.debug = debug
 
         self.debug['max_ball_grad'] = -99999999
+        self.debug['max_move_reward'] = -99999999
 
         # Initialize Class Atributes
         self.previous_ball_potential = None
@@ -209,7 +210,7 @@ class VSS5v5Env(VSSBaseEnv):
 
         pos_frame: Frame = Frame()
 
-        pos_frame.ball = Ball(x=-1., y=0.)
+        pos_frame.ball = Ball(x=1.1, y=0.)
 
         min_dist = 0.1
 
@@ -307,6 +308,10 @@ class VSS5v5Env(VSSBaseEnv):
         move_reward = np.dot(robot_ball, robot_vel)
 
         move_reward = np.clip(move_reward / 0.4, -5.0, 5.0)
+
+        if(move_reward > self.debug['max_move_reward']):
+            self.debug['max_move_reward'] = move_reward
+
         return move_reward
 
     def __energy_penalty(self):
