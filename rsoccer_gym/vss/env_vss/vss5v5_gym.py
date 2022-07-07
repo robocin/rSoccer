@@ -11,7 +11,7 @@ from rsoccer_gym.Utils import KDTree
 
 
 class VSS5v5Env(VSSBaseEnv):
-    """This environment controls a single robot in a VSS soccer League 3v3 match 
+    """This environment controls a single robot in a VSS soccer League 5v5 match 
 
 
         Description:
