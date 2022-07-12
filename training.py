@@ -42,10 +42,10 @@ GAMMA = 0.99
 STEPS = 300000
 SIGMA = 0.3
 TAU = 0.001
-BATCH_SIZE = 32
+BATCH_SIZE = 64
 TRAINING_FREQ = 1
 TARGET_UPDATE_RATE = 1
-EPISODE_MAX_LENGTH = 2000
+EPISODE_MAX_LENGTH = 5000
 ####### END HIPERPARAMETERS #########
 
 
@@ -119,7 +119,6 @@ for i in trange(STEPS):
 
   if episode_length >= EPISODE_MAX_LENGTH:
     done = True
-    episode_length = 0
 
   avg_rw = ((avg_rw*i) + reward)/(i+1)
 
@@ -131,6 +130,7 @@ for i in trange(STEPS):
 
   if done:
     state = env.reset()
+    episode_length = 0
   elif i % TRAINING_FREQ != 0:
     continue
 
