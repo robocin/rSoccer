@@ -39,12 +39,13 @@ class Buffer():
 ######### HIPERPARAMETERS ###########
 LEARNING_RATE = 0.001
 GAMMA = 0.99
-STEPS = 10000
+STEPS = 300000
 SIGMA = 0.3
 TAU = 0.001
 BATCH_SIZE = 32
 TRAINING_FREQ = 1
 TARGET_UPDATE_RATE = 1
+EPISODE_MAX_LENGTH = 2000
 ####### END HIPERPARAMETERS #########
 
 
@@ -92,26 +93,33 @@ buffer = Buffer(batch_size=BATCH_SIZE)
 
 
 ###################################### TRAINING ########################################
-# wandb.init(
-#     monitor_gym=True,
-#     project="training-time-estimation",
-#     tags=[
-#       f"env: {'VSS5v5Env'}"
-#       f"actor: target_p_net",
-#       f"critic: target_q_net"
-#     ]
-# )
+wandb.init(
+    monitor_gym=False,
+    project="vss5v5env-energy-penalty-normalize-training",
+    tags=[
+      f"env: {'VSS5v5Env'}",
+      f"actor: target_p_net",
+      f"critic: target_q_net"
+    ]
+)
 
 state = env.reset()
 
 avg_rw = 0
 ep_rw = 0
 
+episode_length = -1
+
 for i in trange(STEPS):
+  episode_length += 1
   action = torch.Tensor.cpu(p_net(torch.tensor(state).float().to(DEVICE)).detach()).numpy()
   action = np.clip(np.random.normal(action, SIGMA), a_min=-1, a_max=1)
 
   next_state, reward, done, _ = env.step(action)
+
+  if episode_length >= EPISODE_MAX_LENGTH:
+    done = True
+    episode_length = 0
 
   avg_rw = ((avg_rw*i) + reward)/(i+1)
 
@@ -166,9 +174,6 @@ for i in trange(STEPS):
   q_optim.zero_grad()
   q_loss.backward()
   q_optim.step()
-
-  # if i>3000:
-  #   set_trace()
 
   p_loss = -q_net(
     torch.cat(
