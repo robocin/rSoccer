@@ -24,7 +24,6 @@ if __name__ == '__main__':
         env.render()
     
     print(info)
-    print(env.debug)
 
 # The found maximum accumulated energy_penalty was 30000
 # experiment: https://wandb.ai/robocin/RoboCIn-RL/runs/4vdd7if2?workspace=user-icaro-nunes
