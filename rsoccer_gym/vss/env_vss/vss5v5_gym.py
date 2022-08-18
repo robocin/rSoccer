@@ -52,7 +52,7 @@ class VSS5v5Env(VSSBaseEnv):
             5 minutes match time
     """
 
-    def __init__(self, debug=dict()):
+    def __init__(self):
         super().__init__(field_type=1, n_robots_blue=1, n_robots_yellow=0,
                          time_step=0.025)
 
@@ -62,12 +62,9 @@ class VSS5v5Env(VSSBaseEnv):
                                                 high=self.NORM_BOUNDS,
                                                 shape=(11, ), dtype=np.float32)
 
-        self.debug = debug
-
-        self.debug['max_ball_grad'] = -99999999
-        self.debug['max_move_reward'] = -99999999
-        self.debug['max_energy'] = 99999999
-        self.debug['cumulative_energy'] = 0.0
+        self.BALL_GRAD_NORM = 1.6342460522826219
+        self.MOVE_REWARD_NORM = 2.9975812293803084
+        self.ACCUMULATED_ENERGY_PENALTY_NORM = 30000
 
         # Initialize Class Atributes
         self.previous_ball_potential = None
@@ -287,10 +284,7 @@ class VSS5v5Env(VSSBaseEnv):
 
         self.previous_ball_potential = ball_potential
 
-        if abs(grad_ball_potential > self.debug['max_ball_grad']):
-            self.debug['max_ball_grad'] = grad_ball_potential
-
-        return grad_ball_potential
+        return grad_ball_potential / self.BALL_GRAD_NORM
 
     def __move_reward(self):
         '''Calculate Move to ball reward
@@ -311,10 +305,7 @@ class VSS5v5Env(VSSBaseEnv):
 
         move_reward = np.clip(move_reward / 0.4, -5.0, 5.0)
 
-        if(move_reward > self.debug['max_move_reward']):
-            self.debug['max_move_reward'] = move_reward
-
-        return move_reward
+        return move_reward / self.MOVE_REWARD_NORM
 
     def __energy_penalty(self):
         '''Calculates the energy penalty'''
@@ -323,9 +314,4 @@ class VSS5v5Env(VSSBaseEnv):
         en_penalty_2 = abs(self.sent_commands[0].v_wheel1)
         energy_penalty = - (en_penalty_1 + en_penalty_2)
 
-        if energy_penalty < self.debug['max_energy']:
-            self.debug['max_energy'] = energy_penalty
-
-        self.debug['cumulative_energy'] += energy_penalty
-
-        return energy_penalty
+        return energy_penalty / self.ACCUMULATED_ENERGY_PENALTY_NORM
