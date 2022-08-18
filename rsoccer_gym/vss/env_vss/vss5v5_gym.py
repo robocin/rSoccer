@@ -53,14 +53,14 @@ class VSS5v5Env(VSSBaseEnv):
     """
 
     def __init__(self):
-        super().__init__(field_type=1, n_robots_blue=1, n_robots_yellow=0,
+        super().__init__(field_type=1, n_robots_blue=5, n_robots_yellow=5,
                          time_step=0.025)
 
         self.action_space = gym.spaces.Box(low=-1, high=1,
                                            shape=(2, ), dtype=np.float32)
         self.observation_space = gym.spaces.Box(low=-self.NORM_BOUNDS,
                                                 high=self.NORM_BOUNDS,
-                                                shape=(11, ), dtype=np.float32)
+                                                shape=(74, ), dtype=np.float32)
 
         self.BALL_GRAD_NORM = 1.6342460522826219
         self.MOVE_REWARD_NORM = 2.9975812293803084
