@@ -66,6 +66,8 @@ class VSS5v5Env(VSSBaseEnv):
 
         self.debug['max_ball_grad'] = -99999999
         self.debug['max_move_reward'] = -99999999
+        self.debug['max_energy'] = 99999999
+        self.debug['cumulative_energy'] = 0.0
 
         # Initialize Class Atributes
         self.previous_ball_potential = None
@@ -320,4 +322,10 @@ class VSS5v5Env(VSSBaseEnv):
         en_penalty_1 = abs(self.sent_commands[0].v_wheel0)
         en_penalty_2 = abs(self.sent_commands[0].v_wheel1)
         energy_penalty = - (en_penalty_1 + en_penalty_2)
+
+        if energy_penalty < self.debug['max_energy']:
+            self.debug['max_energy'] = energy_penalty
+
+        self.debug['cumulative_energy'] += energy_penalty
+
         return energy_penalty
