@@ -60,7 +60,7 @@ class VSS5v5Env(VSSBaseEnv):
                                            shape=(2, ), dtype=np.float32)
         self.observation_space = gym.spaces.Box(low=-self.NORM_BOUNDS,
                                                 high=self.NORM_BOUNDS,
-                                                shape=(74, ), dtype=np.float32)
+                                                shape=(64, ), dtype=np.float32)
 
         self.BALL_GRAD_NORM = 1.6342460522826219
         self.MOVE_REWARD_NORM = 2.9975812293803084
