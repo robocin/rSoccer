@@ -17,6 +17,8 @@ TAG_GREEN =     (57  /255, 220 /255, 20  /255)
 TAG_RED =       (151 /255, 21  /255, 0   /255)
 TAG_PURPLE =    (102 /255, 51  /255, 153 /255)
 TAG_PINK =      (220 /255, 0   /255, 220 /255)
+TAG_GRAY =      (200 /255, 200 /255, 200 /255)
+TAG_CYAN =     (0   /255, 255 /255, 230 /255)
 
 class RCGymRender:
     '''
@@ -257,7 +259,9 @@ class RCGymRender:
         tag_id_colors: Dict[int, Tuple[float, float, float]] = {
             0 : TAG_GREEN,
             1 : TAG_PURPLE,
-            2 : TAG_RED
+            2 : TAG_RED,
+            3 : TAG_GRAY,
+            4 : TAG_CYAN
         }
         
         # Add blue robots

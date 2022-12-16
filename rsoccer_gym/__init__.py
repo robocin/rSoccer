@@ -25,6 +25,11 @@ register(id='VSSFIRA-v0',
          max_episode_steps=1200
          )
 
+register(id='VSS5v5-v0',
+         entry_point='rsoccer_gym.vss.env_vss:VSS5v5Env',
+         max_episode_steps=1200
+         )
+
 register(id='SSLGoToBall-v0',
          entry_point='rsoccer_gym.ssl.ssl_go_to_ball:SSLGoToBallEnv',
          kwargs={'field_type': 2, 'n_robots_yellow': 6},
