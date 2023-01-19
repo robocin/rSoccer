@@ -2,25 +2,25 @@
 
 from dataclasses import dataclass
 from collections import namedtuple
-from typing import Final
+from typing import Final, Optional
 import math
 
-ANGLE_K_P: Final[float] = 0.5  # TODO: get correct value
-ALLY_MAX_SPEED: Final[float] = 2.5  # TODO: get correct value
-ALLY_MIN_SPEED: Final[float] = 0.5  # TODO: get correct value
-MIN_DIST_TO_PROP_VELOCITY: Final[float] = 0.1  # TODO: get correct value
+ANGLE_K_P: Final[float] = 4.0
+ALLY_MAX_SPEED: Final[float] = 2200.0
+ALLY_MIN_SPEED: Final[float] = 0.30
+MIN_DIST_TO_PROP_VELOCITY: Final[float] = 800.00
 
-SMALL_TOLERANCE_TO_DESIRED_POSITION: Final[float] = 0.01  # TODO: get correct value
-DEFAULT_TOLERANCE_TO_DESIRED_POSITION: Final[float] = 0.05  # TODO: get correct value
+SMALL_TOLERANCE_TO_DESIRED_POSITION: Final[float] = 10.0  # Not a parameter.
+DEFAULT_TOLERANCE_TO_DESIRED_POSITION: Final[float] = 35.0  # Not a parameter.
 
-ROBOT_VEL_BREAK_DECAY_FACTOR: Final[float] = 0.5  # TODO: get correct value
-ROBOT_VEL_FAVORABLE_DECAY_FACTOR: Final[float] = 0.5  # TODO: get correct value
+ROBOT_VEL_BREAK_DECAY_FACTOR: Final[float] = 2.11
+ROBOT_VEL_FAVORABLE_DECAY_FACTOR: Final[float] = 0.09
 
-ROBOT_MAX_LINEAR_ACCELERATION: Final[float] = 0.5  # TODO: get correct value
+ROBOT_MAX_LINEAR_ACCELERATION: Final[float] = 2.4
 
-ROBOT_MAX_ANGULAR_ACCELERATION: Final[float] = 10.0  # TODO: get correct value
+ROBOT_MAX_ANGULAR_ACCELERATION: Final[float] = 10.0
 
-CYCLE_STEP: Final[float] = 0.01  # TODO: get correct value
+CYCLE_STEP: Final[float] = 0.16
 
 M_TO_MM: Final[float] = 1000.0
 
@@ -101,13 +101,13 @@ class GoToPointEntry:
     target: Point2D = Point2D(0.0, 0.0)
     target_angle: float = 0.0
 
-    max_velocity: float = 0.0
-    k_p: float = 0.0
-    custom_acceleration: float = 0.0
-    min_velocity: float = 0.0
-    prop_min_distance: float = 0.0
-    using_prop_velocity: bool = False
-    required_high_precision_to_target: bool = False
+    max_velocity: Optional[float] = None
+    k_p: Optional[float] = None
+    custom_acceleration: Optional[float] = None
+    min_velocity: Optional[float] = None
+    prop_min_distance: Optional[float] = None
+    using_prop_velocity: Optional[bool] = None
+    required_high_precision_to_target: Optional[bool] = None
 
 
 def go_to_point(entry: GoToPointEntry, agent_angle: float, agent_position: Point2D, agent_velocity: Point2D) -> RobotMove:

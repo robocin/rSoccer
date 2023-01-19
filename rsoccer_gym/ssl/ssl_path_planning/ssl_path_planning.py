@@ -1,20 +1,18 @@
-import math
 import random
 
 from utility import GoToPointEntry, go_to_point, Point2D, RobotMove, dist
 
-from rsoccer_gym.Utils.Utils import OrnsteinUhlenbeckAction
 from typing import Final, List
 
 import gym
 import numpy as np
-from rsoccer_gym.Entities import Frame, Robot, Ball
+from rsoccer_gym.Entities import Frame, Robot
 from rsoccer_gym.ssl.ssl_gym_base import SSLBaseEnv
 from rsoccer_gym.Utils import KDTree
 
 
 class SSLPathPlanningEnv(SSLBaseEnv):
-    """The SSL robot needs to reach the target point"""
+    """The SSL robot needs to reach the target point with a given angle"""
 
     def __init__(self, field_type=1, n_robots_yellow=0):
         super().__init__(field_type=field_type, n_robots_blue=1,
@@ -23,7 +21,7 @@ class SSLPathPlanningEnv(SSLBaseEnv):
         self.action_space = gym.spaces.Box(low=-1, high=1, # hyp tg.
                                            shape=(3, ), dtype=np.float32)
 
-        n_obs = 2 + 7*self.n_robots_blue + 2*self.n_robots_yellow
+        n_obs = 3 + 7*self.n_robots_blue + 2*self.n_robots_yellow
         self.observation_space = gym.spaces.Box(low=-self.NORM_BOUNDS,
                                                 high=self.NORM_BOUNDS,
                                                 shape=(n_obs, ),
@@ -34,6 +32,7 @@ class SSLPathPlanningEnv(SSLBaseEnv):
         self.max_w = 10
 
         self.target_point: Point2D = Point2D(0, 0)
+        self.target_angle: float = 0.0
 
         print('Environment initialized')
 
@@ -43,6 +42,7 @@ class SSLPathPlanningEnv(SSLBaseEnv):
 
         observation.append(self.norm_pos(self.target_point.x))
         observation.append(self.norm_pos(self.target_point.y))
+        observation.append(self.target_angle)
 
         for i in range(self.n_robots_blue):
             observation.append(self.norm_pos(self.frame.robots_blue[i].x))
@@ -68,14 +68,8 @@ class SSLPathPlanningEnv(SSLBaseEnv):
         entry.target = Point2D(action[0] * 1000.0,
                                action[1] * 1000.0
                                )
-        entry.target_angle = action[2]
-        # entry.max_velocity = 0.0  # todo
-        # entry.k_p = 0.0  # todo
-        # entry.custom_acceleration = 0.0  # todo
-        # entry.min_velocity = 0.0  # todo
-        # entry.prop_min_distance = 0.0  # todo
-        # entry.using_prop_velocity = False  # todo
-        # entry.required_high_precision_to_target = False  # todo
+        entry.target_angle = action[2] # (target.position() - ally.position()).angle()
+        entry.using_prop_velocity = True
 
         angle: float = np.deg2rad(self.frame.robots_blue[0].theta)
         position: Point2D = Point2D(x=self.frame.robots_blue[0].x * 1000.0,
@@ -132,10 +126,15 @@ class SSLPathPlanningEnv(SSLBaseEnv):
         pos_frame: Frame = Frame()
 
         self.target_point = Point2D(x=get_random_x(), y=get_random_y())
+        self.target_angle = np.deg2rad(get_random_theta())
 
         min_dist = 0.2
 
         places = KDTree()
+
+        # place ball outside field
+        pos_frame.ball.x = 0.0
+        pos_frame.ball.y = field_half_width + 0.5
 
         for i in range(self.n_robots_blue):
             pos = (get_random_x(), get_random_y())
