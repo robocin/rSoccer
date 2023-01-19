@@ -69,3 +69,9 @@ register(id='SSLPassEnduranceMA-v0',
          entry_point='rsoccer_gym.ssl.ssl_hw_challenge:SSLPassEnduranceMAEnv',
          max_episode_steps=1200
          )
+
+register(
+        id='SSLPathPlanning-v0',
+        entry_point='rsoccer_gym.ssl.ssl_path_planning:SSLPathPlanningEnv',
+        max_episode_steps=1200
+)

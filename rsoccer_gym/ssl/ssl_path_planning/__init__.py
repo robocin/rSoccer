@@ -1,0 +1,1 @@
+from rsoccer_gym.ssl.ssl_path_planning.ssl_path_planning import SSLPathPlanningEnv
