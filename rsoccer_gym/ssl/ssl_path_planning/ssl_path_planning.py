@@ -1,6 +1,6 @@
 import random
 
-from utility import GoToPointEntry, go_to_point, Point2D, RobotMove, dist
+from rsoccer_gym.ssl.ssl_path_planning.utility import GoToPointEntry, go_to_point, Point2D, RobotMove, dist
 
 from typing import Final, List
 
@@ -18,7 +18,7 @@ class SSLPathPlanningEnv(SSLBaseEnv):
         super().__init__(field_type=field_type, n_robots_blue=1,
                          n_robots_yellow=n_robots_yellow, time_step=0.025)
 
-        self.action_space = gym.spaces.Box(low=-1, high=1, # hyp tg.
+        self.action_space = gym.spaces.Box(low=-1, high=1,  # hyp tg.
                                            shape=(3, ), dtype=np.float32)
 
         n_obs = 3 + 7*self.n_robots_blue + 2*self.n_robots_yellow
@@ -88,7 +88,7 @@ class SSLPathPlanningEnv(SSLBaseEnv):
                 id=0,
                 v_x=robot_move.velocity.x / 1000.0,
                 v_y=robot_move.velocity.y / 1000.0,
-                v_theta=robot_move.velocity_theta
+                v_theta=robot_move.angular_velocity
             )
         ]
 
@@ -131,6 +131,7 @@ class SSLPathPlanningEnv(SSLBaseEnv):
         min_dist = 0.2
 
         places = KDTree()
+        places.insert(self.target_point)
 
         # place ball outside field
         pos_frame.ball.x = 0.0
@@ -138,6 +139,7 @@ class SSLPathPlanningEnv(SSLBaseEnv):
 
         for i in range(self.n_robots_blue):
             pos = (get_random_x(), get_random_y())
+
             while places.get_nearest(pos)[1] < min_dist:
                 pos = (get_random_x(), get_random_y())
 

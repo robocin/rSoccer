@@ -140,7 +140,7 @@ def go_to_point(entry: GoToPointEntry, agent_angle: float, agent_position: Point
         d_theta: float = smallest_angle_diff(
             agent_angle, entry.target_angle)
 
-        delta_s /= M_TO_MM
+        delta_s = Point2D(delta_s.x / M_TO_MM, delta_s.y / M_TO_MM)
 
         v0: Point2D = Point2D(agent_velocity.x /
                               M_TO_MM, agent_velocity.y / M_TO_MM)
@@ -164,7 +164,9 @@ def go_to_point(entry: GoToPointEntry, agent_angle: float, agent_position: Point
         acc_prop *= prop_factor
 
         if length(acceleration_required) > acc_prop:
-            acceleration_required *= acc_prop / length(acceleration_required)
+            # acceleration_required *= acc_prop / length(acceleration_required)
+            acceleration_required = Point2D(acceleration_required.x * acc_prop / length(acceleration_required),
+                                            acceleration_required.y * acc_prop / length(acceleration_required))
 
         # // v = v0 + a*t
         new_velocity: Point2D = Point2D(v0.x + acceleration_required.x * CYCLE_STEP,
