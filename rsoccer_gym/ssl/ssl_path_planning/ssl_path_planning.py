@@ -1,12 +1,13 @@
+import math
 import random
 
-from rsoccer_gym.ssl.ssl_path_planning.utility import GoToPointEntry, go_to_point, Point2D, RobotMove, dist
+from rsoccer_gym.ssl.ssl_path_planning.utility import GoToPointEntry, go_to_point, Point2D, RobotMove, dist, smallest_angle_diff
 
 from typing import Final, List
 
 import gym
 import numpy as np
-from rsoccer_gym.Entities import Frame, Robot
+from rsoccer_gym.Entities import Ball, Frame, Robot
 from rsoccer_gym.ssl.ssl_gym_base import SSLBaseEnv
 from rsoccer_gym.Utils import KDTree
 
@@ -21,7 +22,7 @@ class SSLPathPlanningEnv(SSLBaseEnv):
         self.action_space = gym.spaces.Box(low=-1, high=1,  # hyp tg.
                                            shape=(3, ), dtype=np.float32)
 
-        n_obs = 3 + 7*self.n_robots_blue + 2*self.n_robots_yellow
+        n_obs = 3 + 4 + 7*self.n_robots_blue + 2*self.n_robots_yellow
         self.observation_space = gym.spaces.Box(low=-self.NORM_BOUNDS,
                                                 high=self.NORM_BOUNDS,
                                                 shape=(n_obs, ),
@@ -44,6 +45,11 @@ class SSLPathPlanningEnv(SSLBaseEnv):
         observation.append(self.norm_pos(self.target_point.y))
         observation.append(self.target_angle)
 
+        observation.append(self.norm_pos(self.frame.ball.x))
+        observation.append(self.norm_pos(self.frame.ball.y))
+        observation.append(self.norm_v(self.frame.ball.v_x))
+        observation.append(self.norm_v(self.frame.ball.v_y))
+
         for i in range(self.n_robots_blue):
             observation.append(self.norm_pos(self.frame.robots_blue[i].x))
             observation.append(self.norm_pos(self.frame.robots_blue[i].y))
@@ -65,10 +71,15 @@ class SSLPathPlanningEnv(SSLBaseEnv):
 
     def _get_commands(self, action):
         entry: GoToPointEntry = GoToPointEntry()
-        entry.target = Point2D(action[0] * 1000.0,
-                               action[1] * 1000.0
+
+        field_half_length: Final[float] = self.field.length / 2 # x
+        field_half_width: Final[float] = self.field.width / 2  # y
+
+        entry.target = Point2D(action[0] * 1000.0 * field_half_length,
+                               action[1] * 1000.0 * field_half_width
                                )
-        entry.target_angle = action[2] # (target.position() - ally.position()).angle()
+        entry.target_angle = action[2] * math.pi
+
         entry.using_prop_velocity = True
 
         angle: float = np.deg2rad(self.frame.robots_blue[0].theta)
@@ -86,8 +97,8 @@ class SSLPathPlanningEnv(SSLBaseEnv):
             Robot(
                 yellow=False,
                 id=0,
-                v_x=robot_move.velocity.x / 1000.0,
-                v_y=robot_move.velocity.y / 1000.0,
+                v_x=robot_move.velocity.x,
+                v_y=robot_move.velocity.y,
                 v_theta=robot_move.angular_velocity
             )
         ]
@@ -102,7 +113,9 @@ class SSLPathPlanningEnv(SSLBaseEnv):
         dist_robot_target = dist(target_pos, robot_pos)
 
         if dist_robot_target < 0.2:
-            reward = 1
+            if smallest_angle_diff(np.deg2rad(self.target_angle), np.deg2rad((self.frame.robots_blue[0].theta))) < 0.2:
+                # if np.linalg.norm([self.frame.robots_blue[0].v_x, self.frame.robots_blue[0].v_y]) < 0.1:
+                reward = 1
 
         done = reward
 
@@ -125,6 +138,9 @@ class SSLPathPlanningEnv(SSLBaseEnv):
 
         pos_frame: Frame = Frame()
 
+        # place ball outside field
+        pos_frame.ball = Ball(x=get_random_x(), y=get_random_y())
+
         self.target_point = Point2D(x=get_random_x(), y=get_random_y())
         self.target_angle = np.deg2rad(get_random_theta())
 
@@ -132,10 +148,7 @@ class SSLPathPlanningEnv(SSLBaseEnv):
 
         places = KDTree()
         places.insert(self.target_point)
-
-        # place ball outside field
-        pos_frame.ball.x = 0.0
-        pos_frame.ball.y = field_half_width + 0.5
+        places.insert((pos_frame.ball.x, pos_frame.ball.y))
 
         for i in range(self.n_robots_blue):
             pos = (get_random_x(), get_random_y())
@@ -144,7 +157,8 @@ class SSLPathPlanningEnv(SSLBaseEnv):
                 pos = (get_random_x(), get_random_y())
 
             places.insert(pos)
-            pos_frame.robots_blue[i] = Robot(x=pos[0], y=pos[1], theta=get_random_theta())
+            pos_frame.robots_blue[i] = Robot(id=i, yellow=False,
+                                             x=pos[0], y=pos[1], theta=get_random_theta())
 
         for i in range(self.n_robots_yellow):
             pos = (get_random_x(), get_random_y())
@@ -152,7 +166,7 @@ class SSLPathPlanningEnv(SSLBaseEnv):
                 pos = (get_random_x(), get_random_y())
 
             places.insert(pos)
-            pos_frame.robots_yellow[i] = Robot(
-                x=pos[0], y=pos[1], theta=get_random_theta())
+            pos_frame.robots_yellow[i] = Robot(id=i, yellow=True,
+                                               x=pos[0], y=pos[1], theta=get_random_theta())
 
         return pos_frame
