@@ -11,6 +11,7 @@ BG_GREEN =      (20  /255, 90  /255, 45  /255)
 LINES_WHITE =   (220 /255, 220 /255, 220 /255)
 ROBOT_BLACK =   (25  /255, 25  /255, 25  /255)
 BALL_ORANGE =   (253 /255, 106 /255, 2   /255)
+TARGET_RED =    (255 /255, 0   /255, 0   /255)
 TAG_BLUE =      (0   /255, 64  /255, 255 /255)
 TAG_YELLOW =    (250 /255, 218 /255, 94  /255)
 TAG_GREEN =     (57  /255, 220 /255, 20  /255)
@@ -58,6 +59,9 @@ class RCGymRender:
         self.blue_robots: List[rendering.Transform] = []
         self.yellow_robots: List[rendering.Transform] = []
 
+        self.target: rendering.Transform = None
+        self.target_position_x, self.target_position_y = None, None
+
         # Window dimensions in pixels
         screen_width = width
         screen_height = height
@@ -103,10 +107,17 @@ class RCGymRender:
         # add ball
         self._add_ball()
 
+        # add target
+        self._add_target()
+
     def __del__(self):
         self.screen.close()
         del(self.screen)
         self.screen = None
+
+    def set_target(self, x: float, y: float) -> None:
+        self.target_position_x = x
+        self.target_position_y = y
 
     def render_frame(self, frame: Frame, return_rgb_array: bool = False) -> None:
         '''
@@ -123,6 +134,9 @@ class RCGymRender:
         '''
 
         self.ball.set_translation(frame.ball.x, frame.ball.y)
+
+        if self.target_position_x is not None and self.target_position_y is not None:
+            self.target.set_translation(self.target_position_x, self.target_position_y)
 
         for i, blue in enumerate(frame.robots_blue.values()):
             self.blue_robots[i].set_translation(blue.x, blue.y)
@@ -538,3 +552,21 @@ class RCGymRender:
         self.screen.add_geom(ball_outline)
         
         self.ball = ball_transform
+
+    def _add_target(self):
+        target_radius: float = self.field.ball_radius
+        target_transform: rendering.Transform = rendering.Transform()
+        
+        target: rendering.Geom = rendering.make_circle(target_radius, filled=True)
+        target.set_color(*TARGET_RED)
+        target.add_attr(target_transform)
+        
+        target_outline: rendering.Geom = rendering.make_circle(target_radius*1.1, filled=False)
+        target_outline.linewidth.stroke = 1
+        target_outline.set_color(*BLACK)
+        target_outline.add_attr(target_transform)
+        
+        self.screen.add_geom(target)
+        self.screen.add_geom(target_outline)
+        
+        self.target = target_transform

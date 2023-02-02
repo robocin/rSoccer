@@ -1,5 +1,6 @@
 import math
 import random
+from rsoccer_gym.Render.Render import RCGymRender
 
 from rsoccer_gym.ssl.ssl_path_planning.utility import GoToPointEntry, go_to_point, Point2D, RobotMove, dist, smallest_angle_diff
 
@@ -148,6 +149,14 @@ class SSLPathPlanningEnv(SSLBaseEnv):
 
         self.target_point = Point2D(x=get_random_x(), y=get_random_y())
         self.target_angle = np.deg2rad(get_random_theta())
+
+        #  TODO: Add a way to change the target point
+        self.view = RCGymRender(self.n_robots_blue,
+                                 self.n_robots_yellow,
+                                 self.field,
+                                 simulator='ssl')
+
+        self.view.set_target(self.target_point.x, self.target_point.y)
 
         min_dist = 0.2
 
