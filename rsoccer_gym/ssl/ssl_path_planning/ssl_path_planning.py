@@ -72,7 +72,7 @@ class SSLPathPlanningEnv(SSLBaseEnv):
     def _get_commands(self, action):
         entry: GoToPointEntry = GoToPointEntry()
 
-        field_half_length: Final[float] = self.field.length / 2 # x
+        field_half_length: Final[float] = self.field.length / 2  # x
         field_half_width: Final[float] = self.field.width / 2  # y
 
         entry.target = Point2D(action[0] * 1000.0 * field_half_length,
@@ -103,21 +103,26 @@ class SSLPathPlanningEnv(SSLBaseEnv):
             )
         ]
 
+    def reward_function(self, robot_pos: Point2D, target_pos: Point2D):
+        field_half_length: Final[float] = self.field.length / 2
+        field_half_width: Final[float] = self.field.width / 2
+
+        max_distance: Final[float] = np.linalg.norm(
+            [2 * field_half_length, 2 * field_half_width])
+        dist_robot_to_target: Final[float] = np.linalg.norm([robot_pos.x - target_pos.x,
+                                                             robot_pos.y - target_pos.y])
+
+        if dist_robot_to_target < 0.2:
+            return 1.0
+
+        return -dist(robot_pos, target_pos) / max_distance
+
     def _calculate_reward_and_done(self):
-        reward = 0
+        reward = self.reward_function(robot_pos=Point2D(x=self.frame.robots_blue[0].x,
+                                                        y=self.frame.robots_blue[0].y),
+                                      target_pos=self.target_point)
 
-        target_pos: Point2D = self.target_point
-        robot_pos: Point2D = Point2D(x=self.frame.robots_blue[0].x,
-                                     y=self.frame.robots_blue[0].y)
-
-        dist_robot_target = dist(target_pos, robot_pos)
-
-        if dist_robot_target < 0.2:
-            if smallest_angle_diff(np.deg2rad(self.target_angle), np.deg2rad((self.frame.robots_blue[0].theta))) < 0.2:
-                # if np.linalg.norm([self.frame.robots_blue[0].v_x, self.frame.robots_blue[0].v_y]) < 0.1:
-                reward = 1
-
-        done = reward
+        done = reward == 1.0
 
         return reward, done
 
