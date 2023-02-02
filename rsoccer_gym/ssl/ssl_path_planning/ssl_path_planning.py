@@ -104,7 +104,7 @@ class SSLPathPlanningEnv(SSLBaseEnv):
             )
         ]
 
-    def reward_function(self, robot_pos: Point2D, target_pos: Point2D):
+    def reward_function(self, robot_pos: Point2D, robot_vel: Point2D, robot_angle: float, target_pos: Point2D, target_angle: float):
         field_half_length: Final[float] = self.field.length / 2
         field_half_width: Final[float] = self.field.width / 2
 
@@ -113,15 +113,28 @@ class SSLPathPlanningEnv(SSLBaseEnv):
         dist_robot_to_target: Final[float] = np.linalg.norm([robot_pos.x - target_pos.x,
                                                              robot_pos.y - target_pos.y])
 
-        if dist_robot_to_target < 0.2:
-            return 1.0
+        if dist_robot_to_target > 0.2:
+            return -dist_robot_to_target / max_distance
 
-        return -dist(robot_pos, target_pos) / max_distance
+        reward: Final[float] = 0.5
+
+        if np.linalg.norm([robot_vel.x, robot_vel.y]) < 0.1:
+            reward += 0.25
+
+        if abs(smallest_angle_diff(robot_angle, target_angle)) < np.deg2rad(15):
+            reward += 0.25
+
+        return reward
 
     def _calculate_reward_and_done(self):
         reward = self.reward_function(robot_pos=Point2D(x=self.frame.robots_blue[0].x,
                                                         y=self.frame.robots_blue[0].y),
-                                      target_pos=self.target_point)
+                                      robot_vel=Point2D(x=self.frame.robots_blue[0].v_x,
+                                                        y=self.frame.robots_blue[0].v_y),
+                                      robot_angle=np.deg2rad(
+                                          self.frame.robots_blue[0].theta),
+                                      target_pos=self.target_point,
+                                      target_angle=self.target_angle)
 
         done = reward == 1.0
 
@@ -152,9 +165,9 @@ class SSLPathPlanningEnv(SSLBaseEnv):
 
         #  TODO: Add a way to change the target point
         self.view = RCGymRender(self.n_robots_blue,
-                                 self.n_robots_yellow,
-                                 self.field,
-                                 simulator='ssl')
+                                self.n_robots_yellow,
+                                self.field,
+                                simulator='ssl')
 
         self.view.set_target(self.target_point.x, self.target_point.y)
 
