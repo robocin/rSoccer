@@ -12,6 +12,8 @@ from rsoccer_gym.Entities import Ball, Frame, Robot
 from rsoccer_gym.ssl.ssl_gym_base import SSLBaseEnv
 from rsoccer_gym.Utils import KDTree
 
+ANGLE_TOLERANCE: Final[float] = np.deg2rad(7.5)
+
 
 class SSLPathPlanningEnv(SSLBaseEnv):
     """The SSL robot needs to reach the target point with a given angle"""
@@ -104,7 +106,7 @@ class SSLPathPlanningEnv(SSLBaseEnv):
             )
         ]
 
-    def reward_function(self, robot_pos: Point2D, robot_vel: Point2D, robot_angle: float, target_pos: Point2D, target_angle: float):
+    def reward_function(self, robot_pos: Point2D, robot_angle: float, target_pos: Point2D, target_angle: float):
         field_half_length: Final[float] = self.field.length / 2
         field_half_width: Final[float] = self.field.width / 2
 
@@ -113,31 +115,20 @@ class SSLPathPlanningEnv(SSLBaseEnv):
         dist_robot_to_target: Final[float] = np.linalg.norm([robot_pos.x - target_pos.x,
                                                              robot_pos.y - target_pos.y])
 
-        if dist_robot_to_target > 0.2:
-            return -dist_robot_to_target / max_distance
+        if dist_robot_to_target < 0.2:
+            if abs(smallest_angle_diff(robot_angle, target_angle)) < ANGLE_TOLERANCE:
+                return 1.0, True
+            return 0.75 * (1.0 - abs(smallest_angle_diff(robot_angle, target_angle)) / np.pi), False
 
-        reward: Final[float] = 0.5
-
-        if np.linalg.norm([robot_vel.x, robot_vel.y]) < 0.1:
-            reward += 0.25
-
-        if abs(smallest_angle_diff(robot_angle, target_angle)) < np.deg2rad(15):
-            reward += 0.25
-
-        return reward
+        return -dist(robot_pos, target_pos) / max_distance, False
 
     def _calculate_reward_and_done(self):
-        reward = self.reward_function(robot_pos=Point2D(x=self.frame.robots_blue[0].x,
-                                                        y=self.frame.robots_blue[0].y),
-                                      robot_vel=Point2D(x=self.frame.robots_blue[0].v_x,
-                                                        y=self.frame.robots_blue[0].v_y),
-                                      robot_angle=np.deg2rad(
-                                          self.frame.robots_blue[0].theta),
-                                      target_pos=self.target_point,
-                                      target_angle=self.target_angle)
-
-        done = reward == 1.0
-
+        reward, done = self.reward_function(robot_pos=Point2D(x=self.frame.robots_blue[0].x,
+                                                              y=self.frame.robots_blue[0].y),
+                                            robot_angle=np.deg2rad(
+                                                self.frame.robots_blue[0].theta),
+                                            target_pos=self.target_point,
+                                            target_angle=self.target_angle)
         return reward, done
 
     def _get_initial_positions_frame(self):
@@ -167,9 +158,11 @@ class SSLPathPlanningEnv(SSLBaseEnv):
         self.view = RCGymRender(self.n_robots_blue,
                                 self.n_robots_yellow,
                                 self.field,
-                                simulator='ssl')
+                                simulator='ssl',
+                                angle_tolerance=ANGLE_TOLERANCE)
 
         self.view.set_target(self.target_point.x, self.target_point.y)
+        self.view.set_target_angle(np.rad2deg(self.target_angle))
 
         min_dist = 0.2
 
