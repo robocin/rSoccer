@@ -106,25 +106,29 @@ class SSLPathPlanningEnv(SSLBaseEnv):
             )
         ]
 
-    def reward_function(self, robot_pos: Point2D, robot_angle: float, target_pos: Point2D, target_angle: float):
+    def reward_function(self, robot_pos: Point2D, last_robot_pos: Point2D, robot_angle: float, target_pos: Point2D, target_angle: float):
         field_half_length: Final[float] = self.field.length / 2
         field_half_width: Final[float] = self.field.width / 2
 
         max_distance: Final[float] = np.linalg.norm(
             [2 * field_half_length, 2 * field_half_width])
+        last_dist_robot_to_target: Final[float] = np.linalg.norm([last_robot_pos.x - target_pos.x,
+                                                                  last_robot_pos.y - target_pos.y])
         dist_robot_to_target: Final[float] = np.linalg.norm([robot_pos.x - target_pos.x,
                                                              robot_pos.y - target_pos.y])
 
         if dist_robot_to_target < 0.2:
             if abs(smallest_angle_diff(robot_angle, target_angle)) < ANGLE_TOLERANCE:
-                return 1.0, True
-            return 0.75 * (1.0 - abs(smallest_angle_diff(robot_angle, target_angle)) / np.pi), False
-
-        return -dist(robot_pos, target_pos) / max_distance, False
+                return 0.0, True
+            return 0.0, False
+            # return 0.75 * (1.0 - abs(smallest_angle_diff(robot_angle, target_angle)) / np.pi), False
+        return (last_dist_robot_to_target - dist_robot_to_target) / max_distance, False
 
     def _calculate_reward_and_done(self):
         reward, done = self.reward_function(robot_pos=Point2D(x=self.frame.robots_blue[0].x,
                                                               y=self.frame.robots_blue[0].y),
+                                            last_robot_pos=Point2D(x=self.last_frame.robots_blue[0].x,
+                                                                   y=self.last_frame.robots_blue[0].y),
                                             robot_angle=np.deg2rad(
                                                 self.frame.robots_blue[0].theta),
                                             target_pos=self.target_point,
