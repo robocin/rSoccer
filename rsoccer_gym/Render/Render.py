@@ -151,8 +151,7 @@ class RCGymRender:
                 self.target_position_x, self.target_position_y)
             self.target_angle_direction.set_translation(
                 self.target_position_x, self.target_position_y)
-            self.target_angle_direction.set_rotation(
-                np.deg2rad(self.target_angle))
+            self.target_angle_direction.set_rotation(np.deg2rad(self.target_angle))
 
         for i, blue in enumerate(frame.robots_blue.values()):
             self.blue_robots[i].set_translation(blue.x, blue.y)
@@ -610,7 +609,7 @@ class RCGymRender:
         target_angle_transform: rendering.Transform = rendering.Transform()
 
         target_angle: rendering.Geom = rendering.make_polyline(
-            [(0, 0), (0, robot_radius)])
+            [(0, 0), (robot_radius, 0)])
         target_angle.set_color(*GRAY)
         target_angle.add_attr(target_angle_transform)
         target_angle.set_linewidth(2)
