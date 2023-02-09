@@ -12,7 +12,7 @@ from rsoccer_gym.Entities import Ball, Frame, Robot
 from rsoccer_gym.ssl.ssl_gym_base import SSLBaseEnv
 from rsoccer_gym.Utils import KDTree
 
-ANGLE_TOLERANCE: Final[float] = np.deg2rad(7.5)
+ANGLE_TOLERANCE: Final[float] = np.deg2rad(15)
 
 
 class SSLPathPlanningEnv(SSLBaseEnv):
