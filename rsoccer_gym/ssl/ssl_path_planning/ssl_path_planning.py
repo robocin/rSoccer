@@ -12,7 +12,7 @@ from rsoccer_gym.Entities import Ball, Frame, Robot
 from rsoccer_gym.ssl.ssl_gym_base import SSLBaseEnv
 from rsoccer_gym.Utils import KDTree
 
-ANGLE_TOLERANCE: Final[float] = np.deg2rad(15)
+ANGLE_TOLERANCE: Final[float] = np.deg2rad(7.5)
 
 
 class SSLPathPlanningEnv(SSLBaseEnv):
@@ -23,9 +23,9 @@ class SSLPathPlanningEnv(SSLBaseEnv):
                          n_robots_yellow=n_robots_yellow, time_step=0.025)
 
         self.action_space = gym.spaces.Box(low=-1, high=1,  # hyp tg.
-                                           shape=(3, ), dtype=np.float32)
+                                           shape=(4, ), dtype=np.float32)
 
-        n_obs = 3 + 4 + 7*self.n_robots_blue + 2*self.n_robots_yellow
+        n_obs = 4 + 4 + 7*self.n_robots_blue + 2*self.n_robots_yellow
         self.observation_space = gym.spaces.Box(low=-self.NORM_BOUNDS,
                                                 high=self.NORM_BOUNDS,
                                                 shape=(n_obs, ),
@@ -46,7 +46,8 @@ class SSLPathPlanningEnv(SSLBaseEnv):
 
         observation.append(self.norm_pos(self.target_point.x))
         observation.append(self.norm_pos(self.target_point.y))
-        observation.append(self.target_angle)
+        observation.append(np.sin(self.target_angle))
+        observation.append(np.cos(self.target_angle))
 
         observation.append(self.norm_pos(self.frame.ball.x))
         observation.append(self.norm_pos(self.frame.ball.y))
@@ -81,7 +82,7 @@ class SSLPathPlanningEnv(SSLBaseEnv):
         entry.target = Point2D(action[0] * 1000.0 * field_half_length,
                                action[1] * 1000.0 * field_half_width
                                )
-        entry.target_angle = action[2] * math.pi
+        entry.target_angle = np.arctan2(action[2], action[3])
 
         entry.using_prop_velocity = True
 
