@@ -1,7 +1,7 @@
 import random
 from rsoccer_gym.Render.Render import RCGymRender
 
-from rsoccer_gym.ssl.ssl_path_planning.navigation import Point2D, GoToPointEntry, go_to_point, abs_smallest_angle_diff, dist_to
+from rsoccer_gym.ssl.ssl_path_planning.navigation import Point2D, GoToPointEntry, go_to_point, abs_smallest_angle_diff, dist_to, length
 
 import gym
 import numpy as np
@@ -103,14 +103,14 @@ class SSLPathPlanningEnv(SSLBaseEnv):
             )
         ]
 
-    def reward_function(self, robot_pos: Point2D, last_robot_pos: Point2D, robot_angle: float, target_pos: Point2D, target_angle: float):
+    def reward_function(self, robot_pos: Point2D, last_robot_pos: Point2D, robot_vel: Point2D, robot_angle: float, target_pos: Point2D, target_angle: float):
         max_dist = np.sqrt(self.field.length ** 2 + self.field.width ** 2)
 
         last_dist_robot_to_target = dist_to(target_pos, last_robot_pos)
         dist_robot_to_target = dist_to(target_pos, robot_pos)
 
         if dist_robot_to_target < 0.2:
-            if abs_smallest_angle_diff(robot_angle, target_angle) < ANGLE_TOLERANCE:
+            if abs_smallest_angle_diff(robot_angle, target_angle) < ANGLE_TOLERANCE and length(robot_vel) < 0.1:
                 return 0.0, True
             return 0.0, False
         return (last_dist_robot_to_target - dist_robot_to_target) / max_dist, False
@@ -125,8 +125,11 @@ class SSLPathPlanningEnv(SSLBaseEnv):
         target_pos = self.target_point
         target_angle = self.target_angle
 
+        robot_vel = Point2D(x=robot.v_x, y=robot.v_y)
+
         reward, done = self.reward_function(robot_pos=robot_pos,
                                             last_robot_pos=last_robot_pos,
+                                            robot_vel=robot_vel,
                                             robot_angle=robot_angle,
                                             target_pos=target_pos,
                                             target_angle=target_angle)
