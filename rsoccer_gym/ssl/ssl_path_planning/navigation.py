@@ -29,7 +29,7 @@ Point2D = namedtuple("Point2D", ["x", "y"])
 RobotMove = namedtuple("RobotMove", ["velocity", "angular_velocity"])
 
 
-def dist(p_1: Point2D, p_2: Point2D) -> float:
+def dist_to(p_1: Point2D, p_2: Point2D) -> float:
     """Returns the distance between two points"""
     return ((p_1.x - p_2.x) ** 2 + (p_1.y - p_2.y) ** 2) ** 0.5
 
@@ -75,6 +75,11 @@ def smallest_angle_diff(angle_a: float, angle_b: float) -> float:
     return angle
 
 
+def abs_smallest_angle_diff(angle_a: float, angle_b: float) -> float:
+    """Returns the absolute smallest angle difference between two angles"""
+    return abs(smallest_angle_diff(angle_a, angle_b))
+
+
 def from_polar(radius: float, theta: float) -> Point2D:
     """Returns a point from polar coordinates"""
     return Point2D(radius * math.cos(theta), radius * math.sin(theta))
@@ -110,7 +115,7 @@ class GoToPointEntry:
     required_high_precision_to_target: Optional[bool] = None
 
 
-def go_to_point(entry: GoToPointEntry, agent_angle: float, agent_position: Point2D, agent_velocity: Point2D) -> RobotMove:
+def go_to_point(agent_position: Point2D, agent_velocity: Point2D, agent_angle: float, entry: GoToPointEntry) -> RobotMove:
     """Returns the robot move"""
     s0: Point2D = agent_position
     s: Point2D = entry.target

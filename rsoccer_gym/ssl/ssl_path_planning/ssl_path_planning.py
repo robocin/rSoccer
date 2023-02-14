@@ -1,10 +1,7 @@
-import math
 import random
 from rsoccer_gym.Render.Render import RCGymRender
 
-from rsoccer_gym.ssl.ssl_path_planning.utility import GoToPointEntry, go_to_point, Point2D, RobotMove, dist, smallest_angle_diff
-
-from typing import Final, List
+from rsoccer_gym.ssl.ssl_path_planning.navigation import Point2D, GoToPointEntry, go_to_point, abs_smallest_angle_diff, dist_to
 
 import gym
 import numpy as np
@@ -12,7 +9,8 @@ from rsoccer_gym.Entities import Ball, Frame, Robot
 from rsoccer_gym.ssl.ssl_gym_base import SSLBaseEnv
 from rsoccer_gym.Utils import KDTree
 
-ANGLE_TOLERANCE: Final[float] = np.deg2rad(7.5)
+
+ANGLE_TOLERANCE: float = np.deg2rad(7.5)
 
 
 class SSLPathPlanningEnv(SSLBaseEnv):
@@ -41,8 +39,7 @@ class SSLPathPlanningEnv(SSLBaseEnv):
         print('Environment initialized')
 
     def _frame_to_observations(self):
-
-        observation: List[float] = []
+        observation = list()
 
         observation.append(self.norm_pos(self.target_point.x))
         observation.append(self.norm_pos(self.target_point.y))
@@ -74,71 +71,70 @@ class SSLPathPlanningEnv(SSLBaseEnv):
         return np.array(observation, dtype=np.float32)
 
     def _get_commands(self, action):
+        field_half_length = self.field.length / 2  # x
+        field_half_width = self.field.width / 2    # y
+
+        target_x = action[0] * field_half_length
+        target_y = action[1] * field_half_width
+        target_angle = np.arctan2(action[2], action[3])
+
         entry: GoToPointEntry = GoToPointEntry()
-
-        field_half_length: Final[float] = self.field.length / 2  # x
-        field_half_width: Final[float] = self.field.width / 2  # y
-
-        entry.target = Point2D(action[0] * 1000.0 * field_half_length,
-                               action[1] * 1000.0 * field_half_width
-                               )
-        entry.target_angle = np.arctan2(action[2], action[3])
-
+        entry.target = Point2D(target_x * 1000.0, target_y * 1000.0)  # m to mm
+        entry.target_angle = target_angle
         entry.using_prop_velocity = True
 
-        angle: float = np.deg2rad(self.frame.robots_blue[0].theta)
-        position: Point2D = Point2D(x=self.frame.robots_blue[0].x * 1000.0,
-                                    y=self.frame.robots_blue[0].y * 1000.0)
-        velocity: Point2D = Point2D(x=self.frame.robots_blue[0].v_x * 1000.0,
-                                    y=self.frame.robots_blue[0].v_y * 1000.0)
+        robot = self.frame.robots_blue[0]
+        angle = np.deg2rad(robot.theta)
+        position = Point2D(x=robot.x * 1000.0, y=robot.y * 1000.0)
+        velocity = Point2D(x=robot.v_x * 1000.0, y=robot.v_y * 1000.0)
 
-        robot_move: RobotMove = go_to_point(entry=entry,
-                                            agent_angle=angle,
-                                            agent_position=position,
-                                            agent_velocity=velocity)
+        result = go_to_point(agent_position=position,
+                             agent_velocity=velocity,
+                             agent_angle=angle,
+                             entry=entry)
 
         return [
             Robot(
                 yellow=False,
                 id=0,
-                v_x=robot_move.velocity.x,
-                v_y=robot_move.velocity.y,
-                v_theta=robot_move.angular_velocity
+                v_x=result.velocity.x,
+                v_y=result.velocity.y,
+                v_theta=result.angular_velocity
             )
         ]
 
     def reward_function(self, robot_pos: Point2D, last_robot_pos: Point2D, robot_angle: float, target_pos: Point2D, target_angle: float):
-        field_half_length: Final[float] = self.field.length / 2
-        field_half_width: Final[float] = self.field.width / 2
+        max_dist = np.sqrt(self.field.length ** 2 + self.field.width ** 2)
 
-        max_distance: Final[float] = np.linalg.norm(
-            [2 * field_half_length, 2 * field_half_width])
-        last_dist_robot_to_target: Final[float] = np.linalg.norm([last_robot_pos.x - target_pos.x,
-                                                                  last_robot_pos.y - target_pos.y])
-        dist_robot_to_target: Final[float] = np.linalg.norm([robot_pos.x - target_pos.x,
-                                                             robot_pos.y - target_pos.y])
+        last_dist_robot_to_target = dist_to(target_pos, last_robot_pos)
+        dist_robot_to_target = dist_to(target_pos, robot_pos)
 
         if dist_robot_to_target < 0.2:
-            if abs(smallest_angle_diff(robot_angle, target_angle)) < ANGLE_TOLERANCE:
+            if abs_smallest_angle_diff(robot_angle, target_angle) < ANGLE_TOLERANCE:
                 return 0.0, True
             return 0.0, False
-            # return 0.75 * (1.0 - abs(smallest_angle_diff(robot_angle, target_angle)) / np.pi), False
-        return (last_dist_robot_to_target - dist_robot_to_target) / max_distance, False
+        return (last_dist_robot_to_target - dist_robot_to_target) / max_dist, False
 
     def _calculate_reward_and_done(self):
-        reward, done = self.reward_function(robot_pos=Point2D(x=self.frame.robots_blue[0].x,
-                                                              y=self.frame.robots_blue[0].y),
-                                            last_robot_pos=Point2D(x=self.last_frame.robots_blue[0].x,
-                                                                   y=self.last_frame.robots_blue[0].y),
-                                            robot_angle=np.deg2rad(
-                                                self.frame.robots_blue[0].theta),
-                                            target_pos=self.target_point,
-                                            target_angle=self.target_angle)
+        robot = self.frame.robots_blue[0]
+        last_robot = self.last_frame.robots_blue[0]
+
+        robot_pos = Point2D(x=robot.x, y=robot.y)
+        last_robot_pos = Point2D(x=last_robot.x, y=last_robot.y)
+        robot_angle = np.deg2rad(robot.theta)
+        target_pos = self.target_point
+        target_angle = self.target_angle
+
+        reward, done = self.reward_function(robot_pos=robot_pos,
+                                            last_robot_pos=last_robot_pos,
+                                            robot_angle=robot_angle,
+                                            target_pos=target_pos,
+                                            target_angle=target_angle)
         return reward, done
 
     def _get_initial_positions_frame(self):
-        field_half_length: Final[float] = self.field.length / 2
-        field_half_width: Final[float] = self.field.width / 2
+        field_half_length = self.field.length / 2
+        field_half_width = self.field.width / 2
 
         def get_random_x():
             return random.uniform(-field_half_length + 0.1,
@@ -153,13 +149,12 @@ class SSLPathPlanningEnv(SSLBaseEnv):
 
         pos_frame: Frame = Frame()
 
-        # place ball outside field
         pos_frame.ball = Ball(x=get_random_x(), y=get_random_y())
 
         self.target_point = Point2D(x=get_random_x(), y=get_random_y())
         self.target_angle = np.deg2rad(get_random_theta())
 
-        #  TODO: Add a way to change the target point
+        #  TODO: Move RCGymRender to another place
         self.view = RCGymRender(self.n_robots_blue,
                                 self.n_robots_yellow,
                                 self.field,
@@ -172,7 +167,7 @@ class SSLPathPlanningEnv(SSLBaseEnv):
         min_dist = 0.2
 
         places = KDTree()
-        places.insert(self.target_point)
+        places.insert((self.target_point.x, self.target_point.y))
         places.insert((pos_frame.ball.x, pos_frame.ball.y))
 
         for i in range(self.n_robots_blue):
