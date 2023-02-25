@@ -111,7 +111,7 @@ class SSLPathPlanningEnv(SSLBaseEnv):
 
         if dist_robot_to_target < 0.2:
             if abs_smallest_angle_diff(robot_angle, target_angle) < ANGLE_TOLERANCE:
-                return 0.0, True
+                return 1000.0, True
             return 0.0, False
         return (last_dist_robot_to_target - dist_robot_to_target) / max_dist, False
 
