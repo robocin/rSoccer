@@ -1,7 +1,7 @@
 import random
 from rsoccer_gym.Render.Render import RCGymRender
 
-from rsoccer_gym.ssl.ssl_path_planning.navigation import Point2D, GoToPointEntry, go_to_point, abs_smallest_angle_diff, dist_to
+from rsoccer_gym.ssl.ssl_path_planning.navigation import Point2D, GoToPointEntry, go_to_point, abs_smallest_angle_diff, dist_to, length
 
 import gym
 import numpy as np
@@ -11,6 +11,7 @@ from rsoccer_gym.Utils import KDTree
 
 
 ANGLE_TOLERANCE: float = np.deg2rad(7.5)
+SPEED_TOLERANCE: float = 0.01  # m/s == 1 cm/s
 
 
 class SSLPathPlanningEnv(SSLBaseEnv):
@@ -103,15 +104,20 @@ class SSLPathPlanningEnv(SSLBaseEnv):
             )
         ]
 
-    def reward_function(self, robot_pos: Point2D, last_robot_pos: Point2D, robot_angle: float, target_pos: Point2D, target_angle: float):
+    def is_v_in_range(self, current, target) -> bool:
+        return -SPEED_TOLERANCE <= current - target <= SPEED_TOLERANCE
+
+    def reward_function(self, robot_pos: Point2D, last_robot_pos: Point2D, robot_vel: Point2D, robot_angle: float, target_pos: Point2D, target_angle: float):
         max_dist = np.sqrt(self.field.length ** 2 + self.field.width ** 2)
 
         last_dist_robot_to_target = dist_to(target_pos, last_robot_pos)
         dist_robot_to_target = dist_to(target_pos, robot_pos)
 
+        robot_speed = length(robot_vel)
+
         if dist_robot_to_target < 0.2:
             if abs_smallest_angle_diff(robot_angle, target_angle) < ANGLE_TOLERANCE:
-                return 0.25, True
+                return 0.25 if self.is_v_in_range(robot_speed, 0) else 0.0, True
             return 0.0, False
         return 0.75 * (last_dist_robot_to_target - dist_robot_to_target) / max_dist, False
 
@@ -125,8 +131,11 @@ class SSLPathPlanningEnv(SSLBaseEnv):
         target_pos = self.target_point
         target_angle = self.target_angle
 
+        robot_vel = Point2D(x=robot.v_x, y=robot.v_y)
+
         reward, done = self.reward_function(robot_pos=robot_pos,
                                             last_robot_pos=last_robot_pos,
+                                            robot_vel=robot_vel,
                                             robot_angle=robot_angle,
                                             target_pos=target_pos,
                                             target_angle=target_angle)
