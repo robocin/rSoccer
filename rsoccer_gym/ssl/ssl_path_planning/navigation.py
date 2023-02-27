@@ -5,22 +5,17 @@ from collections import namedtuple
 from typing import Final, Optional
 import math
 
-ANGLE_K_P: Final[float] = 4.0
-ALLY_MAX_SPEED: Final[float] = 2200.0
-ALLY_MIN_SPEED: Final[float] = 0.30
-MIN_DIST_TO_PROP_VELOCITY: Final[float] = 800.00
+PROP_VELOCITY_MIN_FACTOR: Final[float] = 0.1
+MAX_VELOCITY: Final[float] = 2.2
+ANGLE_EPSILON: Final[float] = 0.1
+ANGLE_KP: Final[float] = 5
+ROTATE_IN_POINT_MIN_VEL_FACTOR: Final[float] = 0.18
+ROTATE_IN_POINT_APPROACH_KP: Final[float] = 2
+ROTATE_IN_POINT_MAX_VELOCITY: Final[float] = 1.8
+ROTATE_IN_POINT_ANGLE_KP: Final[float] = 5
+MIN_DIST_TO_PROP_VELOCITY: Final[float] = 720
 
-SMALL_TOLERANCE_TO_DESIRED_POSITION: Final[float] = 10.0  # Not a parameter.
-DEFAULT_TOLERANCE_TO_DESIRED_POSITION: Final[float] = 35.0  # Not a parameter.
-
-ROBOT_VEL_BREAK_DECAY_FACTOR: Final[float] = 2.11
-ROBOT_VEL_FAVORABLE_DECAY_FACTOR: Final[float] = 0.09
-
-ROBOT_MAX_LINEAR_ACCELERATION: Final[float] = 2.4
-
-ROBOT_MAX_ANGULAR_ACCELERATION: Final[float] = 10.0
-
-CYCLE_STEP: Final[float] = 0.16
+ADJUST_ANGLE_MIN_DIST: Final[float] = 50
 
 M_TO_MM: Final[float] = 1000.0
 
@@ -108,96 +103,45 @@ class GoToPointEntry:
 
     max_velocity: Optional[float] = None
     k_p: Optional[float] = None
-    custom_acceleration: Optional[float] = None
-    min_velocity: Optional[float] = None
+    prop_velocity_factor: Optional[float] = None
     prop_min_distance: Optional[float] = None
-    using_prop_velocity: Optional[bool] = None
-    required_high_precision_to_target: Optional[bool] = None
+    using_prop_velocity: bool = False
 
 
-def go_to_point(agent_position: Point2D, agent_velocity: Point2D, agent_angle: float, entry: GoToPointEntry) -> RobotMove:
+def go_to_point(agent_position: Point2D, agent_angle: float, entry: GoToPointEntry) -> RobotMove:
     """Returns the robot move"""
-    s0: Point2D = agent_position
-    s: Point2D = entry.target
+    # If Player send max speed, this max speed has to be respected
+    # Ohterwise, use the max speed received in the parameter
 
-    delta_s: Point2D = Point2D(s.x - s0.x, s.y - s0.y)
-    k_p: float = entry.k_p if entry.k_p is not None else ANGLE_K_P
+    max_velocity: float = entry.max_velocity if entry.max_velocity else MAX_VELOCITY
+    distance_to_goal: float = dist_to(agent_position, entry.target)
+    k_p: float = entry.k_p if entry.k_p else ANGLE_KP
 
-    def compute_max_velocity():
-        max_velocity: float = ALLY_MAX_SPEED / \
-            M_TO_MM if entry.max_velocity is None else entry.max_velocity
+    # If it is to use proportional speed and the distance to the target position is less the
+    # threshold
+    if entry.using_prop_velocity:
+        prop_velocity_factor: float = PROP_VELOCITY_MIN_FACTOR
+        min_prop_distance: float = entry.prop_min_distance if entry.prop_min_distance else MIN_DIST_TO_PROP_VELOCITY
 
-        if entry.using_prop_velocity:
-            min_prop_distance: float = entry.prop_min_distance if entry.prop_min_distance is not None else MIN_DIST_TO_PROP_VELOCITY
-            min_velocity: float = entry.min_velocity if entry.min_velocity is not None else ALLY_MIN_SPEED
+        # If Player send the min prop speed factor, it has to be respected
+        # Otherwise, use defined in the parameter
+        if entry.prop_velocity_factor and 0.0 <= entry.prop_velocity_factor <= 1.0:
+            prop_velocity_factor = entry.prop_velocity_factor
 
-            if length(delta_s) <= min_prop_distance:
-                return max(math_map(length(delta_s), 0.0, min_prop_distance, min_velocity, max_velocity), min_velocity)
+        if distance_to_goal <= min_prop_distance:
+            max_velocity = max_velocity * math_map(distance_to_goal, 0.0, min_prop_distance, prop_velocity_factor, 1.0)
 
-        return max_velocity
+        if distance_to_goal > ADJUST_ANGLE_MIN_DIST:
+            # Uses an angle PID (only proportional for now), and first try to get in the right angle,
+            # using only angular speed and then use linear speed to get into the point
 
-    max_velocity: float = compute_max_velocity()
+            theta: float = pt_angle(Point2D(entry.target.x - agent_position.x, entry.target.y - agent_position.y))
+            d_theta: float = smallest_angle_diff(agent_angle, entry.target_angle)
 
-    tolerance_to_target: float = SMALL_TOLERANCE_TO_DESIRED_POSITION if entry.required_high_precision_to_target else DEFAULT_TOLERANCE_TO_DESIRED_POSITION
+            # Proportional to prioritize the angle correction
+            v_prop: float = abs(smallest_angle_diff(math.pi - ANGLE_EPSILON, d_theta)) * (max_velocity / (math.pi - ANGLE_EPSILON))
 
-    if length(delta_s) > tolerance_to_target:
-        theta: float = pt_angle(delta_s)
-        d_theta: float = smallest_angle_diff(
-            agent_angle, entry.target_angle)
-
-        delta_s = Point2D(delta_s.x / M_TO_MM, delta_s.y / M_TO_MM)
-
-        v0: Point2D = Point2D(agent_velocity.x /
-                              M_TO_MM, agent_velocity.y / M_TO_MM)
-        v: Point2D = from_polar(max_velocity, theta)
-
-        v0_decay: float = ROBOT_VEL_BREAK_DECAY_FACTOR if abs(angle_between(
-            v, v0)) > math.pi / 2.0 else ROBOT_VEL_FAVORABLE_DECAY_FACTOR
-
-        v0 = Point2D(v0.x - (v0.x * v0_decay) * CYCLE_STEP,
-                     v0.y - (v0.y * v0_decay) * CYCLE_STEP)
-
-        acceleration_required: Point2D = Point2D((v.x - v0.x) / CYCLE_STEP,
-                                                 (v.y - v0.y) / CYCLE_STEP)
-
-        acc_prop: float = entry.custom_acceleration if entry.custom_acceleration else ROBOT_MAX_LINEAR_ACCELERATION
-
-        alpha: float = math_map(abs(d_theta), 0.0, math.pi, 0.0, 1.0)
-
-        prop_factor: float = (alpha - 1.0) * (alpha - 1.0)
-
-        acc_prop *= prop_factor
-
-        if length(acceleration_required) > acc_prop:
-            # acceleration_required *= acc_prop / length(acceleration_required)
-            acceleration_required = Point2D(acceleration_required.x * acc_prop / length(acceleration_required),
-                                            acceleration_required.y * acc_prop / length(acceleration_required))
-
-        # // v = v0 + a*t
-        new_velocity: Point2D = Point2D(v0.x + acceleration_required.x * CYCLE_STEP,
-                                        v0.y + acceleration_required.y * CYCLE_STEP)
-
-        # w0: float = 0
-        # w: float = k_p * d_theta
-
-        # // w0 = w0 - (w0 * v0Decay) * Env::Navigation::CYCLE_STEP
-        # rotate_acceleration_required: float = (w - w0) / CYCLE_STEP
-
-        # acc_rotate: float = math_bound(
-        #     rotate_acceleration_required,
-        #     -ROBOT_MAX_ANGULAR_ACCELERATION,
-        #     ROBOT_MAX_ANGULAR_ACCELERATION
-        # )
-
-        # // v = v0 + a*t
-        # new_ang_velocity: float = w0 + acc_rotate * CYCLE_STEP
-
-        return RobotMove(velocity=new_velocity, angular_velocity=k_p * d_theta)
-
-    def angle_pid(target_angle: float, k_p: float) -> RobotMove:
-        d_theta: float = smallest_angle_diff(
-            agent_angle, target_angle)
-
-        return RobotMove(velocity=Point2D(0.0, 0.0), angular_velocity=k_p * d_theta)
-
-    return angle_pid(entry.target_angle, k_p)
+            return RobotMove(from_polar(v_prop, theta), k_p * d_theta)
+        
+        d_theta: float = smallest_angle_diff(agent_angle, entry.target_angle)
+        return RobotMove(Point2D(0.0, 0.0), k_p * d_theta)

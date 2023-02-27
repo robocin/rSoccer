@@ -90,7 +90,6 @@ class SSLPathPlanningEnv(SSLBaseEnv):
         velocity = Point2D(x=robot.v_x * 1000.0, y=robot.v_y * 1000.0)
 
         result = go_to_point(agent_position=position,
-                             agent_velocity=velocity,
                              agent_angle=angle,
                              entry=entry)
 
