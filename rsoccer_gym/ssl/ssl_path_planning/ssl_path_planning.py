@@ -114,10 +114,9 @@ class SSLPathPlanningEnv(SSLBaseEnv):
 
         robot_speed = length(robot_vel)
 
-        if dist_robot_to_target < 0.2:
-            if abs_smallest_angle_diff(robot_angle, target_angle) < ANGLE_TOLERANCE:
+        if abs_smallest_angle_diff(robot_angle, target_angle) < ANGLE_TOLERANCE:
+            if dist_robot_to_target < 0.2:
                 return 0.25 if self.is_v_in_range(robot_speed, 0) else 0.0, True
-            return 0.0, False
         return 0.75 * (last_dist_robot_to_target - dist_robot_to_target) / max_dist, False
 
     def _calculate_reward_and_done(self):
