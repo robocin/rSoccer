@@ -8,6 +8,7 @@ import numpy as np
 from rsoccer_gym.Entities import Frame, Robot, Ball
 from rsoccer_gym.ssl.ssl_gym_base import SSLBaseEnv
 from rsoccer_gym.Utils import KDTree
+from rsoccer_gym.Kinematics import Kinematics
 
 
 class SSLGoToBallEnv(SSLBaseEnv):
@@ -38,8 +39,9 @@ class SSLGoToBallEnv(SSLBaseEnv):
             Ball is reached or 30 seconds (1200 steps)
     """
 
-    def __init__(self, field_type=1, n_robots_yellow=0):
-        super().__init__(field_type=field_type, n_robots_blue=1, 
+    def __init__(self, field_type=1, n_robots_blue=1, n_robots_yellow=0, 
+                 mm_deviation=0, angle_deviation=0):
+        super().__init__(field_type=field_type, n_robots_blue=n_robots_blue, 
                          n_robots_yellow=n_robots_yellow, time_step=0.025)
 
         self.action_space = gym.spaces.Box(low=-1, high=1,
@@ -51,11 +53,41 @@ class SSLGoToBallEnv(SSLBaseEnv):
                                                 shape=(n_obs, ),
                                                 dtype=np.float32)
         
+        # Set robot kinematics
+        self.kinematics = self._make_robots_kinematics(mm_deviation, angle_deviation)
+
         # Limit robot speeds
         self.max_v = 2.5
         self.max_w = 10
 
         print('Environment initialized')
+
+    def _make_robots_kinematics(self, mm_deviation, angle_deviation):
+        self.original_kinematics = self._get_robot_kinematics(robot_id=15,
+                                                              mm_deviation=0,
+                                                              angle_deviation=0)
+
+        robots_kinematics = []
+        for i in range(self.n_robots_blue):
+            if i==0:
+                kin = self.original_kinematics
+            else:
+                kin = self._get_robot_kinematics(robot_id=i,
+                                                mm_deviation=mm_deviation,
+                                                angle_deviation=angle_deviation)
+            robots_kinematics.append(kin)
+        
+        return robots_kinematics
+
+    def _get_robot_kinematics(self, robot_id, mm_deviation=0, angle_deviation=0):
+        robot_kinematics = Kinematics.Robot(number_of_wheels=4,
+                                            id = robot_id,
+                                            wheel_radius = 0.02475,
+                                            axis_length = 0.081,
+                                            wheels_alphas = [60, 135, -135, -60],
+                                            mm_deviation = mm_deviation,
+                                            angle_deviation = angle_deviation)
+        return robot_kinematics
 
     def _frame_to_observations(self):
 
@@ -87,13 +119,24 @@ class SSLGoToBallEnv(SSLBaseEnv):
 
     def _get_commands(self, actions):
         commands = []
-
-        angle = self.frame.robots_blue[0].theta
-        v_x, v_y, v_theta = self.convert_actions(actions, np.deg2rad(angle))
-        cmd = Robot(yellow=False, id=0, v_x=v_x, v_y=v_y, v_theta=v_theta)
-        commands.append(cmd)
+        v_x, v_y, v_theta = self.convert_actions(actions, np.deg2rad(0))
+        for id in range(self.n_robots_blue):
+            v_x, v_y, v_theta = self.apply_kinematics_transformation(id, v_x, v_y, v_theta)
+            cmd = Robot(yellow=False, id=id, v_x=v_x, v_y=v_y, v_theta=v_theta)
+            commands.append(cmd)
 
         return commands
+
+    def apply_kinematics_transformation(self, id, v_x, v_y, v_theta):
+        v = np.array([v_x, v_y, v_theta])
+
+        # WHEELS' DESIRED ROTATION
+        phi = self.original_kinematics.get_J2_inv()@self.original_kinematics.get_J1()@v
+
+        # ROBOT MOVEMENT
+        v_real = self.kinematics[id].get_J1_inv()@self.kinematics[id].get_J2()@phi
+
+        return v_real
 
     def convert_actions(self, action, angle):
         """Denormalize, clip to absolute max and convert to local"""
@@ -114,18 +157,12 @@ class SSLGoToBallEnv(SSLBaseEnv):
 
     def _calculate_reward_and_done(self):
         reward = 0
-
-        ball = self.frame.ball
-        robot = self.frame.robots_blue[0]
-        
-        dist_robot_ball = np.linalg.norm(
-            np.array([ball.x, ball.y]) 
-            - np.array([robot.x, robot.y])
-        )
-        
-        # Check if robot is less than 0.2m from ball
-        if dist_robot_ball < 0.2:
-            reward = 1
+    
+        for id in range(self.n_robots_blue):
+            robot = self.frame.robots_blue[id]
+            # Check if robot is out of field
+            if abs(robot.x) > 3 or abs(robot.y) > 2:
+                reward = 1
 
         done = reward
 
@@ -146,7 +183,7 @@ class SSLGoToBallEnv(SSLBaseEnv):
 
         pos_frame: Frame = Frame()
 
-        pos_frame.ball = Ball(x=x(), y=y())
+        pos_frame.ball = Ball(x=3, y=2)
 
         min_dist = 0.2
 
@@ -154,12 +191,8 @@ class SSLGoToBallEnv(SSLBaseEnv):
         places.insert((pos_frame.ball.x, pos_frame.ball.y))
         
         for i in range(self.n_robots_blue):
-            pos = (x(), y())
-            while places.get_nearest(pos)[1] < min_dist:
-                pos = (x(), y())
-
-            places.insert(pos)
-            pos_frame.robots_blue[i] = Robot(x=pos[0], y=pos[1], theta=theta())
+            pos = [-2.5, 0.5*i-1.5]
+            pos_frame.robots_blue[i] = Robot(x=pos[0], y=pos[1], theta=0)
 
         for i in range(self.n_robots_yellow):
             pos = (x(), y())

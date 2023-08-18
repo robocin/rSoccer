@@ -19,3 +19,7 @@ class Field:
     rbt_radius: float
     rbt_wheel_radius: float
     rbt_motor_max_rpm: float
+    x_min: float
+    x_max: float
+    y_min: float
+    y_max: float
