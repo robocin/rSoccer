@@ -1,6 +1,11 @@
-from dataclasses import Field
+from dataclasses import Field, dataclass
 from typing import Final
 from rsoccer_gym.Render.BaseRender import BaseRender, RenderParam2D
+
+@dataclass
+class RenderParam2D:
+    DEFAULT_WIDTH: int = 1080
+    DEFAULT_HEIGHT: int = 720
 
 class Render2D(BaseRender):
     def __init__(self, n_allies: int,

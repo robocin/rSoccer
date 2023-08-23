@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from rsoccer_gym.Entities import Frame, Field
+from rsoccer_gym.Entities import Frame
 
 class BaseRender(ABC):
     @abstractmethod
@@ -30,8 +29,3 @@ class BaseRender(ABC):
     @abstractmethod
     def _add_ball() -> None:
         pass
-
-@dataclass
-class RenderParam2D:
-    DEFAULT_WIDTH: int = 1080
-    DEFAULT_HEIGHT: int = 720
