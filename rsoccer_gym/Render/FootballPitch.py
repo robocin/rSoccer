@@ -76,11 +76,6 @@ while running:
     pygame.draw.arc(screen, WHITE, (screen_width - PITCH_MARGIN - CORNER_ARC_R, PITCH_MARGIN - CORNER_ARC_R, 2 * CORNER_ARC_R, 2 * CORNER_ARC_R), math.pi, 1.5 * math.pi, 2)
     pygame.draw.arc(screen, WHITE, (screen_width - PITCH_MARGIN - CORNER_ARC_R, screen_height - PITCH_MARGIN - CORNER_ARC_R, 2 * CORNER_ARC_R, 2 * CORNER_ARC_R), 0.5 * math.pi, math.pi, 2)# ok
     
-    
-    #pygame.draw.arc(screen, WHITE, (100, 100, 200, 200), 0, 2 * math.pi, 2)
-
-    # player
-    # pygame.draw.circle(screen, WHITE, (int(screen_width / 2), int(screen_height / 2)), int(PLAYER_SIZE), 2)
     pygame.display.flip()
 
 pygame.quit()
