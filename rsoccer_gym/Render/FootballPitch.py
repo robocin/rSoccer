@@ -71,10 +71,10 @@ while running:
     pygame.draw.rect(screen, BLACK, (screen_width - PITCH_MARGIN, (screen_height - GOAL_WIDTH) / 2 , GOAL_DEPTH, GOAL_WIDTH))
 
     # arc
-    pygame.draw.arc(screen, WHITE, (PITCH_MARGIN - CORNER_ARC_R, PITCH_MARGIN - CORNER_ARC_R, 2 * CORNER_ARC_R, 2 * CORNER_ARC_R), 1.5 * math.pi, 0, 2) #ok
-    pygame.draw.arc(screen, WHITE, (PITCH_MARGIN - CORNER_ARC_R, screen_height - PITCH_MARGIN - CORNER_ARC_R, 2 * CORNER_ARC_R, 2 * CORNER_ARC_R),0, 0.5 * math.pi, 2) # ok
+    pygame.draw.arc(screen, WHITE, (PITCH_MARGIN - CORNER_ARC_R, PITCH_MARGIN - CORNER_ARC_R, 2 * CORNER_ARC_R, 2 * CORNER_ARC_R), 1.5 * math.pi, 0, 2)
+    pygame.draw.arc(screen, WHITE, (PITCH_MARGIN - CORNER_ARC_R, screen_height - PITCH_MARGIN - CORNER_ARC_R, 2 * CORNER_ARC_R, 2 * CORNER_ARC_R),0, 0.5 * math.pi, 2)
     pygame.draw.arc(screen, WHITE, (screen_width - PITCH_MARGIN - CORNER_ARC_R, PITCH_MARGIN - CORNER_ARC_R, 2 * CORNER_ARC_R, 2 * CORNER_ARC_R), math.pi, 1.5 * math.pi, 2)
-    pygame.draw.arc(screen, WHITE, (screen_width - PITCH_MARGIN - CORNER_ARC_R, screen_height - PITCH_MARGIN - CORNER_ARC_R, 2 * CORNER_ARC_R, 2 * CORNER_ARC_R), 0.5 * math.pi, math.pi, 2)# ok
+    pygame.draw.arc(screen, WHITE, (screen_width - PITCH_MARGIN - CORNER_ARC_R, screen_height - PITCH_MARGIN - CORNER_ARC_R, 2 * CORNER_ARC_R, 2 * CORNER_ARC_R), 0.5 * math.pi, math.pi, 2)
     
     pygame.display.flip()
 
