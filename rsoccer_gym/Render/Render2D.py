@@ -21,7 +21,24 @@ class Render2D(BaseRender):
         self.field_params: Final[Field] = field_params
 
         # todo(bonna.borsoi): implement required params to render
-        self.screen_dimensions = None
+
+        margin = 40.0
+        goal_width = 146.56
+        goal_length = 44
+        pitch_length = 840
+        pitch_width = 544 
+
+        # half dimensions
+        h_length = (pitch_length + 2*goal_length) / 2
+        h_width = pitch_width / 2
+
+        self.screen_dimensions = {
+            "left" : -(h_length + margin),
+            "right" : (h_length + margin),
+            "bottom" : -(h_width + margin),
+            "top" : (h_width + margin),
+        }
+
         self.screen = None
 
         self._add_background()
