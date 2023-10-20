@@ -2,6 +2,7 @@ import math
 import random
 from rsoccer_gym.Utils.Utils import OrnsteinUhlenbeckAction
 from typing import Dict
+from math import pi
 
 import gym
 import numpy as np
@@ -10,8 +11,26 @@ from rsoccer_gym.vss.vss_gym_base import VSSBaseEnv
 from rsoccer_gym.Utils import KDTree
 
 
-class VSSEnv(VSSBaseEnv):
-    """This environment controls a single robot in a VSS soccer League 3v3 match 
+def menor_angulo(v1, v2):
+    angle = math.acos(np.dot(v1,v2))
+
+    if np.cross(v1,v2) > 0:
+        return -angle
+    
+
+    return angle
+
+def transform(v1, ang):
+    mod = np.sqrt(v1[0]**2 + v1[1]**2)
+    v1 = (v1[0]/mod, v1[1]/mod)
+
+    mn = menor_angulo(v1, (math.cos(ang), math.sin(ang)))
+
+    return mn, (math.cos(mn)*mod, math.sin(mn)*mod)
+
+class VSS1x0(VSSBaseEnv):
+    """This environment controls a singl
+    e robot in a VSS soccer League 3v3 match 
 
 
         Description:
@@ -52,15 +71,15 @@ class VSSEnv(VSSBaseEnv):
             5 minutes match time
     """
 
-    def __init__(self, use_fira=False):
-        super().__init__(field_type=0, n_robots_blue=3, n_robots_yellow=3,
-                         time_step=0.025, use_fira=use_fira)
+    def __init__(self):
+        super().__init__(field_type=0, n_robots_blue=1, n_robots_yellow=0,
+                         time_step=0.1)
 
         self.action_space = gym.spaces.Box(low=-1, high=1,
                                            shape=(2, ), dtype=np.float32)
         self.observation_space = gym.spaces.Box(low=-self.NORM_BOUNDS,
                                                 high=self.NORM_BOUNDS,
-                                                shape=(40, ), dtype=np.float32)
+                                                shape=(9, ), dtype=np.float32)
 
         # Initialize Class Atributes
         self.previous_ball_potential = None
@@ -93,32 +112,43 @@ class VSSEnv(VSSBaseEnv):
 
         observation = []
 
-        observation.append(self.norm_pos(self.frame.ball.x))
-        observation.append(self.norm_pos(self.frame.ball.y))
+        max_comprimento = self.field.length + self.field.penalty_length
+        max_altura = self.field.width
+
+        vetor_x_gol_oponente = (max_comprimento/2 - self.frame.robots_blue[0].x) / max_comprimento
+        vetor_y_gol_oponente = (0 - self.frame.robots_blue[0].y) / (max_altura/2)
+
+        # de cima pra baixo verde e azul -> 4,71 rad -> 270 graus
+        # significa que azul e verde e 90 graus
+        # azul e a frente do robo, quando alinhada no eixo x ela e 0 graus
+        ang = np.deg2rad(self.frame.robots_blue[0].theta)
+
+        angle, (v1_x, v1_y) = transform((vetor_x_gol_oponente, vetor_y_gol_oponente), ang)
+
+        distance_rg = np.sqrt(v1_x * v1_x + v1_y * v1_y)
+        observation.append(distance_rg) # vetor robo -> gol oponente
+
+        observation.append(angle/math.pi) # vetor robo -> gol oponente
+
+        vetor_x_bola = (self.frame.ball.x - self.frame.robots_blue[0].x) / max_comprimento
+        vetor_y_bola = (self.frame.ball.y - self.frame.robots_blue[0].y) / max_altura
+
+
+        angle, (v1_x, v1_y) = transform((vetor_x_bola, vetor_y_bola), ang)
+        distance_rb = np.sqrt(v1_x * v1_x + v1_y * v1_y) # vetor robo -> bola
+        
+        observation.append(distance_rb)
+        observation.append(angle/math.pi) # vetor robo -> bola
+
+
+        observation.append(np.cos(ang))
+
+
         observation.append(self.norm_v(self.frame.ball.v_x))
         observation.append(self.norm_v(self.frame.ball.v_y))
 
-        for i in range(self.n_robots_blue):
-            observation.append(self.norm_pos(self.frame.robots_blue[i].x))
-            observation.append(self.norm_pos(self.frame.robots_blue[i].y))
-            observation.append(
-                np.sin(np.deg2rad(self.frame.robots_blue[i].theta))
-            )
-            observation.append(
-                np.cos(np.deg2rad(self.frame.robots_blue[i].theta))
-            )
-            observation.append(self.norm_v(self.frame.robots_blue[i].v_x))
-            observation.append(self.norm_v(self.frame.robots_blue[i].v_y))
-            observation.append(self.norm_w(self.frame.robots_blue[i].v_theta))
-
-        for i in range(self.n_robots_yellow):
-            observation.append(self.norm_pos(self.frame.robots_yellow[i].x))
-            observation.append(self.norm_pos(self.frame.robots_yellow[i].y))
-            observation.append(self.norm_v(self.frame.robots_yellow[i].v_x))
-            observation.append(self.norm_v(self.frame.robots_yellow[i].v_y))
-            observation.append(
-                self.norm_w(self.frame.robots_yellow[i].v_theta)
-            )
+        observation.append(self.norm_v(self.frame.robots_blue[0].v_x))
+        observation.append(self.norm_v(self.frame.robots_blue[0].v_y))
 
         return np.array(observation, dtype=np.float32)
 
@@ -149,9 +179,9 @@ class VSSEnv(VSSBaseEnv):
     def _calculate_reward_and_done(self):
         reward = 0
         goal = False
-        w_move = 0.2
-        w_ball_grad = 0.8
-        w_energy = 2e-4
+        w_move = 0.5
+        w_ball_grad = 1
+        w_energy = 4e-2
         if self.reward_shaping_total is None:
             self.reward_shaping_total = {'goal_score': 0, 'move': 0,
                                          'ball_grad': 0, 'energy': 0,
@@ -161,12 +191,12 @@ class VSSEnv(VSSBaseEnv):
         if self.frame.ball.x > (self.field.length / 2):
             self.reward_shaping_total['goal_score'] += 1
             self.reward_shaping_total['goals_blue'] += 1
-            reward = 10
+            reward = 1000
             goal = True
         elif self.frame.ball.x < -(self.field.length / 2):
             self.reward_shaping_total['goal_score'] -= 1
             self.reward_shaping_total['goals_yellow'] += 1
-            reward = -10
+            reward = -1000
             goal = True
         else:
 
@@ -181,6 +211,9 @@ class VSSEnv(VSSBaseEnv):
                 reward = w_move * move_reward + \
                     w_ball_grad * grad_ball_potential + \
                     w_energy * energy_penalty
+                
+                # reward = \
+                #     w_energy * energy_penalty
 
                 self.reward_shaping_total['move'] += w_move * move_reward
                 self.reward_shaping_total['ball_grad'] += w_ball_grad \
@@ -309,3 +342,6 @@ class VSSEnv(VSSBaseEnv):
         en_penalty_2 = abs(self.sent_commands[0].v_wheel1)
         energy_penalty = - (en_penalty_1 + en_penalty_2)
         return energy_penalty
+    
+
+

@@ -1,3 +1,4 @@
+import pickle
 import math
 import random
 from rsoccer_gym.Utils.Utils import OrnsteinUhlenbeckAction
@@ -9,9 +10,30 @@ from rsoccer_gym.Entities import Frame, Robot, Ball
 from rsoccer_gym.vss.vss_gym_base import VSSBaseEnv
 from rsoccer_gym.Utils import KDTree
 
+from rsoccer_gym.vss.env_vss.shared_tcc import observations, w_ball_grad_tcc, w_energy_tcc, w_move_tcc, goal_reward_tcc
 
-class VSSEnv(VSSBaseEnv):
-    """This environment controls a single robot in a VSS soccer League 3v3 match 
+distancia = lambda o1, o2: np.sqrt((o1.x - o2.x)**2 + (o1.y - o2.y)**2)
+
+
+def menor_angulo(v1, v2):
+    angle = math.acos(np.dot(v1,v2))
+
+    if np.cross(v1,v2) > 0:
+        return -angle
+
+    return angle
+
+def transform(v1, ang):
+    mod = np.sqrt(v1[0]**2 + v1[1]**2)
+    v1 = (v1[0]/mod, v1[1]/mod)
+
+    mn = menor_angulo(v1, (math.cos(ang), math.sin(ang)))
+
+    return mn, (math.cos(mn)*mod, math.sin(mn)*mod)
+
+class vss_tcc_medio(VSSBaseEnv):
+    """This environment controls a singl
+    e robot in a VSS soccer League 3v3 match 
 
 
         Description:
@@ -52,21 +74,24 @@ class VSSEnv(VSSBaseEnv):
             5 minutes match time
     """
 
-    def __init__(self, use_fira=False):
-        super().__init__(field_type=0, n_robots_blue=3, n_robots_yellow=3,
-                         time_step=0.025, use_fira=use_fira)
+    def __init__(self):
+        super().__init__(field_type=0, n_robots_blue=1, n_robots_yellow=3,
+                         time_step=0.025)
 
         self.action_space = gym.spaces.Box(low=-1, high=1,
                                            shape=(2, ), dtype=np.float32)
         self.observation_space = gym.spaces.Box(low=-self.NORM_BOUNDS,
                                                 high=self.NORM_BOUNDS,
-                                                shape=(40, ), dtype=np.float32)
+                                                shape=(15, ), dtype=np.float32)
+
+        self.goleiro_teve_bola = False
 
         # Initialize Class Atributes
         self.previous_ball_potential = None
         self.actions: Dict = None
         self.reward_shaping_total = None
         self.v_wheel_deadzone = 0.05
+
 
         self.ou_actions = []
         for i in range(self.n_robots_blue + self.n_robots_yellow):
@@ -82,76 +107,44 @@ class VSSEnv(VSSBaseEnv):
         self.previous_ball_potential = None
         for ou in self.ou_actions:
             ou.reset()
-
+        self.goleiro_teve_bola = False
         return super().reset()
 
     def step(self, action):
+        
         observation, reward, done, _ = super().step(action)
         return observation, reward, done, self.reward_shaping_total
-
+    
     def _frame_to_observations(self):
+        return self.observations_atacante()
 
-        observation = []
-
-        observation.append(self.norm_pos(self.frame.ball.x))
-        observation.append(self.norm_pos(self.frame.ball.y))
-        observation.append(self.norm_v(self.frame.ball.v_x))
-        observation.append(self.norm_v(self.frame.ball.v_y))
-
-        for i in range(self.n_robots_blue):
-            observation.append(self.norm_pos(self.frame.robots_blue[i].x))
-            observation.append(self.norm_pos(self.frame.robots_blue[i].y))
-            observation.append(
-                np.sin(np.deg2rad(self.frame.robots_blue[i].theta))
-            )
-            observation.append(
-                np.cos(np.deg2rad(self.frame.robots_blue[i].theta))
-            )
-            observation.append(self.norm_v(self.frame.robots_blue[i].v_x))
-            observation.append(self.norm_v(self.frame.robots_blue[i].v_y))
-            observation.append(self.norm_w(self.frame.robots_blue[i].v_theta))
-
-        for i in range(self.n_robots_yellow):
-            observation.append(self.norm_pos(self.frame.robots_yellow[i].x))
-            observation.append(self.norm_pos(self.frame.robots_yellow[i].y))
-            observation.append(self.norm_v(self.frame.robots_yellow[i].v_x))
-            observation.append(self.norm_v(self.frame.robots_yellow[i].v_y))
-            observation.append(
-                self.norm_w(self.frame.robots_yellow[i].v_theta)
-            )
-
-        return np.array(observation, dtype=np.float32)
-
+    def observations_atacante(self):
+        return observations(self)
+    
     def _get_commands(self, actions):
         commands = []
         self.actions = {}
 
-        self.actions[0] = actions
+        self.actions[0] = actions[:2]
         v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions)
         commands.append(Robot(yellow=False, id=0, v_wheel0=v_wheel0,
                               v_wheel1=v_wheel1))
-
-        # Send random commands to the other robots
-        for i in range(1, self.n_robots_blue):
-            actions = self.ou_actions[i].sample()
-            self.actions[i] = actions
-            v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions)
-            commands.append(Robot(yellow=False, id=i, v_wheel0=v_wheel0,
-                                  v_wheel1=v_wheel1))
-        for i in range(self.n_robots_yellow):
+        
+        for i in range(2, self.n_robots_yellow):
+            continue
             actions = self.ou_actions[self.n_robots_blue+i].sample()
             v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions)
-            commands.append(Robot(yellow=True, id=i, v_wheel0=v_wheel0,
+            commands.append(Robot(yellow=True, id=i-1, v_wheel0=v_wheel0,
                                   v_wheel1=v_wheel1))
 
         return commands
-
+    
     def _calculate_reward_and_done(self):
         reward = 0
         goal = False
-        w_move = 0.2
-        w_ball_grad = 0.8
-        w_energy = 2e-4
+        w_move = .1
+        w_ball_grad = 2
+        w_energy = 3e-4
         if self.reward_shaping_total is None:
             self.reward_shaping_total = {'goal_score': 0, 'move': 0,
                                          'ball_grad': 0, 'energy': 0,
@@ -161,12 +154,12 @@ class VSSEnv(VSSBaseEnv):
         if self.frame.ball.x > (self.field.length / 2):
             self.reward_shaping_total['goal_score'] += 1
             self.reward_shaping_total['goals_blue'] += 1
-            reward = 10
+            reward = 100
             goal = True
         elif self.frame.ball.x < -(self.field.length / 2):
             self.reward_shaping_total['goal_score'] -= 1
             self.reward_shaping_total['goals_yellow'] += 1
-            reward = -10
+            reward = -100
             goal = True
         else:
 
@@ -181,15 +174,9 @@ class VSSEnv(VSSBaseEnv):
                 reward = w_move * move_reward + \
                     w_ball_grad * grad_ball_potential + \
                     w_energy * energy_penalty
-
-                self.reward_shaping_total['move'] += w_move * move_reward
-                self.reward_shaping_total['ball_grad'] += w_ball_grad \
-                    * grad_ball_potential
-                self.reward_shaping_total['energy'] += w_energy \
-                    * energy_penalty
-
+                
         return reward, goal
-
+    
     def _get_initial_positions_frame(self):
         '''Returns the position of each robot and ball for the initial frame'''
         field_half_length = self.field.length / 2
@@ -205,34 +192,67 @@ class VSSEnv(VSSBaseEnv):
 
         pos_frame: Frame = Frame()
 
-        pos_frame.ball = Ball(x=x(), y=y())
 
-        min_dist = 0.1
+        pos_frame.ball = Ball(x=x(), y=y())
+        # pos_frame.ball = Ball(x=0, y=0)
+
+        # while pos_frame.ball.x > -.25:
+        #     pos_frame.ball = Ball(x=x(), y=y())
+
+
+        min_dist = 0.2
 
         places = KDTree()
         places.insert((pos_frame.ball.x, pos_frame.ball.y))
         
+        # pos_frame.robots_blue[0] = Robot(x=-.5, y=0, theta=theta())
+
         for i in range(self.n_robots_blue):
             pos = (x(), y())
-            while places.get_nearest(pos)[1] < min_dist:
+            while places.get_nearest(pos)[1] < min_dist or pos[0] > -.1:
                 pos = (x(), y())
 
             places.insert(pos)
             pos_frame.robots_blue[i] = Robot(x=pos[0], y=pos[1], theta=theta())
 
-        for i in range(self.n_robots_yellow):
-            pos = (x(), y())
+        # posicao inicial do goleiro
+        pos = (.6, y())
+
+        while places.get_nearest(pos)[1] < min_dist or pos[1] > .7 or pos[1] < -.7:
+            pos = (.6, y())
+
+        places.insert(pos)
+        pos_frame.robots_yellow[0] = Robot(x=pos[0], y=pos[1], theta=180)
+
+
+
+        # pos_frame.robots_yellow[1] = Robot(x=0, y=-.4, theta=theta())
+        # pos_frame.robots_yellow[2] = Robot(x=0, y=.4, theta=theta())
+
+        for i in range(1, self.n_robots_yellow):
+            pos = (-.4-x()/3, y())
             while places.get_nearest(pos)[1] < min_dist:
-                pos = (x(), y())
+                pos = (-.4-x()/3, y())
 
             places.insert(pos)
             pos_frame.robots_yellow[i] = Robot(x=pos[0], y=pos[1], theta=theta())
 
+
         return pos_frame
 
     def _actions_to_v_wheels(self, actions):
-        left_wheel_speed = actions[0] * self.max_v
-        right_wheel_speed = actions[1] * self.max_v
+        # recebe os valores da rede e converte (velocidade linear, velocidade angular)
+        # para velocidades da roda entre -1 e 1
+
+        # espaçamento entre rodas do carrinho, 1 para que o valor maximo seja 1 tbm
+        L = 1
+
+        vleft = (actions[0] - (actions[1]*L)/2) * 1
+
+        vright = (actions[0] + (actions[1]*L)/2) * 1
+        # print(actions, (vleft,vright))
+        left_wheel_speed = vleft * self.max_v
+        right_wheel_speed = vright * self.max_v
 
         left_wheel_speed, right_wheel_speed = np.clip(
             (left_wheel_speed, right_wheel_speed), -self.max_v, self.max_v
@@ -278,6 +298,12 @@ class VSSEnv(VSSBaseEnv):
             grad_ball_potential = np.clip(diff * 3 / self.time_step,
                                           -5.0, 5.0)
 
+            k = (ball_potential+1)*2
+            if k > 1 and diff != 0:
+                k = k*k*k
+                grad_ball_potential = grad_ball_potential*k
+
+
         self.previous_ball_potential = ball_potential
 
         return grad_ball_potential
@@ -309,3 +335,4 @@ class VSSEnv(VSSBaseEnv):
         en_penalty_2 = abs(self.sent_commands[0].v_wheel1)
         energy_penalty = - (en_penalty_1 + en_penalty_2)
         return energy_penalty
+    
