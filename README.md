@@ -7,13 +7,24 @@ RSoccer Gym is an open-source framework to study Reinforcement Learning for SSL 
 If you use this environment in your publication and want to cite it, utilize this BibTeX:
 
 ```
-@misc{martins2021rsoccer,
-      title={rSoccer: A Framework for Studying Reinforcement Learning in Small and Very Small Size Robot Soccer}, 
-      author={Felipe B. Martins and Mateus G. Machado and Hansenclever F. Bassani and Pedro H. M. Braga and Edna S. Barros},
-      year={2021},
-      eprint={2106.12895},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG}
+@InProceedings{10.1007/978-3-030-98682-7_14,
+author="Martins, Felipe B.
+and Machado, Mateus G.
+and Bassani, Hansenclever F.
+and Braga, Pedro H. M.
+and Barros, Edna S.",
+editor="Alami, Rachid
+and Biswas, Joydeep
+and Cakmak, Maya
+and Obst, Oliver",
+title="rSoccer: A Framework for Studying Reinforcement Learning in Small and Very Small Size Robot Soccer",
+booktitle="RoboCup 2021: Robot World Cup XXIV",
+year="2022",
+publisher="Springer International Publishing",
+address="Cham",
+pages="165--176",
+abstract="Reinforcement learning is an active research area with a vast number of applications in robotics, and the RoboCup competition is an interesting environment for studying and evaluating reinforcement learning methods. A known difficulty in applying reinforcement learning to robotics is the high number of experience samples required, being the use of simulated environments for training the agents followed by transfer learning to real-world (sim-to-real) a viable path. This article introduces an open-source simulator for the IEEE Very Small Size Soccer and the Small Size League optimized for reinforcement learning experiments. We also propose a framework for creating OpenAI Gym environments with a set of benchmarks tasks for evaluating single-agent and multi-agent robot soccer skills. We then demonstrate the learning capabilities of two state-of-the-art reinforcement learning methods as well as their limitations in certain scenarios introduced in this framework. We believe this will make it easier for more teams to compete in these categories using end-to-end reinforcement learning approaches and further develop this research area.",
+isbn="978-3-030-98682-7"
 }
 ```
 
@@ -47,7 +58,7 @@ IEEE VSSS                  |
 Dribbling          |  Pass Endurance     |
 :-------------------------:|:-------------------------:|
  ![](.github/resources/dribbling.gif)|![](.github/resources/pass_endurance.gif) |
- 
+
 |       Environment Id                                                       | Observation Space | Action Space | Step limit |
 |:--------------------------------------------------------------------------:|:-----------------:|:------------:|:----------:|
 |[VSS-v0](rsoccer_gym/vss/README.md#vss-v0)                                       |      Box(40,)     |    Box(2,)   |    1200    |
