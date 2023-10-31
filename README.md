@@ -19,10 +19,9 @@ If you use this environment in your publication and want to cite it, utilize thi
 
 ## Requirements
 - Python 3.7+
-- OpenAI Gym
-- [RSim](https://github.com/robocin/rSim) >= v1.2.0
-- Pyglet
-- Protobuf
+- OpenAI Gym == 0.21.0
+- [RSim](https://github.com/robocin/rSim) == v1.2.0
+- Pyglet == 1.5.21
 ## Install through The Python Package Index (PyPI)
 
 ```bash
@@ -37,9 +36,9 @@ pip install .
 For [editable installs](https://setuptools.pypa.io/en/latest/userguide/development_mode.html), change last command to `"pip install -e ."`.
 # Available Envs
 
-IEEE VSSS                  |  IEEE VSSS Multi-Agent    |        GoTo Ball          | Static Defenders          |
-:-------------------------:|:-------------------------:|:-------------------------:|:-------------------------:|
-![](.github/resources/vss.gif)     | ![](.github/resources/vss_ma.gif) | ![](.github/resources/gotoball.gif) | ![](.github/resources/static.gif)     |
+IEEE VSSS                  |        GoTo Ball          | Static Defenders          |
+:-------------------------:|:-------------------------:|:-------------------------:|
+![](.github/resources/vss.gif)     | ![](.github/resources/gotoball.gif) | ![](.github/resources/static.gif)     |
 
   Contested Possession     |        Dribbling          |  Pass Endurance     |        Pass Endurance MA          |
 :-------------------------:|:-------------------------:|:-------------------------:|:-------------------------:|
@@ -48,8 +47,6 @@ IEEE VSSS                  |  IEEE VSSS Multi-Agent    |        GoTo Ball       
 |       Environment Id                                                       | Observation Space | Action Space | Step limit |
 |:--------------------------------------------------------------------------:|:-----------------:|:------------:|:----------:|
 |[VSS-v0](rsoccer_gym/vss/README.md#vss-v0)                                       |      Box(40,)     |    Box(2,)   |    1200    |
-|[VSSMA-v0](rsoccer_gym/vss/README.md#vssma-v0)                                   |      Box(3,40)    |    Box(3,2)  |    1200    |
-|[VSSGk-v0](rsoccer_gym/vss/README.md#vssgk-v0)                                   |      Box(40,)     |    Box(2,)   |    1200    |
 |[SSLGoToBall-v0](rsoccer_gym/ssl/README.md#sslgotoball-v0)                   |      Box(24,)     |    Box(3,)   |    2400        |
 |[SSLGoToBallShoot-v0](rsoccer_gym/ssl/README.md#sslgotoballshoot-v0)             |      Box(12,)     |    Box(5,)   |    1200    |
 |[SSLStaticDefenders-v0](rsoccer_gym/ssl/README.md#sslstaticdefenders-v0)         |      Box(24,)     |    Box(5,)   |    1000    |
