@@ -91,37 +91,3 @@ class FrameSSL(Frame):
             robot.v_wheel2 = state[5 + n_blues*rbt_obs + (rbt_obs*i) + 9]
             robot.v_wheel3 = state[5 + n_blues*rbt_obs + (rbt_obs*i) + 10]
             self.robots_yellow[robot.id] = robot
-
-
-class FramePB(Frame):
-    def parse(self, packet):
-        """It parses the state received from grSim in a common state for environment"""
-
-        self.ball.x = packet.frame.ball.x
-        self.ball.y = packet.frame.ball.y
-        self.ball.v_x = packet.frame.ball.vx
-        self.ball.v_y = packet.frame.ball.vy
-
-        for _robot in packet.frame.robots_blue:
-            robot = Robot()
-            robot.id = _robot.robot_id
-            robot.x = _robot.x
-            robot.y = _robot.y
-            robot.theta = np.rad2deg(_robot.orientation)
-            robot.v_x = _robot.vx
-            robot.v_y = _robot.vy
-            robot.v_theta = np.rad2deg(_robot.vorientation)
-
-            self.robots_blue[robot.id] = robot
-
-        for _robot in packet.frame.robots_yellow:
-            robot = Robot()
-            robot.id = _robot.robot_id
-            robot.x = _robot.x
-            robot.y = _robot.y
-            robot.theta = np.rad2deg(_robot.orientation)
-            robot.v_x = _robot.vx
-            robot.v_y = _robot.vy
-            robot.v_theta = np.rad2deg(_robot.vorientation)
-
-            self.robots_yellow[robot.id] = robot
