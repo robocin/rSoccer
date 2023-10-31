@@ -36,24 +36,25 @@ pip install .
 For [editable installs](https://setuptools.pypa.io/en/latest/userguide/development_mode.html), change last command to `"pip install -e ."`.
 # Available Envs
 
-IEEE VSSS                  |        GoTo Ball          | Static Defenders          |
-:-------------------------:|:-------------------------:|:-------------------------:|
-![](.github/resources/vss.gif)     | ![](.github/resources/gotoball.gif) | ![](.github/resources/static.gif)     |
+IEEE VSSS                  |
+:-------------------------:|
+![](.github/resources/vss.gif)     |
 
-  Contested Possession     |        Dribbling          |  Pass Endurance     |        Pass Endurance MA          |
-:-------------------------:|:-------------------------:|:-------------------------:|:-------------------------:|
- ![](.github/resources/contested_possession.gif) | ![](.github/resources/dribbling.gif)|![](.github/resources/pass_endurance.gif) | ![](.github/resources/pass_endurance_ma.gif)|
+ Static Defenders          |  Contested Possession     |
+:-------------------------:|:-------------------------:|
+  ![](.github/resources/static.gif)     |![](.github/resources/contested_possession.gif) |
 
+Dribbling          |  Pass Endurance     |
+:-------------------------:|:-------------------------:|
+ ![](.github/resources/dribbling.gif)|![](.github/resources/pass_endurance.gif) |
+ 
 |       Environment Id                                                       | Observation Space | Action Space | Step limit |
 |:--------------------------------------------------------------------------:|:-----------------:|:------------:|:----------:|
 |[VSS-v0](rsoccer_gym/vss/README.md#vss-v0)                                       |      Box(40,)     |    Box(2,)   |    1200    |
-|[SSLGoToBall-v0](rsoccer_gym/ssl/README.md#sslgotoball-v0)                   |      Box(24,)     |    Box(3,)   |    2400        |
-|[SSLGoToBallShoot-v0](rsoccer_gym/ssl/README.md#sslgotoballshoot-v0)             |      Box(12,)     |    Box(5,)   |    1200    |
 |[SSLStaticDefenders-v0](rsoccer_gym/ssl/README.md#sslstaticdefenders-v0)         |      Box(24,)     |    Box(5,)   |    1000    |
 |[SSLDribbling-v0](rsoccer_gym/ssl/README.md#ssldribbling-v0)                     |      Box(21,)     |    Box(4,)   |    4800    |
 |[SSLContestedPossession-v0](rsoccer_gym/ssl/README.md#sslcontestedpossession-v0) |      Box(14,)     |    Box(5,)   |    1200    |
 |[SSLPassEndurance-v0](rsoccer_gym/ssl/README.md#sslpassendurance-v0)             |      Box(18,)     |    Box(3,)   |    1200    |
-|[SSLPassEnduranceMA-v0](rsoccer_gym/ssl/README.md#sslpassendurancema-v0)         |      Box(18,)     |    Box(2,3)  |    1200    |
 
 # Example code - Environment
 

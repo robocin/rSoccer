@@ -23,5 +23,5 @@ register(id='SSLContestedPossession-v0',
 
 register(id='SSLPassEndurance-v0',
          entry_point='rsoccer_gym.ssl.ssl_hw_challenge:SSLPassEnduranceEnv',
-         max_episode_steps=120
+         max_episode_steps=1200
          )

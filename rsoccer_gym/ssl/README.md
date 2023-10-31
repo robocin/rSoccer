@@ -13,102 +13,10 @@ Creating new environments is done over inheritance of the SSL base class through
 The base environment define normalization methods using field size and robot parameters values which are used on the available environments.
 
 # Available Envs
-- [**SSLGoToBall-v0**](#sslgotoball-v0)
-- [**SSLGoToBallShoot-v0**](#sslgotoballshoot-v0)
 - [**SSLStaticDefenders-v0**](#sslstaticdefenders-v0)
 - [**SSLDribbling-v0**](#ssldribbling-v0)
 - [**SSLContestedPossession-v0**](#sslcontestedpossession-v0)
 - [**SSLPassEndurance-v0**](#sslpassendurance-v0)
-- [**SSLPassEnduranceMA-v0**](#sslpassendurancema-v0)
-
-# SSLGoToBall-v0
-In this environment the yellow team has six stopped robots and the blue team has one controlled robot. The episode ends when the robot's infrared detects the ball.
-
-![SSLGoToBall-v0 environment rendering gif](../../.github/resources/gotoball.gif)
-
-- ## Observations:
-    - Box(24,)
-    - Value Range: [-1.25, 1.25] (Normalized)
-
-    | Index        	| Observation                	|
-    |--------------	|----------------------------	|
-    | 0            	| Ball X                     	|
-    | 1            	| Ball Y                     	|
-    | 2            	| Ball Vx                    	|
-    | 3            	| Ball Vy                    	|
-    | 4  	        | id 0 Blue Robot X          	|
-    | 5  	        | id 0 Blue Robot Y          	|
-    | 6  	        | id 0 Blue Robot sin(theta) 	|
-    | 7  	        | id 0 Blue Robot cos(theta) 	|
-    | 8  	        | id 0 Blue Robot Vx         	|
-    | 9  	        | id 0 Blue Robot Vy         	|
-    | 10 	        | id 0 Blue Robot v_theta    	|
-    | 11 + (2 * i) 	| id i Yellow Robot X        	|
-    | 12 + (2 * i) 	| id i Yellow Robot Y        	|
-
-- ## Actions:
-    - Box(3,)
-    - Value Range: [-1, 1]
-
-    | Index | Action        |
-    |-------|---------------|
-    | 0     | Axis X speed |
-    | 1     | Axis Y speed |
-    | 2     | Axis theta speed |
-
-- ## Rewards:
-    - Distance to ball gradient
-    - Energy
-    - Reached objective
-- ## Done:
-    When the robot's infrared detects the ball
-
------
-
-# SSLGoToBallShoot-v0
-In this environment there is no yellow team and the blue team has one controlled robot. The episode ends when a goal occurs.
-
-![SSLGoToBallShoot-v0 environment rendering gif](../../.github/resources/gotoshoot.gif)
-
-- ## Observations:
-    - Box(40,)
-    - Value Range: [-1.25, 1.25] (Normalized)
-
-    | Index        	| Observation                	|
-    |--------------	|----------------------------	|
-    | 0            	| Ball X                     	|
-    | 1            	| Ball Y                     	|
-    | 2            	| Ball Vx                    	|
-    | 3            	| Ball Vy                    	|
-    | 4 + (7 * i)  	| id i Blue Robot X          	|
-    | 5 + (7 * i)  	| id i Blue Robot Y          	|
-    | 6 + (7 * i)  	| id i Blue Robot sin(theta) 	|
-    | 7 + (7 * i)  	| id i Blue Robot cos(theta) 	|
-    | 8 + (7 * i)  	| id i Blue Robot Vx         	|
-    | 9  + (7 * i) 	| id i Blue Robot Vy         	|
-    | 10 + (7 * i) 	| id i Blue Robot v_theta    	|
-
-- ## Actions:
-    - Box(5,)
-    - Value Range: [-1, 1]
-
-    | Index | Action        |
-    |-------|---------------|
-    | 0     | Axis X speed |
-    | 1     | Axis Y speed |
-    | 2     | Axis theta speed |
-    | 3     | Kicker power |
-    | 4     | Active Dribbler |
-
-- ## Rewards:
-    - Distance to ball gradient
-    - Ball potential gradient
-    - Energy
-    - Goal
-- ## Done:
-    When a goal happens
-
------
 
 # SSLStaticDefenders-v0
 In this environment the yellow team has six stopped robots and the blue team has one controlled robot. The episode ends when a goal occurs.
@@ -295,7 +203,6 @@ In this environment the  episode  begins  with  the  two robots at random positi
 
 -----
 
-# SSLPassEnduranceMA-v0
 the  episode  begins  with  the  two  controlled  agents  at random positi on with the ball on the dribbler of one of them. There are no opponents in this environment. The objective is to perform as many passes as possible in 30 seconds. The episode ends if any pass does not reach the teamate.
 
 ![SSLPassEnduranceMA-v0 environment rendering gif](../../.github/resources/pass_endurance_ma.gif)
