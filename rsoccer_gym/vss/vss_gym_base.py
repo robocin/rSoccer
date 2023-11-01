@@ -12,7 +12,6 @@ import gym
 import numpy as np
 from rsoccer_gym.Entities import Frame, Robot
 from rsoccer_gym.Simulators.rsim import RSimVSS
-from rsoccer_gym.Simulators.fira import Fira
 
 
 class VSSBaseEnv(gym.Env):
@@ -26,23 +25,17 @@ class VSSBaseEnv(gym.Env):
         field_type: int,
         n_robots_blue: int,
         n_robots_yellow: int,
-        time_step: float,
-        use_fira: bool = False,
+        time_step: float
     ):
         # Initialize Simulator
         self.time_step = time_step
 
-        if not use_fira:
-            self.rsim = RSimVSS(
-                field_type=field_type,
-                n_robots_blue=n_robots_blue,
-                n_robots_yellow=n_robots_yellow,
-                time_step_ms=int(self.time_step * 1000),
-            )
-        elif field_type == 0:
-            self.rsim = Fira()
-        else:
-            raise ValueError("rsoccer fira wrapper only supports field type 0")
+        self.rsim = RSimVSS(
+            field_type=field_type,
+            n_robots_blue=n_robots_blue,
+            n_robots_yellow=n_robots_yellow,
+            time_step_ms=int(self.time_step * 1000),
+        )
         self.n_robots_blue = n_robots_blue
         self.n_robots_yellow = n_robots_yellow
 
