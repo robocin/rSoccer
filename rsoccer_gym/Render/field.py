@@ -1,5 +1,4 @@
 import pygame
-from rsoccer_gym.Entities.Field import Field
 from rsoccer_gym.Render.utils import COLORS
 
 
@@ -7,21 +6,20 @@ class RenderField:
     _scale = 1
     margin = 0
     window_surface = None
-    window_size = None
-    clock = None
-    screen_height = None
-    screen_width = None
-    length = None
-    width = None
-    margin = None
-    center_circle_r = None
-    penalty_length = None
-    penalty_width = None
-    goal_area_length = None
-    goal_area_width = None
-    goal_width = None
-    goal_depth = None
-    corner_arc_r = None
+    window_size = (0, 0)
+    screen_height = 0
+    screen_width = 0
+    length = 0
+    width = 0
+    margin = 0
+    center_circle_r = 0
+    penalty_length = 0
+    penalty_width = 0
+    goal_area_length = 0
+    goal_area_width = 0
+    goal_width = 0
+    goal_depth = 0
+    corner_arc_r = 0
 
     def __init__(self, render_mode="human"):
         self.render_mode = render_mode
@@ -88,7 +86,7 @@ class RenderField:
             COLORS["WHITE"],
             (
                 self.margin,
-                (self.screen_height - self.penalty_width) / 2,
+                (self.screen_height - self.penalty_width) // 2,
                 self.penalty_length,
                 self.penalty_width,
             ),
@@ -101,7 +99,7 @@ class RenderField:
             COLORS["WHITE"],
             (
                 self.screen_width - self.margin - self.penalty_length,
-                (self.screen_height - self.penalty_width) / 2,
+                (self.screen_height - self.penalty_width) // 2,
                 self.penalty_length,
                 self.penalty_width,
             ),
@@ -114,7 +112,7 @@ class RenderField:
             COLORS["WHITE"],
             (
                 self.margin,
-                (self.screen_height - self.goal_width) / 2,
+                (self.screen_height - self.goal_width) // 2,
                 self.goal_depth,
                 self.goal_width,
             ),
@@ -127,7 +125,7 @@ class RenderField:
             COLORS["WHITE"],
             (
                 self.screen_width - self.margin - self.goal_depth,
-                (self.screen_height - self.goal_width) / 2,
+                (self.screen_height - self.goal_width) // 2,
                 self.goal_depth,
                 self.goal_width,
             ),
@@ -139,8 +137,8 @@ class RenderField:
             self.window_surface,
             COLORS["BLACK"],
             (
-                self.margin / 2,
-                (self.screen_height - self.goal_width) / 2,
+                self.margin // 2,
+                (self.screen_height - self.goal_width) // 2,
                 self.goal_depth,
                 self.goal_width,
             ),
@@ -152,7 +150,7 @@ class RenderField:
             COLORS["BLACK"],
             (
                 self.screen_width - self.margin,
-                (self.screen_height - self.goal_width) / 2,
+                (self.screen_height - self.goal_width) // 2,
                 self.goal_depth,
                 self.goal_width,
             ),
