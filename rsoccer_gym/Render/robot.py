@@ -78,16 +78,31 @@ class Sim2DRobot(Robot):
 
 
 class VSSRobot(Robot):
-    size = 8
+    size = 0.08
 
     def __init__(self, x, y, direction, scale, id, team_color):
         super().__init__(x, y, direction, scale, team_color=team_color)
+        tag_id_colors = {0: COLORS["GREEN"], 1: COLORS["PURPLE"], 2: COLORS["RED"]}
         self.id = id
+        self.id_color = tag_id_colors[id]
 
     def draw_robot(self, screen):
-        rect = pygame.Rect(0, 0, self.size, self.size)
-        rect.center = (self.x, self.y)
-        pygame.draw.rect(screen, self.team_color, rect)
+        rotated_surface = pygame.Surface(
+            (self.size * 2, self.size * 2), pygame.SRCALPHA
+        )
+
+        pygame.draw.rect(
+            rotated_surface,
+            COLORS["ROBOT_BLACK"],
+            rect=(self.size // 2, self.size // 2, self.size, self.size),
+        )
+        self.draw_team_tag(rotated_surface)
+        self.draw_id_tag(rotated_surface)
+
+        rotated_surface = pygame.transform.rotate(rotated_surface, self.direction)
+        new_rect = rotated_surface.get_rect(center=(self.x, self.y))
+
+        screen.blit(rotated_surface, new_rect.topleft)
 
     def draw_direction(self, screen):
         pygame.draw.line(
@@ -95,28 +110,39 @@ class VSSRobot(Robot):
             COLORS["WHITE"],
             (self.x, self.y),
             (
-                self.x + self.size * np.cos(np.deg2rad(self.direction)),
-                self.y + self.size * np.sin(np.deg2rad(self.direction)),
+                self.x + self.size * np.cos(np.deg2rad(-self.direction)),
+                self.y + self.size * np.sin(np.deg2rad(-self.direction)),
             ),
         )
 
-    def draw_team_tag(self, screen):
+    def draw_team_tag(self, surface):
+        tag_size = (0.035 * self.scale, 0.068 * self.scale)
+        tag_offset = (
+            1 + (self.size - 2 * tag_size[0]) // 2,
+            (self.size - tag_size[1]) // 2,
+        )
+        tag_position = (self.size // 2 + tag_offset[0], self.size // 2 + tag_offset[1])
+
         pygame.draw.rect(
-            screen,
-            COLORS["ROBOT_BLACK"],
-            (
-                self.x - self.size,
-                self.y - self.size,
-                self.size * 2,
-                self.size * 2,
-            ),
+            surface,
+            self.team_color,
+            rect=(*tag_position, *tag_size),
+        )
+
+    def draw_id_tag(self, surface):
+        tag_size = (0.035 * self.scale, 0.068 * self.scale)
+        tag_offset = (self.size - tag_size[1]) // 2
+        tag_position = (self.size + 1, self.size // 2 + tag_offset)
+
+        pygame.draw.rect(
+            surface,
+            self.id_color,
+            rect=(*tag_position, *tag_size),
         )
 
     def draw(self, screen):
         self.draw_robot(screen)
-        # self.draw_direction(screen)
-        # self.draw_team_tag(screen)
-        # self.draw_id_tag(screen)
+        self.draw_direction(screen)
 
 
 # class SSLRobot(Robot):
@@ -134,11 +160,14 @@ class VSSRobot(Robot):
 
 if __name__ == "__main__":
     pygame.init()
-    screen = pygame.display.set_mode((500, 500))
-    robot = VSSRobot(250, 250, 30, 10, 0, COLORS["BLUE"])
+    clock = pygame.time.Clock()
+    screen = pygame.display.set_mode((750, 650))
+    robot = VSSRobot(750 // 2, 650 // 2, 0, 500, 0, COLORS["BLUE"])
     while True:
+        clock.tick(60)
         screen.fill(COLORS["GREEN"])
         robot.draw(screen)
+        robot.direction += 1
         pygame.display.update()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
