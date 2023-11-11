@@ -66,7 +66,6 @@ class SSLBaseEnv(gym.Env):
         self.window_surface = None
         self.window_size = self.field_renderer.window_size
         self.clock = None
-        self.render_mode = "human"
 
     def step(self, action):
         self.steps += 1
@@ -157,11 +156,11 @@ class SSLBaseEnv(gym.Env):
         if self.window_surface is None:
             pygame.init()
 
-            if self.render_mode == "human":
+            if mode == "human":
                 pygame.display.init()
                 pygame.display.set_caption("SSL Environment")
                 self.window_surface = pygame.display.set_mode(self.window_size)
-            elif self.render_mode == "rgb_array":
+            elif mode == "rgb_array":
                 self.window_surface = pygame.Surface(self.window_size)
 
         assert (
@@ -171,11 +170,11 @@ class SSLBaseEnv(gym.Env):
         if self.clock is None:
             self.clock = pygame.time.Clock()
         self._render()
-        if self.render_mode == "human":
+        if mode == "human":
             pygame.event.pump()
             pygame.display.update()
             self.clock.tick(self.metadata["render_fps"])
-        elif self.render_mode == "rgb_array":
+        elif mode == "rgb_array":
             return np.transpose(
                 np.array(pygame.surfarray.pixels3d(self.window_surface)), axes=(1, 0, 2)
             )
