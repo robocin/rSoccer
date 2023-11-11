@@ -1,6 +1,6 @@
 import numpy as np
 import pygame
-from utils import COLORS, TAG_ID_COLORS
+from rsoccer_gym.Render.utils import COLORS, TAG_ID_COLORS
 
 
 class Robot:
