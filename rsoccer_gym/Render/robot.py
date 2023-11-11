@@ -39,8 +39,8 @@ class Sim2DRobot(Robot):
             COLORS["BLACK"],
             (self.x, self.y),
             (
-                self.x + self.size * np.cos(np.deg2rad(self.direction)),
-                self.y + self.size * np.sin(np.deg2rad(self.direction)),
+                self.x + self.size * np.cos(np.deg2rad(-self.direction)),
+                self.y + self.size * np.sin(np.deg2rad(-self.direction)),
             ),
             min(max(self.scale, 1), 3),
         )
@@ -162,7 +162,8 @@ if __name__ == "__main__":
     pygame.init()
     clock = pygame.time.Clock()
     screen = pygame.display.set_mode((750, 650))
-    robot = VSSRobot(750 // 2, 650 // 2, 0, 500, 0, COLORS["BLUE"])
+    robot = Sim2DRobot(750 // 2, 650 // 2, 0, 0, 30, 10, COLORS["BLUE"])
+    # robot = VSSRobot(750 // 2, 650 // 2, 0, 500, 0, COLORS["BLUE"])
     while True:
         clock.tick(60)
         screen.fill(COLORS["GREEN"])
