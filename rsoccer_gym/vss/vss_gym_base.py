@@ -23,6 +23,8 @@ class VSSBaseEnv(gym.Env):
     metadata = {
         "render.modes": ["human", "rgb_array"],
         "render_modes": ["human", "rgb_array"],
+        "render_fps": 60,
+        "render.fps": 60,
     }
     NORM_BOUNDS = 1.2
     
@@ -156,7 +158,7 @@ class VSSBaseEnv(gym.Env):
 
             if self.render_mode == "human":
                 pygame.display.init()
-                pygame.display.set_caption("SSL Environment")
+                pygame.display.set_caption("VSS Environment")
                 self.window_surface = pygame.display.set_mode(self.window_size)
             elif self.render_mode == "rgb_array":
                 self.window_surface = pygame.Surface(self.window_size)
@@ -169,8 +171,9 @@ class VSSBaseEnv(gym.Env):
             self.clock = pygame.time.Clock()
         self._render()
         if self.render_mode == "human":
+            pygame.event.pump()
             pygame.display.update()
-            self.clock.tick(60)
+            self.clock.tick(self.metadata["render_fps"])
         elif self.render_mode == "rgb_array":
             return np.transpose(
                 np.array(pygame.surfarray.pixels3d(self.window_surface)), axes=(1, 0, 2)
