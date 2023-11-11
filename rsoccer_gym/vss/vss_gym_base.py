@@ -16,7 +16,6 @@ from rsoccer_gym.Entities import Frame, Robot
 from rsoccer_gym.Render import COLORS, Ball, VSSRenderField, VSSRobot
 from rsoccer_gym.Simulators.rsim import RSimVSS
 
-
 class VSSBaseEnv(gym.Env):
     metadata = {
         "render.modes": ["human", "rgb_array"],
@@ -31,11 +30,10 @@ class VSSBaseEnv(gym.Env):
         field_type: int,
         n_robots_blue: int,
         n_robots_yellow: int,
-        time_step: float
+        time_step: float,
     ):
         # Initialize Simulator
         self.time_step = time_step
-
         self.rsim = RSimVSS(
             field_type=field_type,
             n_robots_blue=n_robots_blue,
@@ -62,7 +60,7 @@ class VSSBaseEnv(gym.Env):
         self.view = None
         self.steps = 0
         self.sent_commands = None
-        
+
         # Render
         self.field_renderer = VSSRenderField()
         self.window_surface = None
@@ -103,7 +101,7 @@ class VSSBaseEnv(gym.Env):
         self.frame = self.rsim.get_frame()
 
         return self._frame_to_observations()
-    
+
     def _render(self):
         def pos_transform(pos_x, pos_y):
             return (
@@ -184,7 +182,6 @@ class VSSBaseEnv(gym.Env):
             return np.transpose(
                 np.array(pygame.surfarray.pixels3d(self.window_surface)), axes=(1, 0, 2)
             )
-        
 
     def close(self):
         if self.window_surface is not None:
@@ -218,3 +215,15 @@ class VSSBaseEnv(gym.Env):
 
     def norm_w(self, w):
         return np.clip(w / self.max_w, -self.NORM_BOUNDS, self.NORM_BOUNDS)
+
+
+class VSSBaseFIRAEnv(VSSBaseEnv):
+    def __init__(
+        self,
+        field_type: int,
+        n_robots_blue: int,
+        n_robots_yellow: int,
+        time_step: float,
+    ):
+        super().__init__(field_type, n_robots_blue, n_robots_yellow, time_step)
+        self.rsim = Fira()

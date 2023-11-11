@@ -2,7 +2,7 @@ import gym
 import rsoccer_gym
 import numpy as np
 
-env = gym.make("SSLGoToBall-v0")
+env = gym.make("VSS-v0")
 for i in range(10):
     env.reset()
     env.render()
