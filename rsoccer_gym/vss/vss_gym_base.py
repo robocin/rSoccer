@@ -10,7 +10,10 @@ from typing import Dict, List, Optional
 
 import gym
 import numpy as np
+import pygame
+
 from rsoccer_gym.Entities import Frame, Robot
+from rsoccer_gym.Render import COLORS, Ball, VSSRenderField, VSSRobot
 from rsoccer_gym.Simulators.rsim import RSimVSS
 from rsoccer_gym.Simulators.fira import Fira
 
@@ -18,7 +21,8 @@ from rsoccer_gym.Simulators.fira import Fira
 
 class VSSBaseEnv(gym.Env):
     metadata = {
-        'render.modes': ['human', 'rgb_array'],
+        "render.modes": ["human", "rgb_array"],
+        "render_modes": ["human", "rgb_array"],
     }
     NORM_BOUNDS = 1.2
     
@@ -49,6 +53,13 @@ class VSSBaseEnv(gym.Env):
         self.view = None
         self.steps = 0
         self.sent_commands = None
+        
+        # Render
+        self.field_renderer = VSSRenderField()
+        self.window_surface = None
+        self.window_size = self.field_renderer.window_size
+        self.clock = None
+        self.render_mode = "human"
 
     def step(self, action):
         self.steps += 1
@@ -84,10 +95,50 @@ class VSSBaseEnv(gym.Env):
         self.frame = self.rsim.get_frame()
 
         return self._frame_to_observations()
+    
+    def _render(self):
+        def pos_transform(pos_x, pos_y):
+            return (
+                int(pos_x * self.field_renderer.scale + self.field_renderer.center_x),
+                int(pos_y * self.field_renderer.scale + self.field_renderer.center_y),
+            )
 
-    def render(self, mode='human') -> None:
-        '''
-        Renders the game depending on 
+        ball = Ball(
+            *pos_transform(self.frame.ball.x, self.frame.ball.y),
+            self.field_renderer.scale
+        )
+        self.field_renderer.draw(self.window_surface)
+
+        for i in range(self.n_robots_blue):
+            robot = self.frame.robots_blue[i]
+            x, y = pos_transform(robot.x, robot.y)
+            rbt = VSSRobot(
+                x,
+                y,
+                robot.theta,
+                self.field_renderer.scale,
+                robot.id,
+                COLORS["BLUE"],
+            )
+            rbt.draw(self.window_surface)
+
+        for i in range(self.n_robots_yellow):
+            robot = self.frame.robots_yellow[i]
+            x, y = pos_transform(robot.x, robot.y)
+            rbt = VSSRobot(
+                x,
+                y,
+                robot.theta,
+                self.field_renderer.scale,
+                robot.id,
+                COLORS["YELLOW"],
+            )
+            rbt.draw(self.window_surface)
+        ball.draw(self.window_surface)
+
+    def render(self, mode="human") -> None:
+        """
+        Renders the game depending on
         ball's and players' positions.
 
         Parameters
@@ -98,18 +149,40 @@ class VSSBaseEnv(gym.Env):
         -------
         None
 
-        '''
-        if self.view == None:
-            from rsoccer_gym.Render import RCGymRender
-            self.view = RCGymRender(self.n_robots_blue,
-                                 self.n_robots_yellow,
-                                 self.field,
-                                 simulator='vss')
+        """
 
-        return self.view.render_frame(self.frame, return_rgb_array=mode == "rgb_array")
+        if self.window_surface is None:
+            pygame.init()
+
+            if self.render_mode == "human":
+                pygame.display.init()
+                pygame.display.set_caption("SSL Environment")
+                self.window_surface = pygame.display.set_mode(self.window_size)
+            elif self.render_mode == "rgb_array":
+                self.window_surface = pygame.Surface(self.window_size)
+
+        assert (
+            self.window_surface is not None
+        ), "Something went wrong with pygame. This should never happen."
+
+        if self.clock is None:
+            self.clock = pygame.time.Clock()
+        self._render()
+        if self.render_mode == "human":
+            pygame.display.update()
+            self.clock.tick(60)
+        elif self.render_mode == "rgb_array":
+            return np.transpose(
+                np.array(pygame.surfarray.pixels3d(self.window_surface)), axes=(1, 0, 2)
+            )
         
 
     def close(self):
+        if self.window_surface is not None:
+            import pygame
+
+            pygame.display.quit()
+            pygame.quit()
         self.rsim.stop()
 
     def _get_commands(self, action):
