@@ -145,30 +145,82 @@ class VSSRobot(Robot):
         self.draw_direction(screen)
 
 
-# class SSLRobot(Robot):
-#     direction_size = 1.8
-#     direction_openning = 30
+class SSLRobot(Robot):
+    size = 0.09
 
-#     def __init__(self, x, y, direction, tag_id):
-#         super().__init__(x, y, size, direction)
-#         self.tag_id = tag_id
+    def __init__(self, x, y, direction, scale, id, team_color):
+        super().__init__(x, y, direction, scale, team_color=team_color)
+        self.id = id
+        self.id_color = TAG_ID_COLORS[id]
 
-#     def draw(self, screen):
-#         super().draw(screen)
-#         pygame.draw.circle(screen, TAG_ID_COLORS[self.tag_id], (self.x, self.y), 0.8)
+    def draw(self, screen):
+        self.draw_robot(screen)
+        self.draw_direction(screen)
+
+    def draw_robot(self, screen):
+        rotated_surface = pygame.Surface(
+            (self.size * 2, self.size * 2), pygame.SRCALPHA
+        )
+
+        pygame.draw.circle(
+            rotated_surface, COLORS["ROBOT_BLACK"], (self.size, self.size), self.size
+        )
+        self.draw_team_tag(rotated_surface)
+        self.draw_id_tag(rotated_surface)
+
+        rotated_surface = pygame.transform.rotate(rotated_surface, self.direction)
+        new_rect = rotated_surface.get_rect(center=(self.x, self.y))
+        
+        screen.blit(rotated_surface, new_rect.topleft)
+    
+    def draw_team_tag(self, surface):
+        tag_radius = 0.025 * self.scale
+        pygame.draw.circle(
+            surface, self.team_color, (self.size, self.size), tag_radius
+        )
+        
+    def draw_id_tag(self, surface):
+        tag_radius = 0.02 * self.scale
+        translations = np.array([
+            [0.035, 0.054772],
+            [-0.054772, 0.035],
+            [-0.054772, -0.035],
+            [0.035, -0.054772],
+        ])
+        translations *= self.scale
+        tags_position = translations + np.array([self.size, self.size])
+        for i, tag_position in enumerate(tags_position):
+            pygame.draw.circle(
+                surface, self.id_color[i], tag_position.astype(int), tag_radius
+            )
+        
+    
+    def draw_direction(self, screen):
+        pygame.draw.line(
+            screen,
+            COLORS["WHITE"],
+            (self.x, self.y),
+            (
+                self.x + self.size * np.cos(np.deg2rad(-self.direction)),
+                self.y + self.size * np.sin(np.deg2rad(-self.direction)),
+            ),
+        )
 
 
 if __name__ == "__main__":
     pygame.init()
     clock = pygame.time.Clock()
     screen = pygame.display.set_mode((750, 650))
-    robot = Sim2DRobot(750 // 2, 650 // 2, 0, 0, 30, 10, COLORS["BLUE"])
-    # robot = VSSRobot(750 // 2, 650 // 2, 0, 500, 0, COLORS["BLUE"])
+    robots = []
+    robots.append(Sim2DRobot(750 // 2, 650 // 2, 0, 0, 100, 10, COLORS["BLUE"]))
+    robots.append(VSSRobot(150, 300, 0, 500, 0, COLORS["BLUE"]))
+    robots.append(SSLRobot(600, 300, 0, 500, 0, COLORS["BLUE"]))
     while True:
         clock.tick(60)
         screen.fill(COLORS["GREEN"])
-        robot.draw(screen)
-        robot.direction += 1
+        for robot in robots:
+            robot.draw(screen)
+            robot.direction += 1
         pygame.display.update()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
