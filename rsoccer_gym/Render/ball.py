@@ -1,6 +1,5 @@
 import pygame
-
-from utils import COLORS
+from rsoccer_gym.Render.utils import COLORS
 
 
 class Ball:
