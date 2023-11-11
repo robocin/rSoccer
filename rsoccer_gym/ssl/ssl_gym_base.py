@@ -178,6 +178,11 @@ class SSLBaseEnv(gym.Env):
             )
 
     def close(self):
+        if self.window_surface is not None:
+            import pygame
+
+            pygame.display.quit()
+            pygame.quit()
         self.rsim.stop()
 
     def _get_commands(self, action):
