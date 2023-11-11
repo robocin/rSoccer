@@ -55,7 +55,7 @@ class RenderField:
                 self.length,
                 self.width,
             ),
-            2,
+            1,
         )
 
     def draw_penalty_area_left(self, screen):
@@ -68,7 +68,7 @@ class RenderField:
                 self.penalty_length,
                 self.penalty_width,
             ),
-            2,
+            1,
         )
 
     def draw_penalty_area_right(self, screen):
@@ -81,7 +81,7 @@ class RenderField:
                 self.penalty_length,
                 self.penalty_width,
             ),
-            2,
+            1,
         )
 
     def draw_goal_area_left(self, screen):
@@ -94,7 +94,7 @@ class RenderField:
                 self.goal_depth,
                 self.goal_width,
             ),
-            2,
+            1,
         )
 
     def draw_goal_area_right(self, screen):
@@ -107,7 +107,7 @@ class RenderField:
                 self.goal_depth,
                 self.goal_width,
             ),
-            2,
+            1,
         )
 
     def draw_goal_left(self, screen):
@@ -140,7 +140,7 @@ class RenderField:
             COLORS["WHITE"],
             (int(self.screen_width / 2), int(self.screen_height / 2)),
             int(self.center_circle_r),
-            2,
+            1,
         )
 
     def draw_central_line(self, screen):
@@ -150,7 +150,7 @@ class RenderField:
             COLORS["WHITE"],
             (midfield_x, self.margin),
             (midfield_x, self.screen_height - self.margin),
-            2,
+            1,
         )
 
     def draw(self, screen):
@@ -196,7 +196,7 @@ class VSSRenderField(RenderField):
     goal_area_length = 0
     goal_area_width = 0
     goal_width = 0.4
-    goal_depth = 0.05
+    goal_depth = 0.1
     corner_arc_r = 0.01
     _scale = 500
 
@@ -221,6 +221,32 @@ class VSSRenderField(RenderField):
         self.draw_penalty_area_right(screen)
         self.draw_goal_left(screen)
         self.draw_goal_right(screen)
+
+    def draw_goal_left(self, screen):
+        pygame.draw.rect(
+            screen,
+            COLORS["WHITE"],
+            (
+                self.margin - self.goal_depth,
+                (self.screen_height - self.goal_width) // 2,
+                self.goal_depth,
+                self.goal_width,
+            ),
+            1,
+        )
+
+    def draw_goal_right(self, screen):
+        pygame.draw.rect(
+            screen,
+            COLORS["WHITE"],
+            (
+                self.screen_width - self.margin,
+                (self.screen_height - self.goal_width) // 2,
+                self.goal_depth,
+                self.goal_width,
+            ),
+            1,
+        )
 
 
 class SSLRenderField(VSSRenderField):
