@@ -16,6 +16,7 @@ from rsoccer_gym.Entities import Frame, Robot
 from rsoccer_gym.Render import COLORS, Ball, VSSRenderField, VSSRobot
 from rsoccer_gym.Simulators.rsim import RSimVSS
 
+
 class VSSBaseEnv(gym.Env):
     metadata = {
         "render.modes": ["human", "rgb_array"],
