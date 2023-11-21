@@ -11,7 +11,7 @@ setup(
         package for package in find_packages() if package.startswith("rsoccer_gym")
     ],
     install_requires=[
-        "gym == 0.21.0",
+        "gymnasium >= 0.28.1",
         "rc-robosim >= 1.2.0",
         "pygame >= 2.1.3",
         "protobuf == 3.20",

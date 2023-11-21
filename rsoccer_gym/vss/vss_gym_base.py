@@ -5,10 +5,9 @@
 """
 
 
-import time
-from typing import Dict, List, Optional
+from typing import List
 
-import gym
+import gymnasium as gym
 import numpy as np
 import pygame
 
@@ -32,8 +31,11 @@ class VSSBaseEnv(gym.Env):
         n_robots_blue: int,
         n_robots_yellow: int,
         time_step: float,
+        render_mode=None,
     ):
         # Initialize Simulator
+        super().__init__()
+        self.render_mode = render_mode
         self.time_step = time_step
         self.rsim = RSimVSS(
             field_type=field_type,
@@ -58,7 +60,6 @@ class VSSBaseEnv(gym.Env):
         # Initiate
         self.frame: Frame = None
         self.last_frame: Frame = None
-        self.view = None
         self.steps = 0
         self.sent_commands = None
 
@@ -83,25 +84,26 @@ class VSSBaseEnv(gym.Env):
         # Calculate environment observation, reward and done condition
         observation = self._frame_to_observations()
         reward, done = self._calculate_reward_and_done()
+        if self.render_mode == "human":
+            self.render()
 
-        return observation, reward, done, {}
+        return observation, reward, done, False, {}
 
-    def reset(self):
+    def reset(self, *, seed=None, options=None):
+        super().reset(seed=seed, options=options)
         self.steps = 0
         self.last_frame = None
         self.sent_commands = None
-
-        # Close render window
-        del self.view
-        self.view = None
 
         initial_pos_frame: Frame = self._get_initial_positions_frame()
         self.rsim.reset(initial_pos_frame)
 
         # Get frame from simulator
         self.frame = self.rsim.get_frame()
-
-        return self._frame_to_observations()
+        obs = self._frame_to_observations()
+        if self.render_mode == "human":
+            self.render()
+        return obs, {}
 
     def _render(self):
         def pos_transform(pos_x, pos_y):
@@ -143,7 +145,7 @@ class VSSBaseEnv(gym.Env):
             rbt.draw(self.window_surface)
         ball.draw(self.window_surface)
 
-    def render(self, mode="human") -> None:
+    def render(self) -> None:
         """
         Renders the game depending on
         ball's and players' positions.
@@ -161,11 +163,11 @@ class VSSBaseEnv(gym.Env):
         if self.window_surface is None:
             pygame.init()
 
-            if mode == "human":
+            if self.render_mode == "human":
                 pygame.display.init()
                 pygame.display.set_caption("VSS Environment")
                 self.window_surface = pygame.display.set_mode(self.window_size)
-            elif mode == "rgb_array":
+            elif self.render_mode == "rgb_array":
                 self.window_surface = pygame.Surface(self.window_size)
 
         assert (
@@ -175,11 +177,11 @@ class VSSBaseEnv(gym.Env):
         if self.clock is None:
             self.clock = pygame.time.Clock()
         self._render()
-        if mode == "human":
+        if self.render_mode == "human":
             pygame.event.pump()
             pygame.display.update()
             self.clock.tick(self.metadata["render_fps"])
-        elif mode == "rgb_array":
+        elif self.render_mode == "rgb_array":
             return np.transpose(
                 np.array(pygame.surfarray.pixels3d(self.window_surface)), axes=(1, 0, 2)
             )
@@ -216,15 +218,3 @@ class VSSBaseEnv(gym.Env):
 
     def norm_w(self, w):
         return np.clip(w / self.max_w, -self.NORM_BOUNDS, self.NORM_BOUNDS)
-
-
-class VSSBaseFIRAEnv(VSSBaseEnv):
-    def __init__(
-        self,
-        field_type: int,
-        n_robots_blue: int,
-        n_robots_yellow: int,
-        time_step: float,
-    ):
-        super().__init__(field_type, n_robots_blue, n_robots_yellow, time_step)
-        self.rsim = Fira()
