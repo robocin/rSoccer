@@ -30,9 +30,8 @@ isbn="978-3-030-98682-7"
 
 ## Requirements
 - Python 3.7+
-- OpenAI Gym == 0.21.0
+- gymnasium >= 0.28.1
 - [RSim](https://github.com/robocin/rSim) == v1.2.0
-- Pyglet == 1.5.21
 ## Install through The Python Package Index (PyPI)
 
 ```bash
@@ -71,16 +70,17 @@ Dribbling          |  Pass Endurance     |
 
 ```python
 import numpy as np
-from gym.spaces import Box
+from gymnasium.spaces import Box
 from rsoccer_gym.Entities import Ball, Frame, Robot
 from rsoccer_gym.ssl.ssl_gym_base import SSLBaseEnv
 
 
 class SSLExampleEnv(SSLBaseEnv):
-    def __init__(self):
+    def __init__(self, render_mode=None):
         field = 0 # SSL Division A Field
         super().__init__(field_type=0, n_robots_blue=1,
-                         n_robots_yellow=0, time_step=0.025)
+                         n_robots_yellow=0, time_step=0.025,
+                         render_mode=render_mode)
         n_obs = 4 # Ball x,y and Robot x, y
         self.action_space = Box(low=-1, high=1, shape=(2, ))
         self.observation_space = Box(low=-self.field.length/2,\
@@ -114,20 +114,20 @@ class SSLExampleEnv(SSLBaseEnv):
 # Example code - Agent
 
 ```python
-import gym
+import gymnasium as gym
 import rsoccer_gym
 
 # Using VSS Single Agent env
-env = gym.make('VSS-v0')
+env = gym.make('VSS-v0', render_mode="human")
 
 env.reset()
 # Run for 1 episode and print reward at the end
 for i in range(1):
-    done = False
-    while not done:
+    terminated = False
+    truncated = False
+    while not (terminated or truncated):
         # Step using random actions
         action = env.action_space.sample()
-        next_state, reward, done, _ = env.step(action)
-        env.render()
+        next_state, reward, terminated, truncated, _ = env.step(action)
     print(reward)
 ```
