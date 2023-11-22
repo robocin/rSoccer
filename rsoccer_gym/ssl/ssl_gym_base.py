@@ -8,7 +8,7 @@
 import time
 from typing import Dict, List, Optional
 
-import gym
+import gymnasium as gym
 import numpy as np
 import pygame
 
@@ -32,8 +32,11 @@ class SSLBaseEnv(gym.Env):
         n_robots_blue: int,
         n_robots_yellow: int,
         time_step: float,
+        render_mode=None,
     ):
+        super().__init__()
         # Initialize Simulator
+        self.render_mode = render_mode
         self.time_step = time_step
         self.rsim = RSimSSL(
             field_type=field_type,
@@ -82,10 +85,12 @@ class SSLBaseEnv(gym.Env):
         # Calculate environment observation, reward and done condition
         observation = self._frame_to_observations()
         reward, done = self._calculate_reward_and_done()
+        if self.render_mode == "human":
+            self.render()
+        return observation, reward, done, False, {}
 
-        return observation, reward, done, {}
-
-    def reset(self):
+    def reset(self, *, seed=None, options=None):
+        super().reset(seed=seed, options=options)
         self.steps = 0
         self.last_frame = None
         self.sent_commands = None
@@ -95,8 +100,10 @@ class SSLBaseEnv(gym.Env):
 
         # Get frame from simulator
         self.frame = self.rsim.get_frame()
-
-        return self._frame_to_observations()
+        obs = self._frame_to_observations()
+        if self.render_mode == "human":
+            self.render()
+        return obs, {}
 
     def _render(self):
         def pos_transform(pos_x, pos_y):
@@ -138,7 +145,7 @@ class SSLBaseEnv(gym.Env):
             rbt.draw(self.window_surface)
         ball.draw(self.window_surface)
 
-    def render(self, mode="human") -> None:
+    def render(self) -> None:
         """
         Renders the game depending on
         ball's and players' positions.
@@ -156,11 +163,11 @@ class SSLBaseEnv(gym.Env):
         if self.window_surface is None:
             pygame.init()
 
-            if mode == "human":
+            if self.render_mode == "human":
                 pygame.display.init()
                 pygame.display.set_caption("SSL Environment")
                 self.window_surface = pygame.display.set_mode(self.window_size)
-            elif mode == "rgb_array":
+            elif self.render_mode == "rgb_array":
                 self.window_surface = pygame.Surface(self.window_size)
 
         assert (
@@ -170,11 +177,11 @@ class SSLBaseEnv(gym.Env):
         if self.clock is None:
             self.clock = pygame.time.Clock()
         self._render()
-        if mode == "human":
+        if self.render_mode == "human":
             pygame.event.pump()
             pygame.display.update()
             self.clock.tick(self.metadata["render_fps"])
-        elif mode == "rgb_array":
+        elif self.render_mode == "rgb_array":
             return np.transpose(
                 np.array(pygame.surfarray.pixels3d(self.window_surface)), axes=(1, 0, 2)
             )

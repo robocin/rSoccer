@@ -2,7 +2,7 @@ import math
 import random
 from typing import Dict
 
-import gym
+import gymnasium as gym
 import numpy as np
 from rsoccer_gym.Entities import Frame, Robot, Ball
 from rsoccer_gym.ssl.ssl_gym_base import SSLBaseEnv
@@ -43,9 +43,9 @@ class SSLHWDribblingEnv(SSLBaseEnv):
             reverse a checkpoint
     """
 
-    def __init__(self):
+    def __init__(self, render_mode=None):
         super().__init__(field_type=2, n_robots_blue=1, 
-                         n_robots_yellow=4, time_step=0.025)
+                         n_robots_yellow=4, time_step=0.025, render_mode=render_mode)
         self.action_space = gym.spaces.Box(low=-1, high=1,
                                            shape=(4, ), dtype=np.float32)
         
@@ -69,9 +69,9 @@ class SSLHWDribblingEnv(SSLBaseEnv):
         
         print('Environment initialized')
 
-    def reset(self):
+    def reset(self, *, seed=None, options=None):
         self.checkpoints_count = 0
-        return super().reset()
+        return super().reset(seed=seed, options=options)
 
     def _frame_to_observations(self):
 
