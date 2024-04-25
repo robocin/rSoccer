@@ -1,11 +1,3 @@
-import pickle
-import math
-import random
-from rsoccer_gym.Utils.Utils import OrnsteinUhlenbeckAction
-from typing import Dict
-
-import gym
-import numpy as np
 from rsoccer_gym.Entities import Frame, Robot, Ball
 from rsoccer_gym.vss.vss_gym_base import VSSBaseEnv
 from rsoccer_gym.Utils import KDTree
@@ -17,25 +9,29 @@ from rsoccer_gym.vss.env_vss.shared_tcc import (
     goal_reward_tcc,
 )
 
+from rsoccer_gym.Utils.Utils import OrnsteinUhlenbeckAction
+from typing import Dict
 
-def distancia(o1, o2):
+import numpy as np
+import pickle
+import random
+import math
+import gym
+
+
+def distancia( o1, o2 ):
     return np.sqrt((o1.x - o2.x) ** 2 + (o1.y - o2.y) ** 2)
 
-
-def close_to_x(x, range=0.15):
+def close_to_x( x, range = 0.15 ):
     return np.clip(x + np.random.uniform(-range, range, 1)[0], -0.5, 0.5)
-
 
 def close_to_y(x, range=0.15):
     return np.clip(x + np.random.uniform(-range, range, 1)[0], -0.5, 0.5)
 
-
 def menor_angulo(v1, v2):
     angle = math.acos(np.dot(v1, v2))
-
     if np.cross(v1, v2) > 0:
         return -angle
-
     return angle
 
 
@@ -48,7 +44,7 @@ def transform(v1, ang):
     return mn, (math.cos(mn) * mod, math.sin(mn) * mod)
 
 
-class vss_tcc_progressivo(VSSBaseEnv):
+class vss_tcc_progressive_with_goalkeeper(VSSBaseEnv):
     """This environment controls a singl
     e robot in a VSS soccer League 3v3 match
 
@@ -200,32 +196,29 @@ class vss_tcc_progressivo(VSSBaseEnv):
             gk_v_wheel_0 = -max_speed * math.sign(diff_orientation)
             gk_v_wheel_1 = max_speed * math.sign(diff_orientation)
 
-        return gk_v_wheel_0, gk_v_wheel_1
+        #return gk_v_wheel_0, gk_v_wheel_1
+        return 1, 1
 
     def _get_commands(self, actions):
         commands = []
         self.actions = {}
 
         self.actions[0] = actions[:2]
-        v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions)
+        gk_v_wheel_0, gk_v_wheel_1 = self._get_goalkeeper_vels()
 
-        commands.append(Robot(yellow=False, id=0, v_wheel0=v_wheel0, v_wheel1=v_wheel1))
+        goalkeeper_move = Robot(
+            yellow=True,
+            id=0,
+            v_wheel0=gk_v_wheel_0,
+            v_wheel1=gk_v_wheel_1,
+        )
+
+        commands.append(goalkeeper_move)
 
         if (
             self.difficulty > 0.5
         ):  # if agent is 50% good, start slowly making other robots move in a random way
             movement = (self.difficulty - 0.2) / 0.8
-
-            gk_v_wheel_0, gk_v_wheel_1 = self._get_goalkeeper_vels()
-
-            goalkeeper_move = Robot(
-                yellow=True,
-                id=0,
-                v_wheel0=gk_v_wheel_0 * movement,
-                v_wheel1=gk_v_wheel_1 * movement,
-            )
-
-            commands.append(goalkeeper_move)
 
             # Skip robot with id 0 which is the goalkeeper
             for i in range(1, self.n_robots_yellow):

@@ -76,6 +76,12 @@ register(id='VSS-tcc_progressivo-v0',
          max_episode_steps=1000
          )
 
+register(id='VSS-tcc_progressive-with-goalkeeper-v0',
+         entry_point='rsoccer_gym.vss.env_vss:vss_tcc_progressive_with_goalkeeper',
+         max_episode_steps=1000
+         )
+
+
 register(id='VSS-dumb_attacker-v0',
          entry_point='rsoccer_gym.vss.env_vss:dumb_attacker',
          max_episode_steps=300
