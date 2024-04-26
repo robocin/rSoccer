@@ -47,7 +47,7 @@ def transform(v1, ang):
     return mn, (math.cos(mn) * mod, math.sin(mn) * mod)
 
 
-class vss_tcc_progressive_with_goalkeeper(VSSBaseEnv):
+class vss_progressive_simple_goalkeeper(VSSBaseEnv):
     """This environment controls a singl
     e robot in a VSS soccer League 3v3 match
 
@@ -114,7 +114,7 @@ class vss_tcc_progressive_with_goalkeeper(VSSBaseEnv):
                 OrnsteinUhlenbeckAction(self.action_space, dt=self.time_step)
             )
 
-        self.difficulty = 0.0  # starts easy
+        self.difficulty = 0.1  # starts easy
 
         self.plotting_data = []
 
@@ -143,9 +143,6 @@ class vss_tcc_progressive_with_goalkeeper(VSSBaseEnv):
 
         self.plotting_data.append([(0, 0)])
 
-        # Falta colocar o goleiro amarelo na reta do gol e controlar ele a partir dessa posição
-        # self.
-
         return super().reset()
 
     def step(self, action):
@@ -170,50 +167,41 @@ class vss_tcc_progressive_with_goalkeeper(VSSBaseEnv):
         gk_pos = self.frame.robots_yellow[0]
 
         # Obter a posição da bola
-        ball_pos = self.frame.ball
+        ball_pos = self.frame.ball.y
+
+        max_gk_pos = self.field.goal_width / 2
+
+        parsed_ball_pos = np.clip(ball_pos, -max_gk_pos, max_gk_pos)
 
         # Calcular a diferença entre a posição Y do goleiro e a posição Y da bola
-        diff_y = ball_pos.y - gk_pos.y
+        diff_y = parsed_ball_pos - gk_pos.y
 
-        # Calcular a orientação do goleiro em radianos
-        gk_orientation = math.radians(gk_pos.orientation)
-
-        # Definir a velocidade máxima das rodas
-        max_speed = 0.7  # Ajuste conforme necessário
-        # Se o goleiro estiver apontando para a direção da bola, mova-se diretamente para a bola
-        if math.cos(gk_orientation) * diff_y > 0:
-            gk_v_wheel_0 = max_speed
-            gk_v_wheel_1 = max_speed
-        # Se o goleiro estiver apontando na direção oposta à bola, gire em direção à bola primeiro
+        if diff_y > 0:
+            return 1, 1
+        elif diff_y < 0:
+            return -1, -1
         else:
-            # Calcular a diferença de orientação necessária para apontar para a bola
-            diff_orientation = (
-                math.atan2(ball_pos.y - gk_pos.y, ball_pos.x - gk_pos.x)
-                - gk_orientation
-            )
-            # Normalizar a diferença de orientação para o intervalo [-pi, pi]
-            diff_orientation = math.atan2(
-                math.sin(diff_orientation), math.cos(diff_orientation)
-            )
-            # Definir as velocidades das rodas para girar em direção à bola
-            gk_v_wheel_0 = -max_speed * math.sign(diff_orientation)
-            gk_v_wheel_1 = max_speed * math.sign(diff_orientation)
-
-        # return gk_v_wheel_0, gk_v_wheel_1
-        return 1, 1
+            return 0, 0
 
     def _get_commands(self, actions):
         commands = []
         self.actions = {}
 
         self.actions[0] = actions[:2]
+
+        # Ações do agente
+        v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions)
+
+        commands.append(Robot(yellow=False, id=0, v_wheel0=v_wheel0, v_wheel1=v_wheel1))
+
+        # Ações do goleiro
         gk_v_wheel_0, gk_v_wheel_1 = self._get_goalkeeper_vels()
 
         goalkeeper_move = Robot(
             yellow=True,
             id=0,
-            v_wheel0=gk_v_wheel_0,
-            v_wheel1=gk_v_wheel_1,
+            v_wheel0=gk_v_wheel_0 * self.difficulty,
+            v_wheel1=gk_v_wheel_1 * self.difficulty,
         )
 
         commands.append(goalkeeper_move)
@@ -279,11 +267,14 @@ class vss_tcc_progressive_with_goalkeeper(VSSBaseEnv):
     def _get_initial_positions_frame(self):
         """Returns the position of each robot and ball for the initial frame"""
 
+        range_from_point = self.difficulty
+        # range_from_point = 1
+
         def x(x: float = 0):
-            return close_to_x(x, self.difficulty)
+            return close_to_x(x, range_from_point)
 
         def y(y: float = 0):
-            return close_to_y(y, self.difficulty)
+            return close_to_y(y, range_from_point)
 
         def theta():
             return random.uniform(0, 360)
@@ -301,15 +292,19 @@ class vss_tcc_progressive_with_goalkeeper(VSSBaseEnv):
             pos = (x(-0.5), y())
         places.insert(pos)
 
-        # posicao do agente
+        # Posição inicial do agente
         pos_frame.robots_blue[0] = Robot(x=pos[0], y=pos[1], theta=theta())
 
         while places.get_nearest(pos)[1] < 0.1:
             pos = (x(0.6), close_to_y(0, 0.05))
         places.insert(pos)
 
-        # posicao inicial do goleiro
-        pos_frame.robots_yellow[0] = Robot(x=pos[0], y=pos[1], theta=theta())
+        # Posição inicial do goleiro - Centralizado no gol
+        gk_x = 0.7125  # Paralelo a linha do gol
+        gk_y = 0  # Centralizado em Y
+        gk_theta = 90  # Apontado 90 graus para cima - Se acelerar +, sobe no eixo Y
+        # print("pos goleiro", gk_x, gk_y, gk_theta)
+        pos_frame.robots_yellow[0] = Robot(x=gk_x, y=gk_y, theta=gk_theta)
 
         while places.get_nearest(pos)[1] < 0.1:
             pos = (x(), y(-0.4))

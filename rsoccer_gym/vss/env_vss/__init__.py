@@ -7,4 +7,4 @@ from rsoccer_gym.vss.env_vss.vss_tcc_medio import vss_tcc_medio
 from rsoccer_gym.vss.env_vss.dumb_attacker import dumb_attacker
 from rsoccer_gym.vss.env_vss.vss_tcc_progressivo import vss_tcc_progressivo
 from rsoccer_gym.vss.env_vss.vss_tcc_progressive_with_goalkeeper import vss_tcc_progressive_with_goalkeeper
-
+from rsoccer_gym.vss.env_vss.vss_progressive_simple_goalkeeper import vss_progressive_simple_goalkeeper
