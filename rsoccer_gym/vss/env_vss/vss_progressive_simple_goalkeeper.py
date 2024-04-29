@@ -114,23 +114,29 @@ class vss_progressive_simple_goalkeeper(VSSBaseEnv):
                 OrnsteinUhlenbeckAction(self.action_space, dt=self.time_step)
             )
 
-        self.difficulty = 0.1  # starts easy
+        self.difficulty = 0.0  # starts easy
 
         self.plotting_data = []
 
         print("Environment initialized")
 
     def set_diff(self, mean_rewards, max_mean_rewards=450):
+
         diff = min(
             1, max(0.1, mean_rewards) / max_mean_rewards
         )  # if the mean rewards gets to 450 points, it is maximum difficulty
 
+        print(
+            f"Mean rewards: {mean_rewards} | Max mean rewards: {max_mean_rewards} | Diff: {diff}"
+        )
         if diff > 0.6 and self.difficulty == 0.1:
             self.difficulty = 0.25
         elif diff > 0.7 and self.difficulty == 0.25:
             self.difficulty = 0.55
         elif diff > 0.8 and self.difficulty == 0.55:
             self.difficulty = 1
+        else:
+            self.difficulty = 0.1
 
     def reset(self):
         print(f"Env. difficulty: {self.difficulty}")
