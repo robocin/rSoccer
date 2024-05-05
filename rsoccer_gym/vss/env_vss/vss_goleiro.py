@@ -9,7 +9,7 @@ import numpy as np
 from rsoccer_gym.Entities import Frame, Robot, Ball
 from rsoccer_gym.vss.vss_gym_base import VSSBaseEnv
 from rsoccer_gym.Utils import KDTree
-from rsoccer_gym.vss.env_vss.shared_tcc import observations, observations_da, w_ball_grad_tcc, w_energy_tcc, w_move_tcc, goal_reward_tcc
+from rsoccer_gym.vss.env_vss.shared_tcc import observations, observations_da, w_ball_grad_tcc, w_energy_tcc, w_move_tcc, goal_reward
 
 distancia = lambda o1, o2: np.sqrt((o1.x - o2.x)**2 + (o1.y - o2.y)**2)
 
@@ -201,7 +201,7 @@ class vss_goleiro(VSSBaseEnv):
 
         # Check if goal ocurred
         if self.frame.ball.x > (self.field.length / 2):
-            reward = -goal_reward_tcc
+            reward = -goal_reward
             goal = True
             self.reward_shaping_total['goal_bad'] = True
         elif self.frame.ball.x < -(self.field.length / 2):

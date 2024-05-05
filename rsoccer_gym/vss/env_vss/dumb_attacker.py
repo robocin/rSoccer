@@ -10,7 +10,7 @@ from rsoccer_gym.Entities import Frame, Robot, Ball
 from rsoccer_gym.vss.vss_gym_base import VSSBaseEnv
 from rsoccer_gym.Utils import KDTree
 
-from rsoccer_gym.vss.env_vss.shared_tcc import observations_da, w_ball_grad_tcc, w_energy_tcc, w_move_tcc, goal_reward_tcc
+from rsoccer_gym.vss.env_vss.shared_tcc import observations_da, w_ball_grad_tcc, w_energy_tcc, w_move_tcc, goal_reward
 
 class dumb_attacker(VSSBaseEnv):
     """This environment controls a singl
@@ -127,7 +127,7 @@ class dumb_attacker(VSSBaseEnv):
         if self.frame.ball.x > (self.field.length / 2):
             self.reward_shaping_total['goal_score'] += 1
             self.reward_shaping_total['goals_blue'] += 1
-            reward = goal_reward_tcc
+            reward = goal_reward
             goal = True
         elif self.frame.ball.x < -(self.field.length / 2):
             self.reward_shaping_total['goal_score'] -= 1

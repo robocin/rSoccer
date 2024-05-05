@@ -14,7 +14,7 @@ from rsoccer_gym.vss.env_vss.shared_tcc import (
     w_ball_grad_tcc,
     w_energy_tcc,
     w_move_tcc,
-    goal_reward_tcc,
+    goal_reward,
 )
 
 
@@ -205,7 +205,7 @@ class vss_tcc_progressivo(VSSBaseEnv):
 
         # Check if goal ocurred
         if self.frame.ball.x > (self.field.length / 2):
-            reward = goal_reward_tcc
+            reward = goal_reward
             goal = True
         elif self.frame.ball.x < -(self.field.length / 2):
             reward = -100

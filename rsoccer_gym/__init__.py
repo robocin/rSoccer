@@ -89,7 +89,6 @@ register(
     max_episode_steps=1000,
 )
 
-
 register(
     id="VSS-dumb_attacker-v0",
     entry_point="rsoccer_gym.vss.env_vss:dumb_attacker",
@@ -99,5 +98,23 @@ register(
 register(
     id="VSS-goleiro-v0",
     entry_point="rsoccer_gym.vss.env_vss:vss_goleiro",
+    max_episode_steps=1000,
+)
+
+register(
+    id="VSS-progressive-atk-random-gk-v0",
+    entry_point="rsoccer_gym.vss.env_vss_progressive_attacker_with_goalkeeper:VSSProgressiveAttackerVSGoalkeeper",
+    max_episode_steps=1000,
+)
+
+register(
+    id="VSS-progressive-atk-half-gk-v0",
+    entry_point="rsoccer_gym.vss.env_vss_progressive_attacker_with_goalkeeper:VSSProgressiveAttackerVSHalfGoalkeeper",
+    max_episode_steps=1000,
+)
+
+register(
+    id="VSS-progressive-atk-gk-v0",
+    entry_point="rsoccer_gym.vss.env_vss_progressive_attacker_with_goalkeeper:VSSProgressiveAttackerVSGoalkeeper",
     max_episode_steps=1000,
 )

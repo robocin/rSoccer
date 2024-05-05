@@ -15,14 +15,9 @@ from rsoccer_gym.Utils.Utils import OrnsteinUhlenbeckAction
 from typing import Dict
 
 import numpy as np
-import pickle
 import random
 import math
 import gym
-
-
-def distancia(o1, o2):
-    return np.sqrt((o1.x - o2.x) ** 2 + (o1.y - o2.y) ** 2)
 
 
 def close_to_x(x, range=0.15):
@@ -68,7 +63,16 @@ class Difficulty(Enum):
             return Difficulty.HARD
 
 
-class vss_progressive_simple_goalkeeper(VSSBaseEnv):
+default_metrics = {
+    "mean_rewards": [],
+    "difficulty": [],
+    "robot_position": [[0, 0]],
+    "goals": [],
+    "reward": {"move": [], "energy": [], "ball_gradient": [], "total": []},
+}
+
+
+class VSSProgressiveAttackerVSRandomGoalkeeper(VSSBaseEnv):
     """This environment controls a singl
     e robot in a VSS soccer League 3v3 match
 
@@ -137,12 +141,7 @@ class vss_progressive_simple_goalkeeper(VSSBaseEnv):
 
         self.difficulty = 0.0  # starts easy
 
-        self.metrics = {
-            "mean_rewards": [],
-            "difficulty": [],
-            "robot_position": [],
-            "reward": {"move": [], "energy": [], "ball_gradient": [], "total": []},
-        }
+        self.metrics = default_metrics
 
         print("Environment initialized")
 
@@ -180,12 +179,7 @@ class vss_progressive_simple_goalkeeper(VSSBaseEnv):
         for ou in self.ou_actions:
             ou.reset()
 
-        self.metrics = {
-            "mean_rewards": [],
-            "difficulty": [],
-            "robot_position": [[0, 0]],
-            "reward": {"move": [], "energy": [], "ball_gradient": [], "total": []},
-        }
+        self.metrics = default_metrics
 
         return super().reset()
 
@@ -198,7 +192,9 @@ class vss_progressive_simple_goalkeeper(VSSBaseEnv):
                 (self.frame.robots_blue[0].x, self.frame.robots_blue[0].y)
             )
 
-        self.metrics["mean_rewards"].append(np.mean(self.metrics["reward"]["total"]))
+        self.metrics["mean_rewards"].append(
+            np.mean(self.metrics["reward"]["total"][:-100])
+        )
         self.metrics["difficulty"].append(self.difficulty)
 
         observation, reward, done, _ = super().step(action)
@@ -211,25 +207,11 @@ class vss_progressive_simple_goalkeeper(VSSBaseEnv):
         return observations(self)
 
     def _get_goalkeeper_vels(self):
-        # Obter a posição atual do goleiro
-        gk_pos = self.frame.robots_yellow[0]
+        # Random position to goalkeeper
+        actions = self.ou_actions[0].sample()
+        v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions)
 
-        # Obter a posição da bola
-        ball_pos = self.frame.ball.y
-
-        max_gk_pos = self.field.goal_width / 2
-
-        parsed_ball_pos = np.clip(ball_pos, -max_gk_pos, max_gk_pos)
-
-        # Calcular a diferença entre a posição Y do goleiro e a posição Y da bola
-        diff_y = parsed_ball_pos - gk_pos.y
-
-        if diff_y > 0:
-            return 1, 1
-        elif diff_y < 0:
-            return -1, -1
-        else:
-            return 0, 0
+        return v_wheel0, v_wheel1
 
     def _get_commands(self, actions):
         commands = []
@@ -287,6 +269,10 @@ class vss_progressive_simple_goalkeeper(VSSBaseEnv):
                 "ball_gradient": 0,
             }
 
+        move_reward = 0
+        energy_penalty = 0
+        grad_ball_potential = 0
+
         # Check if goal ocurred
         if self.frame.ball.x > (self.field.length / 2):
             reward = goal_reward
@@ -306,14 +292,15 @@ class vss_progressive_simple_goalkeeper(VSSBaseEnv):
 
                 reward = grad_ball_potential + move_reward + energy_penalty
 
-                self.metrics["reward"]["move"].append(move_reward)
-                self.metrics["reward"]["energy"].append(energy_penalty)
-                self.metrics["reward"]["ball_gradient"].append(grad_ball_potential)
-                self.metrics["reward"]["total"].append(reward)
-
                 self.reward_shaping_total["move"] += move_reward
                 self.reward_shaping_total["energy"] += energy_penalty
                 self.reward_shaping_total["ball_gradient"] += grad_ball_potential
+
+        self.metrics["reward"]["move"].append(move_reward)
+        self.metrics["reward"]["energy"].append(energy_penalty)
+        self.metrics["reward"]["ball_gradient"].append(grad_ball_potential)
+        self.metrics["reward"]["total"].append(reward)
+        self.metrics["goals"].append(goal)
 
         return reward, goal
 

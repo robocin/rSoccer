@@ -89,7 +89,8 @@ def observations(self):
 w_move_tcc = .25
 w_ball_grad_tcc = 2
 w_energy_tcc = 1e-3
-goal_reward_tcc = 500
+goal_reward = 500
+own_goal_reward = 100
 
 def observations_da(self):
     observation = []
