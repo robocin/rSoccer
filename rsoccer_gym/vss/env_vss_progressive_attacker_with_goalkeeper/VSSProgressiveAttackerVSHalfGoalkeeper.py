@@ -7,11 +7,16 @@ import numpy as np
 
 
 class VSSProgressiveAttackerVSHalfGoalkeeper(VSSProgressiveAttackerVSRandomGoalkeeper):
+    is_random_goalkeeper = False
+
+    def step(self, action):
+        self.is_random_goalkeeper = random.choice([True, False])
+
+        return super().step(action)
 
     def _get_goalkeeper_vels(self):
-        is_random = random.choice([True, False])
 
-        if is_random:
+        if self.is_random_goalkeeper:
             random_velocity = np.random.uniform(-1, 1)
             return random_velocity, random_velocity
 
