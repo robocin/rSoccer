@@ -5,19 +5,23 @@
 """
 
 
-import time
-from typing import Dict, List, Optional
+from typing import List
 
-import gym
+import gymnasium as gym
 import numpy as np
+import pygame
+
 from rsoccer_gym.Entities import Frame, Robot
+from rsoccer_gym.Render import COLORS, Ball, VSSRenderField, VSSRobot
 from rsoccer_gym.Simulators.rsim import RSimVSS
-from rsoccer_gym.Simulators.fira import Fira
 
 
 class VSSBaseEnv(gym.Env):
     metadata = {
         "render.modes": ["human", "rgb_array"],
+        "render_modes": ["human", "rgb_array"],
+        "render_fps": 60,
+        "render.fps": 60,
     }
     NORM_BOUNDS = 1.2
 
@@ -27,22 +31,18 @@ class VSSBaseEnv(gym.Env):
         n_robots_blue: int,
         n_robots_yellow: int,
         time_step: float,
-        use_fira: bool = False,
+        render_mode=None,
     ):
         # Initialize Simulator
+        super().__init__()
+        self.render_mode = render_mode
         self.time_step = time_step
-
-        if not use_fira:
-            self.rsim = RSimVSS(
-                field_type=field_type,
-                n_robots_blue=n_robots_blue,
-                n_robots_yellow=n_robots_yellow,
-                time_step_ms=int(self.time_step * 1000),
-            )
-        elif field_type == 0:
-            self.rsim = Fira()
-        else:
-            raise ValueError("rsoccer fira wrapper only supports field type 0")
+        self.rsim = RSimVSS(
+            field_type=field_type,
+            n_robots_blue=n_robots_blue,
+            n_robots_yellow=n_robots_yellow,
+            time_step_ms=int(self.time_step * 1000),
+        )
         self.n_robots_blue = n_robots_blue
         self.n_robots_yellow = n_robots_yellow
 
@@ -60,9 +60,14 @@ class VSSBaseEnv(gym.Env):
         # Initiate
         self.frame: Frame = None
         self.last_frame: Frame = None
-        self.view = None
         self.steps = 0
         self.sent_commands = None
+
+        # Render
+        self.field_renderer = VSSRenderField()
+        self.window_surface = None
+        self.window_size = self.field_renderer.window_size
+        self.clock = None
 
     def step(self, action):
         self.steps += 1
@@ -79,27 +84,68 @@ class VSSBaseEnv(gym.Env):
         # Calculate environment observation, reward and done condition
         observation = self._frame_to_observations()
         reward, done = self._calculate_reward_and_done()
+        if self.render_mode == "human":
+            self.render()
 
-        return observation, reward, done, {}
+        return observation, reward, done, False, {}
 
-    def reset(self):
+    def reset(self, *, seed=None, options=None):
+        super().reset(seed=seed, options=options)
         self.steps = 0
         self.last_frame = None
         self.sent_commands = None
-
-        # Close render window
-        del self.view
-        self.view = None
 
         initial_pos_frame: Frame = self._get_initial_positions_frame()
         self.rsim.reset(initial_pos_frame)
 
         # Get frame from simulator
         self.frame = self.rsim.get_frame()
+        obs = self._frame_to_observations()
+        if self.render_mode == "human":
+            self.render()
+        return obs, {}
 
-        return self._frame_to_observations()
+    def _render(self):
+        def pos_transform(pos_x, pos_y):
+            return (
+                int(pos_x * self.field_renderer.scale + self.field_renderer.center_x),
+                int(pos_y * self.field_renderer.scale + self.field_renderer.center_y),
+            )
 
-    def render(self, mode="human") -> None:
+        ball = Ball(
+            *pos_transform(self.frame.ball.x, self.frame.ball.y),
+            self.field_renderer.scale
+        )
+        self.field_renderer.draw(self.window_surface)
+
+        for i in range(self.n_robots_blue):
+            robot = self.frame.robots_blue[i]
+            x, y = pos_transform(robot.x, robot.y)
+            rbt = VSSRobot(
+                x,
+                y,
+                robot.theta,
+                self.field_renderer.scale,
+                robot.id,
+                COLORS["BLUE"],
+            )
+            rbt.draw(self.window_surface)
+
+        for i in range(self.n_robots_yellow):
+            robot = self.frame.robots_yellow[i]
+            x, y = pos_transform(robot.x, robot.y)
+            rbt = VSSRobot(
+                x,
+                y,
+                robot.theta,
+                self.field_renderer.scale,
+                robot.id,
+                COLORS["YELLOW"],
+            )
+            rbt.draw(self.window_surface)
+        ball.draw(self.window_surface)
+
+    def render(self) -> None:
         """
         Renders the game depending on
         ball's and players' positions.
@@ -113,16 +159,39 @@ class VSSBaseEnv(gym.Env):
         None
 
         """
-        if self.view == None:
-            from rsoccer_gym.Render import RCGymRender
 
-            self.view = RCGymRender(
-                self.n_robots_blue, self.n_robots_yellow, self.field, simulator="vss"
+        if self.window_surface is None:
+            pygame.init()
+
+            if self.render_mode == "human":
+                pygame.display.init()
+                pygame.display.set_caption("VSS Environment")
+                self.window_surface = pygame.display.set_mode(self.window_size)
+            elif self.render_mode == "rgb_array":
+                self.window_surface = pygame.Surface(self.window_size)
+
+        assert (
+            self.window_surface is not None
+        ), "Something went wrong with pygame. This should never happen."
+
+        if self.clock is None:
+            self.clock = pygame.time.Clock()
+        self._render()
+        if self.render_mode == "human":
+            pygame.event.pump()
+            pygame.display.update()
+            self.clock.tick(self.metadata["render_fps"])
+        elif self.render_mode == "rgb_array":
+            return np.transpose(
+                np.array(pygame.surfarray.pixels3d(self.window_surface)), axes=(1, 0, 2)
             )
 
-        return self.view.render_frame(self.frame, return_rgb_array=mode == "rgb_array")
-
     def close(self):
+        if self.window_surface is not None:
+            import pygame
+
+            pygame.display.quit()
+            pygame.quit()
         self.rsim.stop()
 
     def _get_commands(self, action):

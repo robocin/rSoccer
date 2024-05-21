@@ -16,8 +16,6 @@ The base environment define normalization methods using field size and robot par
 <!-- - **VSSFIRA-v0** [Needs to run with FIRASIm] -->
 <!-- - **VSSMAOpp-v0** [Needs a attacker model trained on VSS-v0] -->
 - [**VSS-v0**](#vss-v0)
-- [**VSSMA-v0**](#vssma-v0)
-- **VSSGk-v0** [Needs a attacker model trained on VSS-v0]
 
 # VSS-v0
 In this environment each team has 3 robots, in which the id 0 blue robot is controlled through setting the desired wheel speed, while the other robots receive actions sampled from a Ornstein Uhlenbeck process. The episode ends when a goal occurs.
@@ -60,53 +58,6 @@ In this environment each team has 3 robots, in which the id 0 blue robot is cont
     - Move
     - Ball potential gradient
     - Energy
-    - Goal
-- ## Done:
-    When a goal happens
-
------
-
-# VSSMA-v0
-In this environment each team has 3 robots, in which the blue robots are controlled through setting the desired wheel speed, while the other robots receive actions sampled from a Ornstein Uhlenbeck process. The episode ends when a goal occurs.
-
-![VSSMA-v0 environment rendering gif](../../.github/resources/vss_ma.gif)
-
-- ## Observations:
-    - Box(3, 40)
-    - Value Range: [-1.25, 1.25] (Normalized)
-
-    | Index        	| Observation                	|
-    |--------------	|----------------------------	|
-    | 0            	| Ball X                     	|
-    | 1            	| Ball Y                     	|
-    | 2            	| Ball Vx                    	|
-    | 3            	| Ball Vy                    	|
-    | 4 + (7 * i)  	| id i Blue Robot X          	|
-    | 5 + (7 * i)  	| id i Blue Robot Y          	|
-    | 6 + (7 * i)  	| id i Blue Robot sin(theta) 	|
-    | 7 + (7 * i)  	| id i Blue Robot cos(theta) 	|
-    | 8 + (7 * i)  	| id i Blue Robot Vx         	|
-    | 9  + (7 * i) 	| id i Blue Robot Vy         	|
-    | 10 + (7 * i) 	| id i Blue Robot v_theta    	|
-    | 25 + (5 * i) 	| id i Yellow Robot X        	|
-    | 26 + (5 * i) 	| id i Yellow Robot Y        	|
-    | 27 + (5 * i) 	| id i Yellow Robot Vx       	|
-    | 28 + (5 * i) 	| id i Yellow Robot Vy       	|
-    | 29 + (5 * i) 	| id i Yellow Robot v_theta  	|
-
-- ## Actions:
-    - Box(3, 2)
-    - Value Range: [-1, 1]
-
-    | Index | Action        |
-    |-------|---------------|
-    | 0     | Wheel 0 speed |
-    | 1     | Wheel 1 speed |
-
-- ## Rewards:
-    - Move (Individual)
-    - Ball potential gradient
-    - Energy (Individual)
     - Goal
 - ## Done:
     When a goal happens

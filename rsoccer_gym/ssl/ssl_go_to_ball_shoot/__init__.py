@@ -1,1 +1,0 @@
-from rsoccer_gym.ssl.ssl_go_to_ball_shoot.ssl_gym_go_to_ball_shoot import SSLGoToBallShootEnv
