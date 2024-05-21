@@ -14,6 +14,6 @@ setup(
         "gymnasium >= 0.28.1",
         "rc-robosim >= 1.2.0",
         "pygame >= 2.1.3",
-        "protobuf == 3.20",
+        "protobuf == 3.20.2",
     ],
 )
