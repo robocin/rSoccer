@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "rsoccer"
+name = "rsoccer-gym"
 version = "1.0.0"
 description = "RSoccer Gym is an open-source framework to study Reinforcement Learning for RoboCup's Small Size League and IEEE VSSS competition environments."
 authors = ["FelipeMartins96 <fbm2@cin.ufpe.br>", "goncamateus <mgm4@cin.ufpe.br>"]
