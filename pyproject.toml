@@ -9,7 +9,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 rc-robosim = "^1.2"
-pygame = "2.1.0"
+pygame = "^2.1.0"
 protobuf = "3.20.2"
 gymnasium = "1.0.0"
 
