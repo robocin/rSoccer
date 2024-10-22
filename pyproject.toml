@@ -1,4 +1,22 @@
-[build-system]
-requires = ["setuptools>=45", "wheel", "setuptools_scm>=6.2"]
+[tool.poetry]
+name = "rsoccer"
+version = "1.0.0"
+description = "RSoccer Gym is an open-source framework to study Reinforcement Learning for RoboCup's Small Size League and IEEE VSSS competition environments."
+authors = ["FelipeMartins96 <fbm2@cin.ufpe.br>", "goncamateus <mgm4@cin.ufpe.br>"]
+license = "MIT"
+readme = "README.md"
 
-[tool.setuptools_scm]
+[tool.poetry.dependencies]
+python = "^3.10"
+rc-robosim = "^1.2"
+pygame = "2.1.0"
+protobuf = "3.20.2"
+gymnasium = "1.0.0"
+
+[tool.poetry.group.dev.dependencies]
+ipython = "^8.28.0"
+ipdb = "^0.13.13"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
