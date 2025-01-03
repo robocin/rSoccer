@@ -7,11 +7,10 @@ license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = ">=3.10"
 rc-robosim = "^1.2"
-pygame = "^2.1.0"
-protobuf = "3.20.2"
-gymnasium = "1.0.0"
+gymnasium = ">=1.0.0"
+pygame = "^2.6.1"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "^8.28.0"
